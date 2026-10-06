@@ -243,6 +243,43 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
 .dias label { display: inline-flex; align-items: center; gap: 4px; margin: 0; font-weight: 400; }
 #confirmar-texto { white-space: pre-line; }
 
+/* Painel geral */
+.cartao-numero small { display: block; font-size: 12px; color: var(--suave); }
+.cartao-numero.alerta-numero strong { color: var(--vermelho); }
+.faixa-atualizacao {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+    background: #fff4d6; color: #5c3d00; border: 1px solid #f3d27a; border-radius: 10px;
+    padding: 10px 14px; margin-bottom: 14px; font-weight: 600;
+}
+.faixa-atualizacao span { flex: 1 1 260px; }
+.escolha-interfaces { padding: 10px 16px; }
+.escolha-interfaces summary { margin: 0; }
+.lista-interfaces { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; }
+.lista-interfaces label { margin: 0; font-weight: 400; }
+.lista-interfaces .desligada { color: var(--suave); }
+.alerta-texto { color: var(--vermelho-escuro); margin: 0 0 8px; min-height: 0; }
+.alerta-texto:empty { display: none; }
+.graficos { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; margin-bottom: 16px; }
+.cartao-grafico { margin: 0; padding: 14px 16px; }
+.grafico-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.grafico-valores { display: flex; flex-direction: column; align-items: flex-end; font-size: 14px; white-space: nowrap; }
+.valor-entrada b { color: var(--azul); font-size: 16px; }
+.valor-saida b { color: #c2410c; font-size: 16px; }
+.grafico-caixa { position: relative; height: 140px; border-left: 1px solid var(--borda); border-bottom: 1px solid var(--borda); }
+.grafico { display: block; width: 100%; height: 100%; }
+.grade-grafico { stroke: #eef0f3; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.linha-entrada, .linha-saida { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.linha-entrada { stroke: var(--azul); }
+.linha-saida { stroke: #ea580c; }
+.area-entrada { fill: rgba(13, 74, 125, .12); }
+.area-saida { fill: rgba(234, 88, 12, .10); }
+.escala-grafico { position: absolute; top: 2px; left: 6px; font-size: 11px; color: var(--suave); background: rgba(255, 255, 255, .8); padding: 0 3px; }
+.grafico-legenda { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; font-size: 13px; }
+.grafico-legenda .ajuda { margin: 0 0 0 auto; }
+.legenda-entrada::before, .legenda-saida::before { content: ""; display: inline-block; width: 12px; height: 3px; margin-right: 5px; vertical-align: middle; }
+.legenda-entrada::before { background: var(--azul); }
+.legenda-saida::before { background: #ea580c; }
+
 /* Celular: tabela vira lista de cartões */
 @media (max-width: 760px) {
     .topo-texto span { display: none; }
@@ -257,6 +294,7 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
     .tabela td:has(> .acoes) { width: 100%; white-space: normal; }
     .tabela-rolagem { overflow-x: visible; }
     .grupo-lote select { min-width: 0; flex: 1; }
+    .graficos { grid-template-columns: 1fr; }
 }
 
 /* Janelas */

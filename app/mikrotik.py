@@ -153,6 +153,10 @@ class Mikrotik:
         dados = self._pedir("GET", caminho, params=filtros or None)
         return dados if isinstance(dados, list) else []
 
+    def ler(self, caminho: str) -> Any:
+        """GET de um caminho que devolve objeto em vez de tabela (ex.: /system/resource)."""
+        return self._pedir("GET", caminho)
+
     def executar(self, caminho: str, dados: dict[str, Any] | None = None) -> Any:
         """Comando do RouterOS (POST /rest/<caminho>), ex.: /ip/hotspot/user/reset-counters."""
         return self._pedir("POST", caminho, json=dados or {})

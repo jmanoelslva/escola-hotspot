@@ -27,12 +27,31 @@ class MikrotikFalso:
             "/ip/dns/static": [],
             "/file": [],
             "/ip/hotspot/cookie": [],
+            "/interface": [
+                {".id": "*1", "name": "ether1", "type": "ether", "running": "true", "disabled": "false", "comment": "internet"},
+                {".id": "*2", "name": "bridge-hotspot", "type": "bridge", "running": "true", "disabled": "false"},
+                {".id": "*3", "name": "ether5", "type": "ether", "running": "false", "disabled": "false"},
+                {".id": "*4", "name": "lo", "type": "loopback", "running": "true", "disabled": "false"},
+            ],
+            "/ip/route": [{".id": "*1", "dst-address": "0.0.0.0/0", "gateway": "192.168.0.1",
+                           "immediate-gw": "192.168.0.1%ether1", "active": "true", "disabled": "false"}],
         }
         self.tabelas["/ip/hotspot"][0]["profile"] = "hsprof1"
         self.adicionar("/ip/hotspot/user", {"name": "default-trial", "default": "true"})
         self.pedidos: list[tuple[str, str, dict | None]] = []
         self.https = True  # False imita o www-ssl desligado
         self.aceita_nxdomain = True  # False imita RouterOS sem DNS type=NXDOMAIN
+        self.objetos = {
+            "/system/resource": {"board-name": "hEX", "version": "7.15.3 (stable)", "cpu-load": "7",
+                                 "total-memory": "268435456", "free-memory": "201326592", "uptime": "3d4h5m"},
+            "/system/health": [{".id": "*1", "name": "voltage", "value": "24.1", "type": "V"},
+                               {".id": "*2", "name": "temperature", "value": "41", "type": "C"}],
+            "/system/package/update": {"channel": "stable", "installed-version": "7.15.3"},
+            "/system/routerboard": {"current-firmware": "7.15.3", "upgrade-firmware": "7.15.3"},
+        }
+        self.versao_disponivel = "7.16.1"
+        self.verificacoes = 0
+        self.trafego_aleatorio = False
 
     def adicionar(self, tabela: str, dados: dict) -> dict:
         item = {".id": f"*{self.proximo:X}", **dados}
@@ -58,6 +77,22 @@ class MikrotikFalso:
         if caminho == "/system/identity":
             return httpx.Response(200, json={"name": "hEX-escola"})
 
+        if pedido.method == "GET" and caminho in self.objetos:
+            return httpx.Response(200, json=self.objetos[caminho])
+        if pedido.method == "POST" and caminho == "/system/package/update/check-for-updates":
+            self.verificacoes += 1
+            estado = self.objetos["/system/package/update"]
+            estado["latest-version"] = self.versao_disponivel
+            estado["status"] = "New version is available" if self.versao_disponivel != estado["installed-version"] else "System is already up to date"
+            return httpx.Response(200, json=[{"status": estado["status"]}])
+        if pedido.method == "POST" and caminho == "/interface/monitor-traffic":
+            nomes = (corpo or {}).get("interface", "").split(",")
+            if self.trafego_aleatorio:  # só para a demonstração visual
+                import random
+                return httpx.Response(200, json=[{"name": n, "rx-bits-per-second": str(random.randint(5, 60) * 1_000_000),
+                                                  "tx-bits-per-second": str(random.randint(1, 12) * 1_000_000)} for n in nomes])
+            return httpx.Response(200, json=[{"name": n, "rx-bits-per-second": str(10_000_000 * (i + 1)),
+                                              "tx-bits-per-second": str(1_000_000 * (i + 1))} for i, n in enumerate(nomes)])
         if pedido.method == "POST" and caminho.endswith("/reset-counters"):
             tabela = caminho.removesuffix("/reset-counters")
             ids = set((corpo or {}).get("numbers", "").split(","))

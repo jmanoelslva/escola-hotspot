@@ -2,6 +2,12 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.3.0] - 2026-10-06
+
+### Adicionado
+- Aba "Painel geral" (a primeira): CPU, memória, temperatura, tempo ligado, modelo e versão do RouterOS, conectados e usuários cadastrados; gráfico ao vivo (a cada 2 segundos, últimos 5 minutos) de entrada e saída das interfaces escolhidas, com a interface de internet detectada pela rota padrão. Só lê enquanto a aba está aberta e visível.
+- Aviso de atualização do RouterOS e do firmware da RouterBOARD: faixa no topo do painel e instruções de como atualizar. Consulta no máximo a cada 6 horas, com "Verificar agora".
+
 ## [1.2.1] - 2026-10-06
 
 ### Removido

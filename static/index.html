@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="/static/style.css">
     <script src="/static/app.js" defer></script>
     <script src="/static/recursos.js" defer></script>
+    <script src="/static/geral.js" defer></script>
 </head>
 <body>
 
@@ -45,6 +46,7 @@
     </header>
 
     <nav class="abas" role="tablist">
+        <button class="aba" data-aba="geral" role="tab">Painel geral</button>
         <button class="aba" data-aba="usuarios" role="tab">Usuários</button>
         <button class="aba" data-aba="conectados" role="tab">Conectados</button>
         <button class="aba" data-aba="aparelhos" role="tab">Aparelhos</button>
@@ -58,6 +60,33 @@
     </nav>
 
     <main class="conteudo">
+        <div id="faixa-atualizacao" class="faixa-atualizacao" role="status" hidden>
+            <span id="texto-faixa-atualizacao"></span>
+            <button id="ver-atualizacao" class="botao pequeno cor-azul" type="button">Ver detalhes</button>
+            <button id="fechar-faixa-atualizacao" class="botao pequeno discreto-escuro" type="button" aria-label="Fechar aviso">✕</button>
+        </div>
+
+        <!-- Painel geral -->
+        <section id="aba-geral" class="painel-aba" hidden>
+            <div class="cartoes-resumo" id="cartoes-sistema"></div>
+            <details class="cartao escolha-interfaces">
+                <summary>Escolher as interfaces do gráfico</summary>
+                <div id="lista-interfaces" class="lista-interfaces"></div>
+            </details>
+            <p class="alerta-texto" id="erro-trafego" role="status"></p>
+            <div id="graficos" class="graficos"></div>
+            <div class="cartao">
+                <h2>Atualização do RouterOS</h2>
+                <p id="estado-atualizacao" class="dica">Verificando…</p>
+                <div id="como-atualizar" class="dica" hidden>
+                    <strong>Como atualizar:</strong> faça um backup, escolha um horário sem aula e, no Winbox, abra
+                    <strong>System → Packages → Check For Updates → Download&amp;Install</strong>. O roteador reinicia sozinho (a rede para por alguns minutos).
+                    Depois, para o firmware: <strong>System → RouterBOARD → Upgrade</strong> e reinicie de novo (<strong>System → Reboot</strong>).
+                </div>
+                <button id="verificar-atualizacao" class="botao cor-azul" type="button">Verificar agora</button>
+            </div>
+        </section>
+
         <!-- Usuários -->
         <section id="aba-usuarios" class="painel-aba" hidden>
             <div class="barra-acoes">

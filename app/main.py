@@ -3,6 +3,7 @@
 import io
 import json
 import logging
+import re
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from typing import Literal
@@ -12,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import backup, controle, historico, importacao, util
+from . import backup, controle, historico, importacao, sistema, util
 from .config import APP_VERSION, PASTA_PROJETO, config
 from .mikrotik import EnderecoMikrotik, ErroAutenticacao, ErroConexao, ErroMikrotik, Mikrotik
 from .sessoes import LimiteLogin, Sessao, Sessoes
@@ -49,6 +50,7 @@ app.state.sessoes = Sessoes(config.sessao_minutos)
 app.state.limite_login = LimiteLogin()
 app.state.transport = None  # os testes trocam por um MikroTik falso
 app.state.endereco = EnderecoMikrotik(config.mikrotik_url, config.mikrotik_verificar_tls)
+app.state.atualizacao = sistema.VerificadorAtualizacao()
 
 
 # ---------------------------------------------------------------- infraestrutura
@@ -894,6 +896,33 @@ def restaurar_arquivo(arquivo: UploadFile = File(...), mk: Mikrotik = Depends(mi
     resultado = backup.restaurar(mk, backup.ler(conteudo))
     registrar(s, f"restaurou o backup do arquivo {arquivo.filename}")
     return resultado
+
+
+# ---------------------------------------------------------------- painel geral e atualização
+
+_NOME_INTERFACE = re.compile(r"^[\w.@:+/ -]{1,64}$")
+
+
+@app.get("/api/sistema")
+def ver_sistema(mk: Mikrotik = Depends(mikrotik)):
+    dados = sistema.resumo(mk)
+    dados["conectados"] = len(mk.listar(ATIVOS))
+    dados["usuarios"] = sum(1 for u in mk.listar(USUARIOS)
+                            if not util.sim(u.get("default")) and u.get("name") != "default-trial")
+    return dados
+
+
+@app.get("/api/trafego")
+def ver_trafego(interfaces: str = "", mk: Mikrotik = Depends(mikrotik)):
+    nomes = [n.strip() for n in interfaces.split(",") if n.strip()][:8]
+    if any(not _NOME_INTERFACE.match(n) for n in nomes):
+        raise util.ErroDados("Nome de interface inválido.")
+    return sistema.trafego(mk, nomes)
+
+
+@app.get("/api/atualizacao")
+def ver_atualizacao(forcar: bool = False, mk: Mikrotik = Depends(mikrotik)):
+    return app.state.atualizacao.obter(mk, forcar)
 
 
 # ---------------------------------------------------------------- páginas

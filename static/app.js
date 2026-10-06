@@ -20,8 +20,10 @@ const estado = {
     relogioConectados: null,
 };
 
-// Função que carrega cada aba; recursos.js acrescenta as abas dele.
+// Função que carrega cada aba; recursos.js e geral.js acrescentam as deles.
 const CARREGAR = {};
+// Funções chamadas logo depois do login (ex.: verificar atualização do RouterOS).
+const AO_ENTRAR = [];
 
 class ErroApi extends Error {
     constructor(mensagem, status) { super(mensagem); this.status = status; }
@@ -173,7 +175,8 @@ function mostrarPainel(sessao) {
     conexao.title = sessao.conexao === 'HTTP'
         ? 'Conexão com o MikroTik sem criptografia (serviço www). Ative o www-ssl para usar HTTPS: veja mikrotik-https.rsc.'
         : 'Conexão com o MikroTik criptografada (www-ssl).';
-    abrirAba(lembrado('aba') || 'usuarios');
+    abrirAba(lembrado('aba') || 'geral');
+    AO_ENTRAR.forEach((funcao) => { try { funcao(); } catch (e) { /* não impede o painel */ } });
 }
 
 function abrirAba(nome) {
