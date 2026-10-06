@@ -282,7 +282,7 @@ def aplicar_forcar_dns(mk: Mikrotik, ativo: bool) -> None:
                 mk.criar(NAT, {
                     "chain": "dstnat", "action": "redirect", "protocol": protocolo, "dst-port": "53",
                     "to-ports": "53", "in-interface": interface,
-                    "comment": f"{PREFIXO_FORCAR_DNS}: consultas DNS do hotspot vão para o roteador",
+                    "comment": f"{PREFIXO_FORCAR_DNS} (Painel do Hotspot)",
                 })
         regras = _regras_forcar_dns(mk)
     for regra in regras:
