@@ -148,9 +148,14 @@ class Mikrotik:
             return None
         return resposta.json()
 
-    def listar(self, caminho: str) -> list[dict[str, Any]]:
-        dados = self._pedir("GET", caminho)
+    def listar(self, caminho: str, filtros: dict[str, str] | None = None) -> list[dict[str, Any]]:
+        """GET da tabela; filtros viram ?campo=valor (a REST API filtra no roteador)."""
+        dados = self._pedir("GET", caminho, params=filtros or None)
         return dados if isinstance(dados, list) else []
+
+    def executar(self, caminho: str, dados: dict[str, Any] | None = None) -> Any:
+        """Comando do RouterOS (POST /rest/<caminho>), ex.: /ip/hotspot/user/reset-counters."""
+        return self._pedir("POST", caminho, json=dados or {})
 
     def obter(self, caminho: str, item_id: str) -> dict[str, Any]:
         return self._pedir("GET", f"{caminho}/{item_id}")

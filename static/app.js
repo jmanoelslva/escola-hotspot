@@ -20,6 +20,9 @@ const estado = {
     relogioConectados: null,
 };
 
+// Função que carrega cada aba; recursos.js acrescenta as abas dele.
+const CARREGAR = {};
+
 class ErroApi extends Error {
     constructor(mensagem, status) { super(mensagem); this.status = status; }
 }
@@ -87,7 +90,18 @@ function confirmar(titulo, texto, rotulo) {
     janela.returnValue = '';
     janela.showModal();
     return new Promise((resolver) => {
-        janela.addEventListener('close', () => resolver(janela.returnValue === 'sim'), { once: true });
+        let respondeu = false;
+        const responder = (sim) => {
+            if (respondeu) return;
+            respondeu = true;
+            if (janela.open) janela.close(sim ? 'sim' : 'nao');
+            resolver(sim);
+        };
+        // Responde no clique (não depende do evento "close", que o navegador
+        // pode atrasar com a aba em segundo plano); Esc continua cancelando.
+        $('#confirmar-sim').onclick = (e) => { e.preventDefault(); responder(true); };
+        janela.querySelector('button[value=nao]').onclick = (e) => { e.preventDefault(); responder(false); };
+        janela.addEventListener('close', () => responder(janela.returnValue === 'sim'), { once: true });
     });
 }
 
@@ -173,8 +187,8 @@ function abrirAba(nome) {
     });
     document.querySelectorAll('.painel-aba').forEach((s) => { s.hidden = s.id !== 'aba-' + nome; });
     clearInterval(estado.relogioConectados);
-    const carregar = { usuarios: carregarUsuarios, conectados: carregarConectados, aparelhos: carregarAparelhos, importar: carregarPerfis };
-    carregar[nome]().catch((e) => aviso(e.message, true));
+    const carregar = CARREGAR[nome];
+    if (carregar) carregar().catch((e) => aviso(e.message, true));
     if (nome === 'conectados') {
         estado.relogioConectados = setInterval(() => carregarConectados().catch(() => {}), 30000);
     }
@@ -215,6 +229,10 @@ async function carregarPerfis() {
     filtro.replaceChildren(el('option', { value: '', texto: 'Todos os perfis' }), ...opcoes());
     filtro.value = estado.perfis.includes(atual) ? atual : '';
     $('#form-usuario').perfil.replaceChildren(...opcoes());
+    const lote = $('#lote-perfil');
+    const loteAtual = lote.value;
+    lote.replaceChildren(...opcoes());
+    if (estado.perfis.includes(loteAtual)) lote.value = loteAtual;
     const importar = $('#perfil-importar');
     const escolhido = importar.value || lembrado('perfil') || '';
     importar.replaceChildren(...opcoes());
@@ -228,14 +246,37 @@ async function carregarUsuarios() {
     estado.usuarios = usuarios;
     const ids = new Set(usuarios.map((u) => u.id));
     for (const id of [...estado.selecionados]) if (!ids.has(id)) estado.selecionados.delete(id);
+    atualizarTurmas();
     renderUsuarios();
+}
+
+// "Maria da Silva - 9º A" -> turma "9º A" (o que vem depois do último " - ").
+function turmaDe(comentario) {
+    const texto = (comentario || '').trim();
+    const i = texto.lastIndexOf(' - ');
+    return i >= 0 ? texto.slice(i + 3).trim() : '';
+}
+
+function atualizarTurmas() {
+    const filtro = $('#filtro-turma');
+    const atual = filtro.value;
+    const turmas = [...new Set(estado.usuarios.map((u) => turmaDe(u.comentario)).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+    const semTurma = estado.usuarios.some((u) => !turmaDe(u.comentario));
+    filtro.replaceChildren(el('option', { value: '', texto: 'Todas as turmas' }),
+        ...turmas.map((t) => el('option', { value: t, texto: t })),
+        semTurma && turmas.length ? el('option', { value: '\u0000', texto: '(sem turma)' }) : null);
+    filtro.value = [...filtro.options].some((o) => o.value === atual) ? atual : '';
+    filtro.hidden = turmas.length === 0;
 }
 
 function usuariosFiltrados() {
     const busca = normalizar($('#busca-usuarios').value);
     const perfil = $('#filtro-perfil').value;
+    const turma = $('#filtro-turma').value;
     return estado.usuarios.filter((u) =>
         (!perfil || u.perfil === perfil) &&
+        (!turma || (turma === '\u0000' ? !turmaDe(u.comentario) : turmaDe(u.comentario) === turma)) &&
         (!busca || normalizar(u.nome + ' ' + u.comentario).includes(busca)));
 }
 
@@ -264,6 +305,7 @@ function renderUsuarios() {
                 u.mac ? el('span', { class: 'etiqueta bypass', title: u.mac, texto: ' preso ao aparelho' }) : null),
             el('td', {}, el('div', { class: 'acoes' },
                 el('button', { class: 'botao pequeno', type: 'button', texto: 'Editar', onclick: () => abrirUsuario(u) }),
+                el('button', { class: 'botao pequeno', type: 'button', texto: 'Nova senha', onclick: () => novaSenha(u) }),
                 el('button', { class: 'botao pequeno', type: 'button', texto: u.desativado ? 'Ativar' : 'Desativar', onclick: () => alternarUsuario(u) }),
                 el('button', { class: 'botao pequeno', type: 'button', texto: 'Excluir', onclick: () => excluirUsuario(u) }),
             )),
@@ -288,6 +330,54 @@ function atualizarSelecao() {
 
 $('#busca-usuarios').addEventListener('input', renderUsuarios);
 $('#filtro-perfil').addEventListener('change', renderUsuarios);
+$('#filtro-turma').addEventListener('change', renderUsuarios);
+$('#limpar-selecao').addEventListener('click', () => { estado.selecionados.clear(); renderUsuarios(); });
+
+async function loteUsuarios(acao, perfil) {
+    const ids = [...estado.selecionados];
+    const textos = {
+        ativar: `Ativar ${ids.length} usuário(s)?`,
+        desativar: `Desativar ${ids.length} usuário(s)? Eles não conseguirão entrar na rede até serem ativados de novo.`,
+        perfil: `Mudar ${ids.length} usuário(s) para o perfil "${perfil}"?`,
+    };
+    const rotulos = { ativar: 'Ativar', desativar: 'Desativar', perfil: 'Mudar perfil' };
+    if (!await confirmar(rotulos[acao], textos[acao], rotulos[acao])) return;
+    try {
+        const r = await api('POST', '/api/usuarios/lote', { ids, acao, perfil: perfil || '' });
+        aviso(`${r.alterados} usuário(s) alterado(s).` + (r.erros.length ? ' Erros: ' + r.erros.join('; ') : ''), r.erros.length > 0);
+        await carregarUsuarios();
+    } catch (e) { aviso(e.message, true); }
+}
+
+$('#lote-ativar').addEventListener('click', () => loteUsuarios('ativar'));
+$('#lote-desativar').addEventListener('click', () => loteUsuarios('desativar'));
+$('#lote-aplicar-perfil').addEventListener('click', () => {
+    const perfil = $('#lote-perfil').value;
+    if (!perfil) { aviso('Escolha o perfil.', true); return; }
+    loteUsuarios('perfil', perfil);
+});
+
+async function novaSenha(u) {
+    if (!await confirmar('Nova senha', `Gerar uma senha nova para "${u.nome}"? A senha atual deixa de funcionar.`, 'Gerar senha')) return;
+    try {
+        const atualizado = await api('POST', '/api/usuarios/' + encodeURIComponent(u.id) + '/nova-senha');
+        await carregarUsuarios();
+        if (await confirmar('Senha nova', `A nova senha de ${u.nome} é: ${atualizado.senha}\n\nDeseja imprimir o cartão?`, 'Imprimir')) {
+            imprimir([{ usuario: atualizado.nome, senha: atualizado.senha, comentario: atualizado.comentario }]);
+        }
+    } catch (e) { aviso(e.message, true); }
+}
+
+$('#exportar-usuarios').addEventListener('click', () => {
+    $('#form-exportar').reset();
+    $('#janela-exportar').showModal();
+});
+$('#form-exportar').addEventListener('submit', (evento) => {
+    evento.preventDefault();
+    const senhas = evento.target.senhas.checked;
+    $('#janela-exportar').close();
+    window.location.href = '/api/usuarios/exportar' + (senhas ? '?senhas=true' : '');
+});
 $('#marcar-todos').addEventListener('change', (e) => {
     for (const u of usuariosFiltrados()) e.target.checked ? estado.selecionados.add(u.id) : estado.selecionados.delete(u.id);
     renderUsuarios();
@@ -411,6 +501,10 @@ function renderConectados() {
             el('td', { 'data-rotulo': 'Conectado há', texto: tempo(c.uptime) + (c.restante ? ` (restam ${tempo(c.restante)})` : '') }),
             el('td', { 'data-rotulo': 'Enviados / recebidos', texto: `${bytes(c.bytes_in)} / ${bytes(c.bytes_out)}` }),
             el('td', {}, el('div', { class: 'acoes' },
+                el('button', { class: 'botao pequeno', type: 'button', texto: 'Liberar aparelho', title: 'Bypass: este aparelho passa a navegar sem login',
+                    onclick: () => abrirAparelho('bypassed', null, { mac: c.mac, comentario: c.comentario || c.usuario }) }),
+                el('button', { class: 'botao pequeno', type: 'button', texto: 'Bloquear aparelho',
+                    onclick: () => abrirAparelho('blocked', null, { mac: c.mac, comentario: c.usuario }) }),
                 el('button', { class: 'botao pequeno', type: 'button', texto: 'Desconectar', onclick: () => desconectar(c) }))),
         ));
     }
@@ -464,17 +558,18 @@ function renderAparelhos() {
     }
 }
 
-function abrirAparelho(tipo, aparelho) {
+function abrirAparelho(tipo, aparelho, preencher) {
     const form = $('#form-aparelho');
     estado.editandoAparelho = aparelho || null;
     form.reset();
     mostrarErroForm(form, '');
     form.tipo.value = tipo === 'blocked' ? 'blocked' : 'bypassed';
     $('#titulo-aparelho').textContent = aparelho ? 'Editar aparelho' : (tipo === 'blocked' ? 'Bloquear aparelho' : 'Liberar aparelho');
-    if (aparelho) {
-        form.comentario.value = aparelho.comentario;
-        form.mac.value = aparelho.mac;
-        form.ip.value = aparelho.ip;
+    const dados = aparelho || preencher;
+    if (dados) {
+        form.comentario.value = dados.comentario || '';
+        form.mac.value = dados.mac || '';
+        form.ip.value = dados.ip || '';
     }
     $('#escolher-aparelho').open = false;
     $('#janela-aparelho').showModal();
@@ -537,7 +632,7 @@ $('#form-aparelho').addEventListener('submit', async (evento) => {
                 aviso(dados.tipo === 'blocked' ? 'Aparelho bloqueado.' : 'Aparelho liberado.');
             }
             $('#janela-aparelho').close();
-            await carregarAparelhos();
+            if (estado.abaAtual === 'aparelhos') await carregarAparelhos();
         } catch (e) {
             mostrarErroForm(form, e.message);
         }
@@ -653,7 +748,15 @@ function imprimir(lista) {
 
 // ------------------------------------------------------------------ início
 
-(async function iniciar() {
+Object.assign(CARREGAR, {
+    usuarios: carregarUsuarios,
+    conectados: carregarConectados,
+    aparelhos: carregarAparelhos,
+    importar: carregarPerfis,
+});
+
+// Depois de todos os scripts (recursos.js registra as abas dele em CARREGAR).
+document.addEventListener('DOMContentLoaded', async function iniciar() {
     try {
         estado.info = await api('GET', '/api/info');
         const texto = estado.info.escola + (estado.info.cidade ? ' · ' + estado.info.cidade : '');
@@ -664,4 +767,4 @@ function imprimir(lista) {
     } catch (e) {
         mostrarLogin();
     }
-})();
+});

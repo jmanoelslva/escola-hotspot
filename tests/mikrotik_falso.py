@@ -22,10 +22,16 @@ class MikrotikFalso:
             "/ip/hotspot/host": [],
             "/ip/hotspot": [{".id": "*1", "name": "hotspot1"}],
             "/ip/dhcp-server/lease": [],
+            "/ip/hotspot/profile": [{".id": "*1", "name": "hsprof1", "html-directory": "hotspot"}],
+            "/ip/firewall/filter": [],
+            "/ip/dns/static": [],
+            "/file": [],
         }
+        self.tabelas["/ip/hotspot"][0]["profile"] = "hsprof1"
         self.adicionar("/ip/hotspot/user", {"name": "default-trial", "default": "true"})
         self.pedidos: list[tuple[str, str, dict | None]] = []
         self.https = True  # False imita o www-ssl desligado
+        self.aceita_nxdomain = True  # False imita RouterOS sem DNS type=NXDOMAIN
 
     def adicionar(self, tabela: str, dados: dict) -> dict:
         item = {".id": f"*{self.proximo:X}", **dados}
@@ -51,6 +57,14 @@ class MikrotikFalso:
         if caminho == "/system/identity":
             return httpx.Response(200, json={"name": "hEX-escola"})
 
+        if pedido.method == "POST" and caminho.endswith("/reset-counters"):
+            tabela = caminho.removesuffix("/reset-counters")
+            ids = set((corpo or {}).get("numbers", "").split(","))
+            for item in self.tabelas[tabela]:
+                if item[".id"] in ids:
+                    item.update({"bytes-in": "0", "bytes-out": "0", "uptime": "0s"})
+            return httpx.Response(200, json=[])
+
         m = re.match(r"^(.*)/(\*[0-9A-F]+)$", caminho)
         tabela, item_id = (m.group(1), m.group(2)) if m else (caminho, None)
         if tabela not in self.tabelas:
@@ -59,8 +73,21 @@ class MikrotikFalso:
 
         if item_id is None:
             if pedido.method == "GET":
-                return httpx.Response(200, json=itens)
+                filtros = dict(pedido.url.params)
+                return httpx.Response(200, json=[i for i in itens if all(i.get(k) == v for k, v in filtros.items())])
             if pedido.method == "PUT":
+                corpo = dict(corpo)
+                antes = corpo.pop("place-before", None)
+                if tabela == "/ip/dns/static" and corpo.get("type") == "NXDOMAIN" and not self.aceita_nxdomain:
+                    return self._erro(400, "input does not match any value of type")
+                if tabela == "/file" and any(i["name"] == corpo["name"] for i in itens):
+                    return self._erro(400, "failure: file already exists")
+                if antes:
+                    novo = self.adicionar(tabela, {"disabled": "false", **corpo})
+                    itens.remove(novo)
+                    posicao = next(i for i, x in enumerate(itens) if x[".id"] == antes)
+                    itens.insert(posicao, novo)
+                    return httpx.Response(201, json=novo)
                 if tabela == "/ip/hotspot/user" and any(i["name"] == corpo["name"] for i in itens):
                     return self._erro(400, "failure: already have user with this name")
                 if tabela == "/ip/hotspot/user" and corpo.get("profile", "default") not in {p["name"] for p in self.tabelas["/ip/hotspot/user/profile"]}:

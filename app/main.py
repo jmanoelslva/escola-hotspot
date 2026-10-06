@@ -1,6 +1,9 @@
 """Painel web do hotspot MikroTik: usuários, conectados, bypass/bloqueio e importação."""
 
+import io
+import json
 import logging
+from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from typing import Literal
 
@@ -9,7 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import importacao, util
+from . import backup, controle, historico, importacao, util
 from .config import APP_VERSION, PASTA_PROJETO, config
 from .mikrotik import EnderecoMikrotik, ErroAutenticacao, ErroConexao, ErroMikrotik, Mikrotik
 from .sessoes import LimiteLogin, Sessao, Sessoes
@@ -21,6 +24,8 @@ BINDINGS = "/ip/hotspot/ip-binding"
 HOSTS = "/ip/hotspot/host"
 SERVIDORES = "/ip/hotspot"
 LEASES = "/ip/dhcp-server/lease"
+ARQUIVOS = "/file"
+PERFIS_HOTSPOT = "/ip/hotspot/profile"
 
 COOKIE = "painel_hotspot"
 MAC_VAZIO = "00:00:00:00:00:00"
@@ -229,6 +234,40 @@ class Importar(BaseModel):
     linhas: list[ItemImportacao] = Field(max_length=importacao.MAX_LINHAS)
 
 
+class Lote(BaseModel):
+    ids: list[str] = Field(min_length=1, max_length=2000)
+    acao: Literal["ativar", "desativar", "perfil"]
+    perfil: str = Field(default="", max_length=64)
+
+
+class DadosPerfil(BaseModel):
+    nome: str | None = Field(default=None, max_length=32)
+    download_mbps: float | None = None
+    envio_mbps: float | None = None
+    aparelhos: int | None = None
+    tempo_sessao: str | None = Field(default=None, max_length=20)
+
+
+class DadosHorario(BaseModel):
+    ativo: bool
+    inicio: str = Field(default="07:00", max_length=5)
+    fim: str = Field(default="17:00", max_length=5)
+    dias: list[str] = Field(default_factory=list, max_length=7)
+
+
+class NovoBloqueio(BaseModel):
+    dominio: str = Field(max_length=300)
+    motivo: str = Field(default="", max_length=100)
+
+
+class Aviso(BaseModel):
+    texto: str = Field(default="", max_length=500)
+
+
+class NomeBackup(BaseModel):
+    nome: str = Field(max_length=60)
+
+
 def _id_valido(item_id: str) -> str:
     # IDs do RouterOS têm a forma *1A; nada além disso vai para a URL.
     if not (item_id.startswith("*") and item_id[1:].isalnum() and len(item_id) <= 12):
@@ -258,6 +297,7 @@ def login(dados: Login, request: Request, response: Response):
     token = app.state.sessoes.criar(usuario, dados.senha, identidade)
     response.set_cookie(COOKIE, token, httponly=True, samesite="strict", path="/")
     log_acoes.info("%s entrou (ip %s)", usuario, ip)
+    _backup_do_dia(usuario, dados.senha)
     return {"usuario": usuario, "identidade": identidade, "conexao": tipo_conexao()}
 
 
@@ -507,6 +547,324 @@ def importar(dados: Importar, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depe
         resultado.append({"usuario": item.usuario, "ok": True, "erro": ""})
     registrar(s, f"importou {criados} usuário(s) de planilha")
     return {"criados": criados, "resultado": resultado}
+
+
+# ---------------------------------------------------------------- ações em lote, senha e exportação
+
+@app.post("/api/usuarios/lote")
+def lote_usuarios(dados: Lote, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    if dados.acao == "perfil":
+        if dados.perfil not in _perfis(mk):
+            raise util.ErroDados("Escolha um perfil que exista no MikroTik.")
+        corpo = {"profile": dados.perfil}
+        descricao = f"perfil {dados.perfil}"
+    else:
+        corpo = {"disabled": "true" if dados.acao == "desativar" else "false"}
+        descricao = "desativou" if dados.acao == "desativar" else "ativou"
+    nomes = {u.get(".id"): u.get("name") for u in mk.listar(USUARIOS)}
+    alterados, erros = 0, []
+    for item_id in dados.ids:
+        _id_valido(item_id)
+        try:
+            mk.alterar(USUARIOS, item_id, corpo)
+            alterados += 1
+        except ErroAutenticacao:
+            raise
+        except ErroMikrotik as erro:
+            erros.append(f"{nomes.get(item_id, item_id)}: {erro.mensagem}")
+    registrar(s, f"lote ({descricao}) em {alterados} usuário(s)")
+    return {"alterados": alterados, "erros": erros}
+
+
+@app.post("/api/usuarios/{item_id}/nova-senha")
+def nova_senha(item_id: str, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    _id_valido(item_id)
+    atual = mk.obter(USUARIOS, item_id)
+    senha = util.gerar_senha()
+    mk.alterar(USUARIOS, item_id, {"password": senha})
+    registrar(s, f"gerou senha nova para {atual.get('name')}")
+    return _usuario({**atual, "password": senha})
+
+
+@app.get("/api/usuarios/exportar")
+def exportar_usuarios(senhas: bool = False, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+
+    usuarios = listar_usuarios(mk)
+    livro = Workbook()
+    folha = livro.active
+    folha.title = "Usuários"
+    titulos = (["Usuário"] + (["Senha"] if senhas else [])
+               + ["Nome", "Turma", "Perfil", "Limite de tempo", "Situação", "Enviados (MB)", "Recebidos (MB)"])
+    folha.append(titulos)
+    for celula in folha[1]:
+        celula.font = Font(bold=True)
+    for u in usuarios:
+        nome, turma = util.separar_turma(u["comentario"])
+        folha.append([u["nome"]] + ([u["senha"]] if senhas else []) + [
+            nome, turma, u["perfil"], u["limite_tempo"], "Desativado" if u["desativado"] else "Ativo",
+            round(u["bytes_in"] / 1048576, 1), round(u["bytes_out"] / 1048576, 1)])
+    for coluna, largura in zip("ABCDEFGHIJ", (18, 12, 30, 12, 14, 14, 12, 14, 14, 14)):
+        folha.column_dimensions[coluna].width = largura
+    saida = io.BytesIO()
+    livro.save(saida)
+    registrar(s, "exportou a lista de usuários" + (" com senhas" if senhas else ""))
+    nome = f"usuarios-hotspot-{datetime.now():%Y-%m-%d}.xlsx"
+    return Response(saida.getvalue(), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f'attachment; filename="{nome}"'})
+
+
+# ---------------------------------------------------------------- perfis e horário
+
+def _perfil_por_id(mk: Mikrotik, item_id: str) -> dict:
+    _id_valido(item_id)
+    return mk.obter(controle.PERFIS, item_id)
+
+
+@app.get("/api/perfis/detalhes")
+def perfis_detalhes(mk: Mikrotik = Depends(mikrotik)):
+    horarios = controle.ler_horarios(mk.listar(controle.FILTROS))
+    usuarios = mk.listar(USUARIOS)
+    lista = []
+    for p in mk.listar(controle.PERFIS):
+        item = controle.perfil_para_json(p, horarios)
+        item["usuarios"] = sum(1 for u in usuarios if u.get("profile", "default") == item["nome"]
+                               and not util.sim(u.get("default")) and u.get("name") != "default-trial")
+        lista.append(item)
+    return sorted(lista, key=lambda p: (not p["padrao"], p["nome"].lower()))
+
+
+@app.post("/api/perfis")
+def criar_perfil(dados: DadosPerfil, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    if not dados.nome:
+        raise util.ErroDados("Informe o nome do perfil.")
+    corpo = controle.montar_perfil(dados.nome, dados.download_mbps or 0, dados.envio_mbps or 0,
+                                   dados.aparelhos if dados.aparelhos is not None else 1, dados.tempo_sessao or "")
+    if corpo["name"] in _perfis(mk):
+        raise util.ErroDados("Já existe um perfil com esse nome.")
+    if not corpo.get("rate-limit"):
+        corpo.pop("rate-limit", None)
+    mk.criar(controle.PERFIS, corpo)
+    registrar(s, f"criou perfil {corpo['name']}")
+    return {"ok": True}
+
+
+@app.patch("/api/perfis/{item_id}")
+def alterar_perfil(item_id: str, dados: DadosPerfil, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    atual = _perfil_por_id(mk, item_id)
+    nome = dados.nome if dados.nome is not None and dados.nome != atual.get("name") else None
+    if nome is not None and (util.sim(atual.get("default")) or atual.get("name") == "default"):
+        raise util.ErroDados("O perfil default não pode ser renomeado.")
+    if nome is not None and controle.ler_horarios(mk.listar(controle.FILTROS)).get(atual.get("name", "")):
+        raise util.ErroDados("Desligue o horário deste perfil antes de renomear.")
+    if nome is not None and any(u.get("profile") == atual.get("name") for u in mk.listar(USUARIOS)):
+        raise util.ErroDados("Há usuários com este perfil; para renomear, crie um perfil novo e mude os usuários.")
+    corpo = controle.montar_perfil(nome, dados.download_mbps, dados.envio_mbps, dados.aparelhos, dados.tempo_sessao)
+    if not corpo:
+        raise util.ErroDados("Nada para alterar.")
+    mk.alterar(controle.PERFIS, item_id, corpo)
+    campos = ", ".join(corpo)
+    registrar(s, f"alterou perfil {atual.get('name')} ({campos})")
+    return {"ok": True}
+
+
+@app.delete("/api/perfis/{item_id}")
+def remover_perfil(item_id: str, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    atual = _perfil_por_id(mk, item_id)
+    nome = atual.get("name", "")
+    if util.sim(atual.get("default")) or nome == "default":
+        raise util.ErroDados("O perfil default não pode ser excluído.")
+    em_uso = sum(1 for u in mk.listar(USUARIOS) if u.get("profile") == nome)
+    if em_uso:
+        raise util.ErroDados(f"Há {em_uso} usuário(s) com este perfil. Mude o perfil deles antes de excluir.")
+    controle.aplicar_horario(mk, atual, None)
+    mk.remover(controle.PERFIS, item_id)
+    registrar(s, f"excluiu perfil {nome}")
+    return {"ok": True}
+
+
+@app.put("/api/perfis/{item_id}/horario")
+def horario_perfil(item_id: str, dados: DadosHorario, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    atual = _perfil_por_id(mk, item_id)
+    horario = controle.validar_horario(dados.inicio, dados.fim, dados.dias) if dados.ativo else None
+    controle.aplicar_horario(mk, atual, horario)
+    registrar(s, f"horário do perfil {atual.get('name')}: " + (horario.texto() if horario else "livre"))
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------- sites bloqueados
+
+def _bloqueio_do_painel(mk: Mikrotik, item_id: str) -> dict:
+    _id_valido(item_id)
+    atual = mk.obter(controle.DNS_ESTATICO, item_id)
+    if not atual.get("comment", "").startswith(controle.PREFIXO_BLOQUEIO):
+        raise util.ErroDados("Esse registro de DNS não foi criado pelo painel.")
+    return atual
+
+
+@app.get("/api/bloqueios")
+def bloqueios(mk: Mikrotik = Depends(mikrotik)):
+    itens = [controle.bloqueio_para_json(b) for b in mk.listar(controle.DNS_ESTATICO)
+             if b.get("comment", "").startswith(controle.PREFIXO_BLOQUEIO)]
+    return sorted(itens, key=lambda b: b["dominio"])
+
+
+@app.post("/api/bloqueios")
+def criar_bloqueio(dados: NovoBloqueio, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    dominio = controle.normalizar_dominio(dados.dominio)
+    if any(b.get("name") == dominio for b in mk.listar(controle.DNS_ESTATICO)):
+        raise util.ErroDados("Esse site já está bloqueado.")
+    controle.criar_bloqueio(mk, dominio, dados.motivo)
+    registrar(s, f"bloqueou o site {dominio}")
+    return {"ok": True, "dominio": dominio}
+
+
+@app.patch("/api/bloqueios/{item_id}")
+def alternar_bloqueio(item_id: str, dados: AlterarDispositivo, mk: Mikrotik = Depends(mikrotik),
+                      s: Sessao = Depends(sessao_atual)):
+    if dados.desativado is None:
+        raise util.ErroDados("Nada para alterar.")
+    atual = _bloqueio_do_painel(mk, item_id)
+    mk.alterar(controle.DNS_ESTATICO, item_id, {"disabled": "true" if dados.desativado else "false"})
+    registrar(s, f"{'pausou' if dados.desativado else 'reativou'} o bloqueio de {atual.get('name')}")
+    return {"ok": True}
+
+
+@app.delete("/api/bloqueios/{item_id}")
+def remover_bloqueio(item_id: str, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    atual = _bloqueio_do_painel(mk, item_id)
+    mk.remover(controle.DNS_ESTATICO, item_id)
+    registrar(s, f"desbloqueou o site {atual.get('name')}")
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------- relatório de consumo
+
+def _estado_relatorio() -> dict:
+    try:
+        return json.loads((config.pasta_dados / "relatorio.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+@app.get("/api/relatorio")
+def relatorio(mk: Mikrotik = Depends(mikrotik)):
+    return {
+        "desde": _estado_relatorio().get("zerado_em", ""),
+        "usuarios": [{"nome": u["nome"], "comentario": u["comentario"], "perfil": u["perfil"],
+                      "uptime": u["uptime"], "bytes_in": u["bytes_in"], "bytes_out": u["bytes_out"]}
+                     for u in listar_usuarios(mk)],
+    }
+
+
+@app.post("/api/relatorio/zerar")
+def zerar_relatorio(mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    ids = [u.get(".id") for u in mk.listar(USUARIOS) if u.get(".id")]
+    if ids:
+        mk.executar(f"{USUARIOS}/reset-counters", {"numbers": ",".join(ids)})
+    agora = datetime.now().isoformat(timespec="seconds")
+    (config.pasta_dados / "relatorio.json").write_text(json.dumps({"zerado_em": agora}), encoding="utf-8")
+    registrar(s, "zerou os contadores de consumo")
+    return {"desde": agora}
+
+
+# ---------------------------------------------------------------- aviso da escola
+
+def _arquivo_aviso(mk: Mikrotik) -> str:
+    """aviso.txt na pasta de páginas (html-directory) do perfil usado pelo hotspot."""
+    servidores = mk.listar(SERVIDORES)
+    perfil_usado = servidores[0].get("profile", "default") if servidores else "default"
+    pasta = "hotspot"
+    for perfil in mk.listar(PERFIS_HOTSPOT):
+        if perfil.get("name") == perfil_usado and perfil.get("html-directory"):
+            pasta = perfil["html-directory"].strip("/")
+            break
+    return f"{pasta}/aviso.txt"
+
+
+@app.get("/api/aviso")
+def ler_aviso(mk: Mikrotik = Depends(mikrotik)):
+    nome = _arquivo_aviso(mk)
+    arquivos = mk.listar(ARQUIVOS, {"name": nome})
+    return {"texto": arquivos[0].get("contents", "") if arquivos else "", "arquivo": nome}
+
+
+@app.put("/api/aviso")
+def gravar_aviso(dados: Aviso, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    texto = dados.texto.replace("\r\n", "\n").strip()
+    nome = _arquivo_aviso(mk)
+    arquivos = mk.listar(ARQUIVOS, {"name": nome})
+    try:
+        if arquivos:
+            mk.alterar(ARQUIVOS, arquivos[0][".id"], {"contents": texto})
+        else:
+            mk.criar(ARQUIVOS, {"name": nome, "contents": texto})
+    except ErroAutenticacao:
+        raise
+    except ErroMikrotik as erro:
+        raise ErroMikrotik(f"O MikroTik não aceitou gravar o aviso ({erro.mensagem}). "
+                           "Pode ser preciso atualizar o RouterOS.", erro.status) from erro
+    registrar(s, "alterou o aviso da escola" if texto else "apagou o aviso da escola")
+    return {"texto": texto, "arquivo": nome}
+
+
+# ---------------------------------------------------------------- histórico
+
+@app.get("/api/historico")
+def ver_historico(busca: str = "", usuario: str = "", dias: int = 30, _: Sessao = Depends(sessao_atual)):
+    return historico.ler(config.pasta_dados, busca[:100], usuario[:64], max(0, min(dias, 3650)))
+
+
+# ---------------------------------------------------------------- backup
+
+def _backup_do_dia(usuario: str, senha: str) -> None:
+    if backup.existe_de_hoje(config.pasta_dados):
+        return
+    try:
+        with conectar(usuario, senha) as mk:
+            nome = backup.salvar(config.pasta_dados, backup.montar(mk))
+        log_acoes.info("%s backup automático %s", usuario, nome)
+    except Exception as erro:  # o login não pode falhar por causa do backup
+        logging.getLogger("painel").warning("backup automático falhou: %r", erro)
+
+
+@app.get("/api/backups")
+def listar_backups(_: Sessao = Depends(sessao_atual)):
+    return backup.listar(config.pasta_dados)
+
+
+@app.post("/api/backups")
+def fazer_backup(mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    nome = backup.salvar(config.pasta_dados, backup.montar(mk), sufixo_hora=True)
+    registrar(s, f"fez backup {nome}")
+    return {"nome": nome}
+
+
+@app.get("/api/backups/{nome}")
+def baixar_backup(nome: str, s: Sessao = Depends(sessao_atual)):
+    arquivo = backup.caminho(config.pasta_dados, nome)
+    registrar(s, f"baixou o backup {nome}")
+    return FileResponse(arquivo, media_type="application/json", filename=nome)
+
+
+@app.post("/api/backups/restaurar")
+def restaurar_backup(dados: NomeBackup, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    conteudo = backup.ler(backup.caminho(config.pasta_dados, dados.nome).read_bytes())
+    resultado = backup.restaurar(mk, conteudo)
+    registrar(s, f"restaurou o backup {dados.nome}")
+    return resultado
+
+
+@app.post("/api/backups/restaurar-arquivo")
+def restaurar_arquivo(arquivo: UploadFile = File(...), mk: Mikrotik = Depends(mikrotik),
+                      s: Sessao = Depends(sessao_atual)):
+    conteudo = arquivo.file.read(ARQUIVO_MAX_BYTES + 1)
+    if len(conteudo) > ARQUIVO_MAX_BYTES:
+        raise util.ErroDados("Arquivo grande demais (máximo de 5 MB).")
+    resultado = backup.restaurar(mk, backup.ler(conteudo))
+    registrar(s, f"restaurou o backup do arquivo {arquivo.filename}")
+    return resultado
 
 
 # ---------------------------------------------------------------- páginas

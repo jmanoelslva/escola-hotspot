@@ -73,3 +73,12 @@ def inteiro(valor: object) -> int:
         return int(str(valor))
     except (TypeError, ValueError):
         return 0
+
+
+def separar_turma(comentario: str) -> tuple[str, str]:
+    """'Maria da Silva - 9º A' -> ('Maria da Silva', '9º A'). Sem ' - ', tudo é nome."""
+    texto = (comentario or "").strip()
+    if " - " in texto:
+        nome, turma = texto.rsplit(" - ", 1)
+        return nome.strip(), turma.strip()
+    return texto, ""

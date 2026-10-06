@@ -186,6 +186,42 @@ input:focus, select:focus { outline: 0; border-color: var(--azul); box-shadow: 0
 .etiqueta.bloqueado { background: #fdecec; color: var(--vermelho-escuro); }
 .etiqueta.alerta-amarelo { background: #fff4d6; color: var(--amarelo); }
 
+/* Versão 1.1 */
+textarea {
+    display: block; width: 100%; margin-top: 4px; padding: 10px; font: inherit; color: var(--texto);
+    background: var(--branco); border: 1px solid var(--borda); border-radius: 8px; resize: vertical;
+}
+textarea:focus { outline: 0; border-color: var(--azul); box-shadow: 0 0 0 3px rgba(13, 74, 125, .15); }
+.escondido { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.grupo-lote { display: inline-flex; gap: 6px; align-items: center; }
+.grupo-lote select { margin: 0; height: 38px; width: auto; min-width: 120px; }
+.botao.discreto-escuro { background: transparent; border-color: transparent; color: var(--suave); }
+.botao.discreto-escuro:hover { color: var(--azul); background: transparent; }
+.campo-largo { flex: 1 1 260px; margin: 0; }
+.alternador { display: inline-flex; border: 1px solid var(--borda); border-radius: 8px; overflow: hidden; }
+.alternador .botao { border: 0; border-radius: 0; height: 36px; }
+.alternador .botao.ativo { background: var(--azul); color: #fff; }
+.cartoes-resumo { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.cartao-numero { flex: 1 1 180px; background: var(--branco); border: 1px solid var(--borda); border-radius: 12px; padding: 10px 14px; }
+.cartao-numero span { display: block; font-size: 13px; color: var(--suave); }
+.cartao-numero strong { font-size: 18px; color: var(--azul); }
+.pct { display: inline-flex; align-items: center; gap: 8px; min-width: 120px; }
+.barra-pct { flex: 1; height: 8px; background: #e4e7eb; border-radius: 999px; overflow: hidden; min-width: 60px; }
+.barra-pct span { display: block; height: 100%; background: var(--azul); }
+.linha-aviso { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.aviso-escola {
+    background: #fff4d6; color: #5c3d00; border: 1px solid #f3d27a; border-radius: 8px;
+    padding: 10px 12px; white-space: pre-line; text-align: center;
+}
+.aviso-escola.vazio-aviso { background: #f3f5f8; color: var(--suave); border-color: var(--borda); }
+.linha-check { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.linha-check input { flex: none; }
+.sem-borda { border: 0; padding: 0; margin: 0; min-width: 0; }
+.sem-borda:disabled { opacity: .45; }
+.dias { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 4px 0 8px; }
+.dias label { display: inline-flex; align-items: center; gap: 4px; margin: 0; font-weight: 400; }
+#confirmar-texto { white-space: pre-line; }
+
 /* Celular: tabela vira lista de cartões */
 @media (max-width: 760px) {
     .topo-texto span { display: none; }
@@ -198,6 +234,7 @@ input:focus, select:focus { outline: 0; border-color: var(--azul); box-shadow: 0
     .tabela td.col-check { position: absolute; right: 12px; top: 12px; width: auto; }
     .acoes { justify-content: flex-start; margin-top: 6px; }
     .tabela-rolagem { overflow-x: visible; }
+    .grupo-lote select { min-width: 0; flex: 1; }
 }
 
 /* Janelas */

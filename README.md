@@ -2,11 +2,17 @@
 
 Aplicação web para administrar o hotspot do MikroTik (RouterOS 7) da escola, sem precisar abrir o Winbox:
 
-- **Usuários:** listar, buscar, cadastrar, alterar senha/perfil/nome/limite de tempo, prender a um aparelho (MAC), desativar, excluir (um ou vários).
-- **Conectados:** quem está usando a rede agora (IP, MAC, tempo, consumo), com botão para desconectar. Atualiza a cada 30 segundos.
+- **Usuários:** listar, buscar, filtrar por turma e perfil, cadastrar, alterar, gerar senha nova com um clique, prender a um aparelho (MAC). Em lote: ativar, desativar, mudar de perfil, imprimir e excluir. Exportar para Excel (com ou sem senhas).
+- **Conectados:** quem está usando a rede agora (IP, MAC, tempo, consumo), com botões para desconectar e para liberar ou bloquear o aparelho. Atualiza a cada 30 segundos.
 - **Aparelhos:** liberar (bypass) TVs, impressoras e computadores da escola, ou bloquear um aparelho, pelo MAC. Dá para escolher o aparelho na lista do que está conectado, com o nome que ele informou à rede (ex.: `SamsungTV-Sala5`).
+- **Perfis e horário:** velocidade de download e envio, aparelhos por usuário e tempo máximo de conexão de cada perfil; horário de acesso por perfil (ex.: alunos só das 7h às 17h, de segunda a sexta).
+- **Sites bloqueados:** bloqueio pelo DNS do MikroTik (o site e todos os subdomínios), com pausa e motivo.
+- **Consumo:** ranking de uso por usuário e por turma, desde o último "Zerar contadores".
+- **Aviso:** texto que aparece para os alunos na tela de login e na tela de conectado do Wi-Fi.
 - **Importar:** cadastrar uma turma inteira por planilha (.xlsx ou .csv). Senhas em branco são criadas pelo painel.
-- **Imprimir credenciais:** cartões com usuário e senha (3 por linha numa folha A4) dos usuários selecionados ou recém-importados.
+- **Imprimir credenciais:** cartões com usuário e senha (3 por linha numa folha A4).
+- **Histórico:** quem fez o quê e quando, com busca e filtro por operador e período.
+- **Backup:** uma cópia automática por dia (últimas 30) e restauração do que faltar no MikroTik.
 
 Cada pessoa entra com um **usuário admin do próprio MikroTik**. O painel não guarda senhas em disco: a senha fica na memória só enquanto a sessão está aberta (60 minutos sem uso, por padrão). As alterações ficam registradas em `dados\acoes.log` e no log do MikroTik.
 
@@ -40,7 +46,15 @@ O topo do painel mostra qual está em uso. Com **HTTP**, a senha do admin passa 
 
 O usuário precisa das permissões `read`, `write`, `rest-api` e `sensitive` (o grupo `full` dos admins já tem). `sensitive` é o que permite ver e imprimir as senhas dos alunos.
 
-## 3. Planilha de importação
+## 3. Como funcionam os recursos de controle
+
+- **Horário de acesso:** o painel coloca quem entra com o perfil numa *address list* (`painel-<perfil>`, ou a que o perfil já usava) e cria regras de firewall `drop` com horário (`time=`) para os períodos fora do permitido, com o comentário `painel-horario:<perfil> ...`, antes das outras regras da cadeia `forward`. Vale a partir do próximo login de cada usuário, e o relógio do MikroTik precisa estar certo (`/system clock`, de preferência com NTP). Conexões já aceleradas pelo *fasttrack* podem continuar alguns minutos depois do horário.
+- **Sites bloqueados:** entradas em `/ip dns static` com `type=NXDOMAIN` e `match-subdomain=yes` (ou `address=0.0.0.0` em versões mais antigas do RouterOS), comentário `painel-bloqueio`. Só afetam aparelhos que usam o DNS do MikroTik. O painel só lista e remove o que ele mesmo criou.
+- **Aviso:** o painel grava `aviso.txt` na pasta de páginas do hotspot (`html-directory` do perfil, normalmente `hotspot`). As páginas do hotspot da escola (pasta `hotspot`, versão com `js/aviso.js`) mostram o texto.
+- **Consumo:** usa os contadores de cada usuário do hotspot. "Zerar contadores" zera todos e anota a data em `dados\relatorio.json`.
+- **Backup:** feito no primeiro login de cada dia em `dados\backups` (contém as senhas dos alunos; a pasta fica só neste computador).
+
+## 4. Planilha de importação
 
 Baixe o modelo na aba **Importar**. A primeira linha tem os títulos; maiúsculas e acentos não importam:
 
@@ -56,7 +70,7 @@ Baixe o modelo na aba **Importar**. A primeira linha tem os títulos; maiúscula
 
 O painel mostra uma prévia: linhas com problema (usuário repetido, já existente, perfil inexistente) são ignoradas. Depois de cadastrar, o botão **Imprimir credenciais** gera os cartões para entregar aos alunos.
 
-## Segurança
+## 5. Segurança
 
 - O acesso ao painel (navegador → computador do painel) é HTTP dentro da rede da escola: use-o em computadores de confiança.
 - Entre o painel e o MikroTik, prefira HTTPS (`mikrotik-https.rsc`).
