@@ -224,11 +224,17 @@ def test_relatorio_e_zerar(logado, mk):
 def test_aviso_criar_e_alterar(logado, mk):
     assert logado.get("/api/aviso").json() == {"texto": "", "arquivo": "hotspot/aviso.txt"}
     logado.put("/api/aviso", json={"texto": "Feira de ciências sexta-feira!\r\nTragam o crachá."})
-    arquivo = mk.tabelas["/file"][-1]
-    assert arquivo["name"] == "hotspot/aviso.txt"
-    assert arquivo["contents"] == "Feira de ciências sexta-feira!\nTragam o crachá."
+    arquivos = {a["name"]: a for a in mk.tabelas["/file"]}
+    assert arquivos["hotspot/aviso.txt"]["contents"] == "Feira de ciências sexta-feira!\nTragam o crachá."
+    # O que as páginas carregam: JavaScript só com ASCII (acentos em \u).
+    script = arquivos["hotspot/aviso-escola.js"]["contents"]
+    assert script == 'var AVISO_ESCOLA = "Feira de ci\\u00eancias sexta-feira!\\nTragam o crach\\u00e1.";\n'
+    assert logado.get("/api/aviso").json()["texto"] == "Feira de ciências sexta-feira!\nTragam o crachá."
+
     logado.put("/api/aviso", json={"texto": ""})
-    assert len(mk.tabelas["/file"]) == 1 and arquivo["contents"] == ""
+    assert len(mk.tabelas["/file"]) == 2
+    assert arquivos["hotspot/aviso.txt"]["contents"] == ""
+    assert arquivos["hotspot/aviso-escola.js"]["contents"] == 'var AVISO_ESCOLA = "";\n'
 
 
 def test_aviso_usa_pasta_do_perfil_do_hotspot(logado, mk):

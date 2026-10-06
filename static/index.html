@@ -64,18 +64,18 @@
                 <input id="busca-usuarios" type="search" placeholder="Buscar usuário, nome ou turma" class="busca">
                 <select id="filtro-turma" class="filtro"><option value="">Todas as turmas</option></select>
                 <select id="filtro-perfil" class="filtro"><option value="">Todos os perfis</option></select>
-                <button id="exportar-usuarios" class="botao" type="button">Exportar planilha</button>
+                <button id="exportar-usuarios" class="botao cor-verde" type="button">Exportar planilha</button>
                 <button id="novo-usuario" class="botao primario" type="button">+ Novo usuário</button>
             </div>
             <div class="barra-selecao" id="barra-selecao" hidden>
                 <span id="qtd-selecionados"></span>
-                <button id="lote-ativar" class="botao" type="button">Ativar</button>
-                <button id="lote-desativar" class="botao" type="button">Desativar</button>
+                <button id="lote-ativar" class="botao cor-verde" type="button">Ativar</button>
+                <button id="lote-desativar" class="botao cor-laranja" type="button">Desativar</button>
                 <span class="grupo-lote">
                     <select id="lote-perfil" aria-label="Novo perfil"></select>
-                    <button id="lote-aplicar-perfil" class="botao" type="button">Mudar perfil</button>
+                    <button id="lote-aplicar-perfil" class="botao cor-azul" type="button">Mudar perfil</button>
                 </span>
-                <button id="imprimir-selecionados" class="botao" type="button">Imprimir credenciais</button>
+                <button id="imprimir-selecionados" class="botao cor-roxo" type="button">Imprimir credenciais</button>
                 <button id="excluir-selecionados" class="botao perigo" type="button">Excluir</button>
                 <button id="limpar-selecao" class="botao discreto-escuro" type="button">Limpar seleção</button>
             </div>
@@ -95,7 +95,7 @@
         <section id="aba-conectados" class="painel-aba" hidden>
             <div class="barra-acoes">
                 <input id="busca-conectados" type="search" placeholder="Buscar usuário, IP ou MAC" class="busca">
-                <button id="atualizar-conectados" class="botao" type="button">Atualizar</button>
+                <button id="atualizar-conectados" class="botao cor-azul" type="button">Atualizar</button>
             </div>
             <p class="resumo" id="resumo-conectados"></p>
             <div class="tabela-rolagem">
@@ -171,7 +171,7 @@
                     <button class="botao pequeno" type="button" data-agrupar="turma">Por turma</button>
                 </span>
                 <input id="busca-relatorio" type="search" placeholder="Buscar" class="busca">
-                <button id="atualizar-relatorio" class="botao" type="button">Atualizar</button>
+                <button id="atualizar-relatorio" class="botao cor-azul" type="button">Atualizar</button>
                 <button id="zerar-relatorio" class="botao perigo" type="button">Zerar contadores</button>
             </div>
             <div class="cartoes-resumo" id="resumo-relatorio"></div>
@@ -225,7 +225,7 @@
                 <p class="resumo" id="resumo-importar"></p>
                 <div class="barra-acoes">
                     <button id="confirmar-importar" class="botao primario" type="button">Cadastrar</button>
-                    <button id="imprimir-importados" class="botao" type="button" hidden>Imprimir credenciais</button>
+                    <button id="imprimir-importados" class="botao cor-roxo" type="button" hidden>Imprimir credenciais</button>
                 </div>
                 <div class="tabela-rolagem">
                     <table class="tabela">
@@ -265,7 +265,7 @@
                 <p class="dica">O painel guarda sozinho uma cópia por dia (no primeiro login do dia) com os usuários e senhas, aparelhos, perfis e sites bloqueados, e mantém as últimas 30 na pasta <strong>dados\backups</strong> deste computador. <strong>Restaurar</strong> recria no MikroTik só o que estiver faltando; não altera nem apaga o que já existe.</p>
                 <div class="barra-acoes">
                     <button id="fazer-backup" class="botao primario" type="button">Fazer backup agora</button>
-                    <label class="botao" for="arquivo-backup">Restaurar de um arquivo…</label>
+                    <label class="botao cor-laranja" for="arquivo-backup">Restaurar de um arquivo…</label>
                     <input type="file" id="arquivo-backup" accept=".json" class="escondido">
                 </div>
             </div>

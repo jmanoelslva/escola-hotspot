@@ -2,6 +2,17 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.1.1] - 2026-10-06
+
+### Corrigido
+- Aviso da escola: o painel grava também `aviso-escola.js`, que as páginas do hotspot carregam com <script> (a leitura de `aviso.txt` pelo navegador não funcionava no roteador).
+- Conectados: botões numa linha só mesmo com login longo; IP e MAC não quebram.
+- Botão "Restaurar de um arquivo" alinhado com "Fazer backup agora".
+
+### Alterado
+- Botões de ação coloridos por tipo (editar, nova senha, ativar, desativar, excluir, horário, liberar, bloquear, desconectar).
+- Topo e menu alinhados com o conteúdo em telas largas.
+
 ## [1.1.0] - 2026-10-06
 
 ### Adicionado

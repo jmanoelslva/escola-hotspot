@@ -771,21 +771,27 @@ def zerar_relatorio(mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao
 
 # ---------------------------------------------------------------- aviso da escola
 
-def _arquivo_aviso(mk: Mikrotik) -> str:
-    """aviso.txt na pasta de páginas (html-directory) do perfil usado pelo hotspot."""
+def _pasta_hotspot(mk: Mikrotik) -> str:
+    """Pasta de páginas (html-directory) do perfil usado pelo hotspot."""
     servidores = mk.listar(SERVIDORES)
     perfil_usado = servidores[0].get("profile", "default") if servidores else "default"
-    pasta = "hotspot"
     for perfil in mk.listar(PERFIS_HOTSPOT):
         if perfil.get("name") == perfil_usado and perfil.get("html-directory"):
-            pasta = perfil["html-directory"].strip("/")
-            break
-    return f"{pasta}/aviso.txt"
+            return perfil["html-directory"].strip("/")
+    return "hotspot"
+
+
+def _gravar_arquivo(mk: Mikrotik, nome: str, conteudo: str) -> None:
+    arquivos = mk.listar(ARQUIVOS, {"name": nome})
+    if arquivos:
+        mk.alterar(ARQUIVOS, arquivos[0][".id"], {"contents": conteudo})
+    else:
+        mk.criar(ARQUIVOS, {"name": nome, "contents": conteudo})
 
 
 @app.get("/api/aviso")
 def ler_aviso(mk: Mikrotik = Depends(mikrotik)):
-    nome = _arquivo_aviso(mk)
+    nome = f"{_pasta_hotspot(mk)}/aviso.txt"
     arquivos = mk.listar(ARQUIVOS, {"name": nome})
     return {"texto": arquivos[0].get("contents", "") if arquivos else "", "arquivo": nome}
 
@@ -793,20 +799,19 @@ def ler_aviso(mk: Mikrotik = Depends(mikrotik)):
 @app.put("/api/aviso")
 def gravar_aviso(dados: Aviso, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
     texto = dados.texto.replace("\r\n", "\n").strip()
-    nome = _arquivo_aviso(mk)
-    arquivos = mk.listar(ARQUIVOS, {"name": nome})
+    pasta = _pasta_hotspot(mk)
     try:
-        if arquivos:
-            mk.alterar(ARQUIVOS, arquivos[0][".id"], {"contents": texto})
-        else:
-            mk.criar(ARQUIVOS, {"name": nome, "contents": texto})
+        # aviso.txt guarda o texto para o painel ler de volta; aviso-escola.js é o que
+        # as páginas do hotspot carregam (<script>, como o CSS), em ASCII com escapes.
+        _gravar_arquivo(mk, f"{pasta}/aviso.txt", texto)
+        _gravar_arquivo(mk, f"{pasta}/aviso-escola.js", f"var AVISO_ESCOLA = {json.dumps(texto)};\n")
     except ErroAutenticacao:
         raise
     except ErroMikrotik as erro:
         raise ErroMikrotik(f"O MikroTik não aceitou gravar o aviso ({erro.mensagem}). "
                            "Pode ser preciso atualizar o RouterOS.", erro.status) from erro
     registrar(s, "alterou o aviso da escola" if texto else "apagou o aviso da escola")
-    return {"texto": texto, "arquivo": nome}
+    return {"texto": texto, "arquivo": f"{pasta}/aviso.txt"}
 
 
 # ---------------------------------------------------------------- histórico

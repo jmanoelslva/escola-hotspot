@@ -52,9 +52,9 @@ async function carregarPerfisDetalhes() {
                 : el('span', { class: 'etiqueta off', texto: 'livre' })),
             el('td', { 'data-rotulo': 'Usuários', texto: String(p.usuarios) }),
             el('td', {}, el('div', { class: 'acoes' },
-                el('button', { class: 'botao pequeno', type: 'button', texto: 'Editar', onclick: () => abrirPerfil(p) }),
-                el('button', { class: 'botao pequeno', type: 'button', texto: 'Horário', onclick: () => abrirHorario(p) }),
-                p.padrao ? null : el('button', { class: 'botao pequeno', type: 'button', texto: 'Excluir', onclick: () => excluirPerfil(p) }),
+                el('button', { class: 'botao pequeno cor-azul', type: 'button', texto: 'Editar', onclick: () => abrirPerfil(p) }),
+                el('button', { class: 'botao pequeno cor-teal', type: 'button', texto: 'Horário', onclick: () => abrirHorario(p) }),
+                p.padrao ? null : el('button', { class: 'botao pequeno cor-vermelho', type: 'button', texto: 'Excluir', onclick: () => excluirPerfil(p) }),
             )),
         ));
     }
@@ -182,8 +182,8 @@ function renderSites() {
             el('td', { 'data-rotulo': 'Motivo', texto: b.motivo || '—' }),
             el('td', {}, b.desativado ? el('span', { class: 'etiqueta off', texto: 'Pausado' }) : el('span', { class: 'etiqueta bloqueado', texto: 'Bloqueado' })),
             el('td', {}, el('div', { class: 'acoes' },
-                el('button', { class: 'botao pequeno', type: 'button', texto: b.desativado ? 'Reativar' : 'Pausar', onclick: () => pausarSite(b) }),
-                el('button', { class: 'botao pequeno', type: 'button', texto: 'Desbloquear', onclick: () => desbloquearSite(b) }))),
+                el('button', { class: 'botao pequeno ' + (b.desativado ? 'cor-vermelho' : 'cor-laranja'), type: 'button', texto: b.desativado ? 'Reativar' : 'Pausar', onclick: () => pausarSite(b) }),
+                el('button', { class: 'botao pequeno cor-verde', type: 'button', texto: 'Desbloquear', onclick: () => desbloquearSite(b) }))),
         ));
     }
 }
@@ -408,8 +408,8 @@ async function carregarBackups() {
             el('td', { 'data-rotulo': 'Perfis', texto: String(b.perfis) }),
             el('td', { 'data-rotulo': 'Sites', texto: String(b.bloqueios) }),
             el('td', {}, el('div', { class: 'acoes' },
-                el('a', { class: 'botao pequeno', href: '/api/backups/' + encodeURIComponent(b.nome), download: b.nome, texto: 'Baixar' }),
-                el('button', { class: 'botao pequeno', type: 'button', texto: 'Restaurar', onclick: () => restaurarBackup(b) }))),
+                el('a', { class: 'botao pequeno cor-azul', href: '/api/backups/' + encodeURIComponent(b.nome), download: b.nome, texto: 'Baixar' }),
+                el('button', { class: 'botao pequeno cor-laranja', type: 'button', texto: 'Restaurar', onclick: () => restaurarBackup(b) }))),
         ));
     }
 }

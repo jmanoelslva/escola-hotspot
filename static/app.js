@@ -304,10 +304,10 @@ function renderUsuarios() {
                 : el('span', { class: 'etiqueta ok', texto: 'Ativo' }),
                 u.mac ? el('span', { class: 'etiqueta bypass', title: u.mac, texto: ' preso ao aparelho' }) : null),
             el('td', {}, el('div', { class: 'acoes' },
-                el('button', { class: 'botao pequeno', type: 'button', texto: 'Editar', onclick: () => abrirUsuario(u) }),
-                el('button', { class: 'botao pequeno', type: 'button', texto: 'Nova senha', onclick: () => novaSenha(u) }),
-                el('button', { class: 'botao pequeno', type: 'button', texto: u.desativado ? 'Ativar' : 'Desativar', onclick: () => alternarUsuario(u) }),
-                el('button', { class: 'botao pequeno', type: 'button', texto: 'Excluir', onclick: () => excluirUsuario(u) }),
+                el('button', { class: 'botao pequeno cor-azul', type: 'button', texto: 'Editar', onclick: () => abrirUsuario(u) }),
+                el('button', { class: 'botao pequeno cor-roxo', type: 'button', texto: 'Nova senha', onclick: () => novaSenha(u) }),
+                el('button', { class: 'botao pequeno ' + (u.desativado ? 'cor-verde' : 'cor-laranja'), type: 'button', texto: u.desativado ? 'Ativar' : 'Desativar', onclick: () => alternarUsuario(u) }),
+                el('button', { class: 'botao pequeno cor-vermelho', type: 'button', texto: 'Excluir', onclick: () => excluirUsuario(u) }),
             )),
         ));
     }
@@ -501,11 +501,11 @@ function renderConectados() {
             el('td', { 'data-rotulo': 'Conectado há', texto: tempo(c.uptime) + (c.restante ? ` (restam ${tempo(c.restante)})` : '') }),
             el('td', { 'data-rotulo': 'Enviados / recebidos', texto: `${bytes(c.bytes_in)} / ${bytes(c.bytes_out)}` }),
             el('td', {}, el('div', { class: 'acoes' },
-                el('button', { class: 'botao pequeno cor-liberar', type: 'button', texto: 'Liberar', title: 'Bypass: este aparelho passa a navegar sem login',
+                el('button', { class: 'botao pequeno cor-verde', type: 'button', texto: 'Liberar', title: 'Bypass: este aparelho passa a navegar sem login',
                     onclick: () => abrirAparelho('bypassed', null, { mac: c.mac, comentario: c.comentario || c.usuario }) }),
-                el('button', { class: 'botao pequeno cor-bloquear', type: 'button', texto: 'Bloquear', title: 'Este aparelho deixa de conseguir usar a rede',
+                el('button', { class: 'botao pequeno cor-vermelho', type: 'button', texto: 'Bloquear', title: 'Este aparelho deixa de conseguir usar a rede',
                     onclick: () => abrirAparelho('blocked', null, { mac: c.mac, comentario: c.usuario }) }),
-                el('button', { class: 'botao pequeno cor-desconectar', type: 'button', texto: 'Desconectar', title: 'Encerra a sessão; o usuário pode entrar de novo',
+                el('button', { class: 'botao pequeno cor-laranja', type: 'button', texto: 'Desconectar', title: 'Encerra a sessão; o usuário pode entrar de novo',
                     onclick: () => desconectar(c) }))),
         ));
     }
@@ -551,9 +551,9 @@ function renderAparelhos() {
             el('td', { 'data-rotulo': 'IP', class: 'mono', texto: a.ip || 'qualquer' }),
             el('td', {}, a.desativado ? el('span', { class: 'etiqueta off', texto: 'Desativado' }) : el('span', { class: 'etiqueta ok', texto: 'Ativo' })),
             el('td', {}, el('div', { class: 'acoes' },
-                el('button', { class: 'botao pequeno', type: 'button', texto: 'Editar', onclick: () => abrirAparelho(a.tipo, a) }),
-                el('button', { class: 'botao pequeno', type: 'button', texto: a.desativado ? 'Ativar' : 'Desativar', onclick: () => alternarAparelho(a) }),
-                el('button', { class: 'botao pequeno', type: 'button', texto: 'Remover', onclick: () => removerAparelho(a) }),
+                el('button', { class: 'botao pequeno cor-azul', type: 'button', texto: 'Editar', onclick: () => abrirAparelho(a.tipo, a) }),
+                el('button', { class: 'botao pequeno ' + (a.desativado ? 'cor-verde' : 'cor-laranja'), type: 'button', texto: a.desativado ? 'Ativar' : 'Desativar', onclick: () => alternarAparelho(a) }),
+                el('button', { class: 'botao pequeno cor-vermelho', type: 'button', texto: 'Remover', onclick: () => removerAparelho(a) }),
             )),
         ));
     }

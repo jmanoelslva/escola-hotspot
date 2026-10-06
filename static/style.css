@@ -110,7 +110,7 @@ input:focus, select:focus { outline: 0; border-color: var(--azul); box-shadow: 0
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 16px;
+    padding: 10px max(16px, calc(50% - 584px));
     color: #fff;
     background: var(--azul);
     border-bottom: 4px solid var(--vermelho);
@@ -126,13 +126,14 @@ input:focus, select:focus { outline: 0; border-color: var(--azul); box-shadow: 0
 .abas {
     display: flex;
     gap: 4px;
-    padding: 0 16px;
+    padding: 0 max(16px, calc(50% - 584px));
     background: var(--branco);
     border-bottom: 1px solid var(--borda);
     overflow-x: auto;
     scrollbar-width: none;
 }
 .abas::-webkit-scrollbar { display: none; }
+.aba:first-child { margin-left: -14px; }
 .aba {
     padding: 12px 14px;
     font: inherit;
@@ -181,12 +182,19 @@ input:focus, select:focus { outline: 0; border-color: var(--azul); box-shadow: 0
 .tabela td strong { overflow-wrap: anywhere; }
 .tabela td.mono { white-space: nowrap; }
 .tabela td:has(> .acoes) { width: 1%; white-space: nowrap; }
-.botao.cor-liberar { color: #fff; background: var(--verde); border-color: var(--verde); }
-.botao.cor-liberar:hover { background: #17652a; }
-.botao.cor-bloquear { color: #fff; background: var(--vermelho); border-color: var(--vermelho); }
-.botao.cor-bloquear:hover { background: var(--vermelho-escuro); }
-.botao.cor-desconectar { color: #fff; background: #b45309; border-color: #b45309; }
-.botao.cor-desconectar:hover { background: #92400e; }
+/* Cores dos botões de ação */
+.botao.cor-azul { color: #fff; background: var(--azul); border-color: var(--azul); }
+.botao.cor-azul:hover { background: var(--azul-escuro); }
+.botao.cor-verde { color: #fff; background: var(--verde); border-color: var(--verde); }
+.botao.cor-verde:hover { background: #17652a; }
+.botao.cor-vermelho { color: #fff; background: var(--vermelho); border-color: var(--vermelho); }
+.botao.cor-vermelho:hover { background: var(--vermelho-escuro); }
+.botao.cor-laranja { color: #fff; background: #b45309; border-color: #b45309; }
+.botao.cor-laranja:hover { background: #92400e; }
+.botao.cor-roxo { color: #fff; background: #6d28d9; border-color: #6d28d9; }
+.botao.cor-roxo:hover { background: #5b21b6; }
+.botao.cor-teal { color: #fff; background: #0f766e; border-color: #0f766e; }
+.botao.cor-teal:hover { background: #115e59; }
 .vazio { text-align: center; color: var(--suave); padding: 28px 12px !important; }
 
 .etiqueta { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
