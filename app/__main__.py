@@ -1,0 +1,13 @@
+"""Inicia o painel: python -m app"""
+
+import logging
+
+import uvicorn
+
+from .config import config
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    logging.getLogger("httpx").setLevel(logging.WARNING)  # sem uma linha por requisição ao MikroTik
+    logging.getLogger("painel").info("Painel em http://localhost:%s, MikroTik em %s", config.porta, config.mikrotik_url)
+    uvicorn.run("app.main:app", host=config.host, port=config.porta, log_level="warning")

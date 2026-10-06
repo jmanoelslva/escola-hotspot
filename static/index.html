@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0d4a7d">
+    <title>Painel do Hotspot</title>
+    <link rel="icon" href="/static/logo.png">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/app.js" defer></script>
+</head>
+<body>
+
+<!-- Login -->
+<main id="tela-login" class="tela-login" hidden>
+    <form id="form-login" class="cartao-login" autocomplete="on">
+        <img src="/static/logo.png" alt="" class="logo-login">
+        <h1>Painel do Hotspot</h1>
+        <p class="sub" data-escola></p>
+        <p id="erro-login" class="alerta" hidden></p>
+        <label>Usuário do MikroTik
+            <input name="usuario" autocomplete="username" autocapitalize="off" spellcheck="false" required>
+        </label>
+        <label>Senha
+            <input name="senha" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="botao primario largo" type="submit">Entrar</button>
+    </form>
+</main>
+
+<!-- Painel -->
+<div id="tela-painel" hidden>
+    <header class="topo">
+        <img src="/static/logo.png" alt="" class="logo-topo">
+        <div class="topo-texto">
+            <strong>Painel do Hotspot</strong>
+            <span data-escola></span>
+        </div>
+        <div class="topo-usuario">
+            <span id="usuario-logado"></span>
+            <span id="tipo-conexao" class="conexao" hidden></span>
+            <button id="sair" class="botao discreto" type="button">Sair</button>
+        </div>
+    </header>
+
+    <nav class="abas" role="tablist">
+        <button class="aba" data-aba="usuarios" role="tab">Usuários</button>
+        <button class="aba" data-aba="conectados" role="tab">Conectados</button>
+        <button class="aba" data-aba="aparelhos" role="tab">Aparelhos</button>
+        <button class="aba" data-aba="importar" role="tab">Importar</button>
+    </nav>
+
+    <main class="conteudo">
+        <!-- Usuários -->
+        <section id="aba-usuarios" class="painel-aba" hidden>
+            <div class="barra-acoes">
+                <input id="busca-usuarios" type="search" placeholder="Buscar usuário, nome ou turma" class="busca">
+                <select id="filtro-perfil" class="filtro"><option value="">Todos os perfis</option></select>
+                <button id="novo-usuario" class="botao primario" type="button">+ Novo usuário</button>
+            </div>
+            <div class="barra-selecao" id="barra-selecao" hidden>
+                <span id="qtd-selecionados"></span>
+                <button id="imprimir-selecionados" class="botao" type="button">Imprimir credenciais</button>
+                <button id="excluir-selecionados" class="botao perigo" type="button">Excluir</button>
+            </div>
+            <p class="resumo" id="resumo-usuarios"></p>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr>
+                        <th class="col-check"><input type="checkbox" id="marcar-todos" aria-label="Marcar todos"></th>
+                        <th>Usuário</th><th>Senha</th><th>Nome / turma</th><th>Perfil</th><th>Limite</th><th>Situação</th><th></th>
+                    </tr></thead>
+                    <tbody id="lista-usuarios"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Conectados -->
+        <section id="aba-conectados" class="painel-aba" hidden>
+            <div class="barra-acoes">
+                <input id="busca-conectados" type="search" placeholder="Buscar usuário, IP ou MAC" class="busca">
+                <button id="atualizar-conectados" class="botao" type="button">Atualizar</button>
+            </div>
+            <p class="resumo" id="resumo-conectados"></p>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr>
+                        <th>Usuário</th><th>IP</th><th>MAC</th><th>Conectado há</th><th>Enviados / recebidos</th><th></th>
+                    </tr></thead>
+                    <tbody id="lista-conectados"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Aparelhos (bypass e bloqueio) -->
+        <section id="aba-aparelhos" class="painel-aba" hidden>
+            <div class="barra-acoes">
+                <input id="busca-aparelhos" type="search" placeholder="Buscar descrição, MAC ou IP" class="busca">
+                <button id="novo-bypass" class="botao primario" type="button">+ Liberar aparelho</button>
+                <button id="novo-bloqueio" class="botao perigo" type="button">+ Bloquear aparelho</button>
+            </div>
+            <p class="dica">Aparelhos <strong>liberados</strong> (bypass) navegam sem passar pelo login: TVs, impressoras, computadores da escola. Aparelhos <strong>bloqueados</strong> não conseguem usar a rede.</p>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr>
+                        <th>Tipo</th><th>Descrição</th><th>MAC</th><th>IP</th><th>Situação</th><th></th>
+                    </tr></thead>
+                    <tbody id="lista-aparelhos"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Importar -->
+        <section id="aba-importar" class="painel-aba" hidden>
+            <div class="cartao">
+                <h2>Cadastrar uma turma pela planilha</h2>
+                <ol class="passos">
+                    <li>Baixe o <a href="/modelo.csv">modelo da planilha</a> e preencha no Excel (uma linha por aluno).</li>
+                    <li>Colunas: <strong>usuario</strong> (obrigatória), <strong>senha</strong> (em branco = o painel cria), <strong>nome</strong>, <strong>turma</strong> e <strong>perfil</strong> (em branco = o perfil escolhido abaixo).</li>
+                    <li>Salve como <strong>.xlsx</strong> ou <strong>.csv</strong> e envie aqui.</li>
+                </ol>
+                <form id="form-importar" class="linha-form">
+                    <input type="file" name="arquivo" accept=".csv,.xlsx" required>
+                    <label class="rotulo-inline">Perfil
+                        <select name="perfil" id="perfil-importar"></select>
+                    </label>
+                    <button class="botao primario" type="submit">Ler planilha</button>
+                </form>
+            </div>
+            <div id="previa-importar" hidden>
+                <p class="resumo" id="resumo-importar"></p>
+                <div class="barra-acoes">
+                    <button id="confirmar-importar" class="botao primario" type="button">Cadastrar</button>
+                    <button id="imprimir-importados" class="botao" type="button" hidden>Imprimir credenciais</button>
+                </div>
+                <div class="tabela-rolagem">
+                    <table class="tabela">
+                        <thead><tr><th>Linha</th><th>Usuário</th><th>Senha</th><th>Nome / turma</th><th>Perfil</th><th>Situação</th></tr></thead>
+                        <tbody id="lista-importar"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- Janela: usuário -->
+<dialog id="janela-usuario" class="janela">
+    <form id="form-usuario" method="dialog">
+        <h2 id="titulo-usuario">Novo usuário</h2>
+        <label>Usuário
+            <input name="nome" required maxlength="64" autocapitalize="off" spellcheck="false" placeholder="ex.: maria.silva">
+        </label>
+        <label>Senha
+            <span class="campo-com-botao">
+                <input name="senha" maxlength="64" autocomplete="off" spellcheck="false">
+                <button type="button" class="botao" id="gerar-senha">Gerar</button>
+            </span>
+            <small id="ajuda-senha" class="ajuda">Deixe em branco para manter a senha atual.</small>
+        </label>
+        <label>Nome / turma
+            <input name="comentario" maxlength="200" placeholder="ex.: Maria da Silva - 9º A">
+        </label>
+        <div class="duas-colunas">
+            <label>Perfil
+                <select name="perfil"></select>
+            </label>
+            <label>Limite de tempo
+                <input name="limite_tempo" maxlength="20" placeholder="sem limite" spellcheck="false">
+                <small class="ajuda">ex.: 2h, 1d</small>
+            </label>
+        </div>
+        <label>Prender a um aparelho (MAC)
+            <input name="mac" maxlength="20" placeholder="opcional" spellcheck="false">
+        </label>
+        <p class="alerta" data-erro hidden></p>
+        <div class="janela-botoes">
+            <button type="button" class="botao" data-fechar>Cancelar</button>
+            <button type="submit" class="botao primario">Salvar</button>
+        </div>
+    </form>
+</dialog>
+
+<!-- Janela: aparelho -->
+<dialog id="janela-aparelho" class="janela">
+    <form id="form-aparelho" method="dialog">
+        <h2 id="titulo-aparelho">Liberar aparelho</h2>
+        <label>Tipo
+            <select name="tipo">
+                <option value="bypassed">Liberado (bypass, sem login)</option>
+                <option value="blocked">Bloqueado</option>
+            </select>
+        </label>
+        <label>Descrição
+            <input name="comentario" maxlength="200" required placeholder="ex.: TV sala 3">
+        </label>
+        <div class="duas-colunas">
+            <label>MAC
+                <input name="mac" maxlength="20" required placeholder="AA:BB:CC:DD:EE:FF" spellcheck="false">
+            </label>
+            <label>IP (opcional)
+                <input name="ip" maxlength="15" placeholder="qualquer" spellcheck="false">
+            </label>
+        </div>
+        <details id="escolher-aparelho">
+            <summary>Escolher entre os aparelhos conectados na rede</summary>
+            <input type="search" id="busca-rede" placeholder="Filtrar por nome, IP ou MAC" class="busca">
+            <ul id="lista-rede" class="lista-rede"></ul>
+        </details>
+        <p class="alerta" data-erro hidden></p>
+        <div class="janela-botoes">
+            <button type="button" class="botao" data-fechar>Cancelar</button>
+            <button type="submit" class="botao primario">Salvar</button>
+        </div>
+    </form>
+</dialog>
+
+<!-- Janela: confirmação -->
+<dialog id="janela-confirmar" class="janela pequena">
+    <form method="dialog">
+        <h2 id="confirmar-titulo">Confirmar</h2>
+        <p id="confirmar-texto"></p>
+        <div class="janela-botoes">
+            <button value="nao" class="botao">Cancelar</button>
+            <button value="sim" class="botao perigo" id="confirmar-sim">Confirmar</button>
+        </div>
+    </form>
+</dialog>
+
+<div id="aviso" class="aviso" role="status" hidden></div>
+
+<!-- Credenciais para imprimir -->
+<div id="impressao" class="impressao"></div>
+
+</body>
+</html>
