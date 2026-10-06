@@ -1,5 +1,6 @@
 """Painel geral: saúde do roteador, tráfego das interfaces e aviso de atualização."""
 
+import logging
 import re
 import threading
 import time
@@ -18,6 +19,8 @@ ROUTERBOARD = "/system/routerboard"
 TIPOS_GRAFICO = ("ether", "bridge", "wlan", "wifi", "vlan", "pppoe-out", "pppoe-in", "lte", "bond", "wg", "sfp")
 
 INTERVALO_VERIFICACAO = 6 * 3600
+
+log = logging.getLogger("painel")
 
 
 def _objeto(mk: Mikrotik, caminho: str) -> dict:
@@ -165,6 +168,8 @@ def verificar(mk: Mikrotik) -> dict:
     firmware_novo = placa.get("upgrade-firmware", "")
     tem_firmware = bool(firmware_atual and firmware_novo and _versao(firmware_novo) > _versao(firmware_atual))
 
+    log.info("verificação de atualização: instalada=%s disponível=%s status=%r firmware=%s/%s erro=%r",
+             instalada, disponivel, status, firmware_atual, firmware_novo, erro)
     return {
         "canal": estado.get("channel", ""),
         "instalada": instalada,

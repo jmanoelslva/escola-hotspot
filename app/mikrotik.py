@@ -124,6 +124,7 @@ class Mikrotik:
         try:
             resposta = self._cliente.request(metodo, caminho, **kwargs)
         except httpx.TimeoutException as erro:
+            log.warning("o MikroTik demorou demais em %s %s", metodo, caminho)
             raise ErroConexao(f"O MikroTik ({self._endereco}) demorou demais para responder.") from erro
         except httpx.HTTPError as erro:
             log.warning("falha ao falar com %s: %r", self._endereco, erro)
