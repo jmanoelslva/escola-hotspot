@@ -501,11 +501,12 @@ function renderConectados() {
             el('td', { 'data-rotulo': 'Conectado há', texto: tempo(c.uptime) + (c.restante ? ` (restam ${tempo(c.restante)})` : '') }),
             el('td', { 'data-rotulo': 'Enviados / recebidos', texto: `${bytes(c.bytes_in)} / ${bytes(c.bytes_out)}` }),
             el('td', {}, el('div', { class: 'acoes' },
-                el('button', { class: 'botao pequeno', type: 'button', texto: 'Liberar aparelho', title: 'Bypass: este aparelho passa a navegar sem login',
+                el('button', { class: 'botao pequeno cor-liberar', type: 'button', texto: 'Liberar', title: 'Bypass: este aparelho passa a navegar sem login',
                     onclick: () => abrirAparelho('bypassed', null, { mac: c.mac, comentario: c.comentario || c.usuario }) }),
-                el('button', { class: 'botao pequeno', type: 'button', texto: 'Bloquear aparelho',
+                el('button', { class: 'botao pequeno cor-bloquear', type: 'button', texto: 'Bloquear', title: 'Este aparelho deixa de conseguir usar a rede',
                     onclick: () => abrirAparelho('blocked', null, { mac: c.mac, comentario: c.usuario }) }),
-                el('button', { class: 'botao pequeno', type: 'button', texto: 'Desconectar', onclick: () => desconectar(c) }))),
+                el('button', { class: 'botao pequeno cor-desconectar', type: 'button', texto: 'Desconectar', title: 'Encerra a sessão; o usuário pode entrar de novo',
+                    onclick: () => desconectar(c) }))),
         ));
     }
     const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });

@@ -176,7 +176,17 @@ input:focus, select:focus { outline: 0; border-color: var(--azul); box-shadow: 0
 .tabela tr.inativo td { color: #8795a1; }
 .col-check { width: 36px; }
 .mono { font-family: Consolas, "SF Mono", Menlo, monospace; font-size: 13px; }
-.acoes { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+/* Botões de ação sempre numa linha; quem quebra é o texto longo (login, comentário). */
+.acoes { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; }
+.tabela td strong { overflow-wrap: anywhere; }
+.tabela td.mono { white-space: nowrap; }
+.tabela td:has(> .acoes) { width: 1%; white-space: nowrap; }
+.botao.cor-liberar { color: #fff; background: var(--verde); border-color: var(--verde); }
+.botao.cor-liberar:hover { background: #17652a; }
+.botao.cor-bloquear { color: #fff; background: var(--vermelho); border-color: var(--vermelho); }
+.botao.cor-bloquear:hover { background: var(--vermelho-escuro); }
+.botao.cor-desconectar { color: #fff; background: #b45309; border-color: #b45309; }
+.botao.cor-desconectar:hover { background: #92400e; }
 .vazio { text-align: center; color: var(--suave); padding: 28px 12px !important; }
 
 .etiqueta { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
@@ -235,7 +245,8 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
     .tabela td { border: 0; padding: 2px 0; }
     .tabela td[data-rotulo]::before { content: attr(data-rotulo) ": "; color: var(--suave); font-size: 13px; font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
     .tabela td.col-check { position: absolute; right: 12px; top: 12px; width: auto; }
-    .acoes { justify-content: flex-start; margin-top: 6px; }
+    .acoes { justify-content: flex-start; margin-top: 6px; flex-wrap: wrap; }
+    .tabela td:has(> .acoes) { width: 100%; white-space: normal; }
     .tabela-rolagem { overflow-x: visible; }
     .grupo-lote select { min-width: 0; flex: 1; }
 }
