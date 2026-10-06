@@ -1,33 +1,31 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="refresh" content="2; url=$(link-redirect)">
+    <!-- Depois do login vai para a tela de status, e não para o endereço original:
+         esse endereço costuma ser o próprio hotspot ou o teste de conexão do celular,
+         que deixam o usuário parado na página do hotspot. -->
+    <meta http-equiv="refresh" content="2; url=$(link-status)">
     <meta http-equiv="pragma" content="no-cache">
     <meta http-equiv="expires" content="-1">
-    <title>Internet hotspot - Redirect</title>
+    <meta name="theme-color" content="#0d4a7d" />
+    <title>Wi-Fi da Escola - Conectado</title>
     <link rel="stylesheet" href="css/style.css">
     <script>
-        function startClock() {
-            $(if popup == 'true')
-            open('$(link-status)', 'hotspot_status', 'toolbar=0,location=0,directories=0,status=0,menubars=0,resizable=1,width=290,height=200');
-        $(endif)
-        location.href = unescape('$(link-redirect-esc)');
+        function irParaStatus() {
+            setTimeout(function () { location.replace('$(link-status)'); }, 1200);
         }
-
-    </script> 
+    </script>
 </head>
 
-<body onLoad="startClock()">
-    <div class="ie-fixMinHeight">
-        <div class="main">
-            <div class="wrap">
-                <h1>You are logged in</h1>
-                <p class="info">If nothing happens, click <a href="$(link-redirect)">here</a></p>
-            </div>
-        </div>
+<body onload="irParaStatus()">
+    <div class="cartao">
+        <img class="logo" src="img/logo.png" alt="Escola Estadual Professora Maria Aldineide Pessoa Gomes" width="180" height="142" />
+        <div class="centro"><span class="selo">Conectado</span></div>
+        <h1>Você está conectado!</h1>
+        <p class="info">Já pode navegar. Se esta tela não mudar, <a href="$(link-status)">toque aqui</a>.</p>
     </div>
 </body>
 

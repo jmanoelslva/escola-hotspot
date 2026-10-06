@@ -1,44 +1,45 @@
-<html>
+<!doctype html>
+<html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />   
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta http-equiv="pragma" content="no-cache">
 <meta http-equiv="expires" content="-1">
-<title>Internet hotspot - Log out</title>
+<meta name="theme-color" content="#0d4a7d" />
+<title>Wi-Fi da Escola - Desconectado</title>
 <link rel="stylesheet" href="css/style.css">
 <script>
     function openLogin() {
-	if (window.name != 'hotspot_logout') return true;
-	open('$(link-login)', '_blank', '');
-	window.close();
-	return false;
+        if (window.name != 'hotspot_logout') return true;
+        open('$(link-login)', '_blank', '');
+        window.close();
+        return false;
     }
 </script>
 </head>
 
 <body>
-    <div class="ie-fixMinHeight">
-        <div class="main">
-            <div class="wrap">
-                <h1>You have just logged out!</h1> 
-                <table>  
-                    <tr><td>Username</td><td>$(username)</td></tr>
-                    <tr><td>IP address</td><td>$(ip)</td></tr>
-                    <tr><td>MAC address</td><td>$(mac)</td></tr>
-                    <tr><td>Session time</td><td>$(uptime)</td></tr>
-                    $(if session-time-left)
-                    <tr><td>Time left</td><td>$(session-time-left)</td></tr>
-                    $(endif)
-                    <tr><td>Bytes up / down:</td><td>$(bytes-in-nice) / $(bytes-out-nice)</td></tr>
-                </table>
+    <div class="cartao">
+        <img class="logo" src="img/logo.png" alt="Escola Estadual Professora Maria Aldineide Pessoa Gomes" width="180" height="142" />
+        <h1>Você saiu da rede</h1>
+        <p class="info">Seu acesso foi encerrado neste aparelho.</p>
 
+        <table>
+            <tr><td>Usuário</td><td>$(username)</td></tr>
+            <tr><td>Tempo conectado</td><td>$(uptime)</td></tr>
+            $(if session-time-left)
+            <tr><td>Tempo restante</td><td>$(session-time-left)</td></tr>
+            $(endif)
+            <tr><td>Enviados / recebidos</td><td>$(bytes-in-nice) / $(bytes-out-nice)</td></tr>
+            <tr><td>Endereço IP</td><td>$(ip)</td></tr>
+            <tr><td>Aparelho (MAC)</td><td>$(mac)</td></tr>
+        </table>
 
-                <form action="$(link-login)" name="login" onSubmit="return openLogin()">
-                <input type="submit" value="Log in">
-                </form>
-            </div>
-        </div>
+        <form action="$(link-login)" name="login" onsubmit="return openLogin()">
+            <input class="botao" type="submit" value="Entrar novamente">
+        </form>
     </div>
 
+    <p class="rodape">Escola Estadual Professora Maria Aldineide Pessoa Gomes<br />Coité do Noia - AL</p>
 </body>
 </html>

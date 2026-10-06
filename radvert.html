@@ -1,40 +1,38 @@
-<html>
+<!doctype html>
+<html lang="pt-BR">
 <head>
 <meta http-equiv="refresh" content="2; url=$(link-orig)">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />   
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta http-equiv="pragma" content="no-cache">
 <meta http-equiv="expires" content="-1">
-<title>Internet hotspot - Advertisement</title>
+<meta name="theme-color" content="#0d4a7d" />
+<title>Wi-Fi da Escola - Aviso</title>
 <link rel="stylesheet" href="css/style.css">
 <script>
-
     var popup = '';
     function openOrig() {
-	if (window.focus) popup.focus();
-	location.href = unescape('$(link-orig-esc)');
+        if (window.focus) popup.focus();
+        location.href = unescape('$(link-orig-esc)');
     }
     function openAd() {
-	location.href = unescape('$(link-redirect-esc)');
+        location.href = unescape('$(link-redirect-esc)');
     }
     function openAdvert() {
-	if (window.name != 'hotspot_advert') {
-		popup = open('$(link-redirect)', 'hotspot_advert', '');
-		setTimeout("openOrig()", 1000);
-		return;
-	}
-	setTimeout("openAd()", 1000);
+        if (window.name != 'hotspot_advert') {
+            popup = open('$(link-redirect)', 'hotspot_advert', '');
+            setTimeout("openOrig()", 1000);
+            return;
+        }
+        setTimeout("openAd()", 1000);
     }
 </script>
 </head>
-<body onLoad="openAdvert()">
-    <div class="ie-fixMinHeight">
-        <div class="main">
-            <div class="wrap">
-                <h1>Advertisement</h1>
-                <p class="info">If nothing happens, open <a href="$(link-redirect)" target="hotspot_advert">advertisement</a> manually.</p>
-            </div>
-        </div>
+<body onload="openAdvert()">
+    <div class="cartao">
+        <img class="logo" src="img/logo.png" alt="Escola Estadual Professora Maria Aldineide Pessoa Gomes" width="180" height="142" />
+        <h1>Aviso da escola</h1>
+        <p class="info">Se nada acontecer, <a href="$(link-redirect)" target="hotspot_advert">abra o aviso</a>.</p>
     </div>
 </body>
 </html>

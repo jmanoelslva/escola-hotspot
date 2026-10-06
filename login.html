@@ -1,23 +1,17 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 
 <head>
     <meta charset="utf-8">
     <meta http-equiv="pragma" content="no-cache" />
     <meta http-equiv="expires" content="-1" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Internet hotspot - Log in</title>
+    <meta name="theme-color" content="#0d4a7d" />
+    <title>Wi-Fi da Escola - Entrar</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-
-    <!-- two other colors
-
-<body class="lite">
-<body class="dark">
-
--->
 
     $(if chap-id)
     <form name="sendin" action="$(link-login-only)" method="post" style="display:none">
@@ -26,51 +20,121 @@
         <input type="hidden" name="dst" value="$(link-orig)" />
         <input type="hidden" name="popup" value="true" />
     </form>
-
     <script src="/md5.js"></script>
+    $(endif)
+
     <script>
+        function aceitou() {
+            return document.login.termos.checked;
+        }
+
         function doLogin() {
+            if (!aceitou()) {
+                alert('Para conectar, marque que leu e aceita os Termos de Uso.');
+                return false;
+            }
+            $(if chap-id)
             document.sendin.username.value = document.login.username.value;
             document.sendin.password.value = hexMD5('$(chap-id)' + document.login.password.value + '$(chap-challenge)');
             document.sendin.submit();
             return false;
+            $(else)
+            return true;
+            $(endif)
         }
 
+        function atualizarBotao() {
+            document.getElementById('conectar').disabled = !aceitou();
+        }
+
+        function abrirTermos() {
+            var janela = document.getElementById('termos');
+            janela.className = 'janela aberta';
+            janela.scrollTop = 0;
+            document.body.className = 'travado';
+            return false;
+        }
+
+        function fecharTermos(aceitar) {
+            document.getElementById('termos').className = 'janela';
+            document.body.className = '';
+            if (aceitar) {
+                document.login.termos.checked = true;
+                atualizarBotao();
+            }
+            return false;
+        }
     </script>
-    $(endif)
-    <div class="ie-fixMinHeight">
-        <div class="main">
-            <div class="wrap animated fadeIn">
-                <form name="login" action="$(link-login-only)" method="post" $(if chap-id) onSubmit="return doLogin()" $(endif)>
-                    <input type="hidden" name="dst" value="$(link-orig)" />
-                    <input type="hidden" name="popup" value="true" />
-                    <svg class="logo" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 174 42">
-                        <path fill="#fff" d="M7.32 13.66L0 41.74 3.12 41.74 9.49 15.94 9.58 15.94 15.01 41.74 18.22 41.74 36.86 16.34 36.95 16.34 30.02 41.74 33.18 41.74 40.4 13.66 35.73 13.66 17.23 38.87 11.99 13.66 7.32 13.66zM43.43 21.45L38.19 41.74 41.16 41.74 46.4 21.45 43.43 21.45zM50.68 21.45L45.5 41.74 48.47 41.74 50.36 34.39 55.55 30.77 62.02 41.74 65.27 41.74 57.91 29.28 69.43 21.45 65.46 21.45 51.21 31.36 51.12 31.28 53.66 21.45 50.68 21.45z" />
-                        <path d="M71.18 21.45L65.94 41.74h3l2.74-10.62c1-3.81 3.82-7.39 9.16-7.47.56 0 1.13 0 1.7 0l.66-2.48c-.52 0-1.09 0-1.61 0-4.34 0-6.94 2-8.82 5h-.1l1.23-4.68zM103.8 28.8c0-5-4-7.94-9.63-7.94-8.69 0-13.59 6.37-13.59 13 0 5.07 3.44 8.45 9.72 8.45 9 0 13.5-6.68 13.5-13.53m-3 .52c0 4.72-3.44 10.93-9.95 10.93-5 0-7.32-2.68-7.32-6.61 0-4.76 3.59-10.7 10.1-10.7 4.77 0 7.17 2.6 7.17 6.38M132.33 21.43L134.26 13.66 105.19 13.66 103.27 21.45 112.59 21.45 112.59 21.45 122.99 21.45 122.99 21.45 132.33 21.43zM111.67 25.17L107.55 41.74 117.93 41.74 122.06 25.17 122.06 25.16 111.67 25.16 111.67 25.17zM134 25.17l-4.11 16.57h9.35l4.1-16.57zm10.28-3.73l1.94-7.78h-9.34l-2 7.79zM150.09 13.66L143.11 41.74 152.45 41.74 153.91 35.92 156.04 34.34 159.34 41.74 169.49 41.74 163.26 29.55 174.26 21.33 163.07 21.33 156.18 27.3 156.09 27.3 159.44 13.66 150.09 13.66zM47.45 0c1.14 7.93 5.39 12.74 14.07 13.14A10.69 10.69 0 0 1 47.45 0" fill="#fff" fill-rule="evenodd" />
-                        <path d="M42.91,1.4c.1,0,.11,0,.12.11A16.55,16.55,0,0,0,48.26,13a16.6,16.6,0,0,0,12,4.66c-10,4-20.55-5.6-17.33-16.28" fill="#fff" fill-rule="evenodd" /></svg>
 
+    <div class="cartao">
+        <form name="login" action="$(link-login-only)" method="post" onsubmit="return doLogin()">
+            <input type="hidden" name="dst" value="$(link-orig)" />
+            <input type="hidden" name="popup" value="true" />
 
-                    <p class="info $(if error)alert$(endif)">
-                        $(if error == "")Please log in to use the internet hotspot service $(if trial == 'yes')<br />Free trial available, <a href="$(link-login-only)?dst=$(link-orig-esc)&amp;username=T-$(mac-esc)">click here</a>.$(endif)
-                        $(endif)
+            <img class="logo" src="img/logo.png" alt="Escola Estadual Professora Maria Aldineide Pessoa Gomes" width="180" height="142" />
 
-                        $(if error)$(error)$(endif)
-                    </p>
-                    <label>
-                        <img class="ico" src="img/user.svg" alt="#" />
-                        <input name="username" type="text" value="$(username)" placeholder="Username" />
-                    </label>
+            <h1>Wi-Fi da Escola</h1>
+            $(if error)
+            <p class="alerta">$(error)</p>
+            $(else)
+            <p class="info">Entre com o usuário e a senha fornecidos pela escola.</p>
+            $(endif)
 
-                    <label>
-                        <img class="ico" src="img/password.svg" alt="#" />
-                        <input name="password" type="password" placeholder="Password" />
-                    </label>
+            <label class="campo">
+                <img class="ico" src="img/user.svg" alt="" />
+                <input name="username" type="text" value="$(username)" placeholder="Usuário"
+                    autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" required />
+            </label>
 
-                    <input type="submit" value="Connect" />
+            <label class="campo">
+                <img class="ico" src="img/password.svg" alt="" />
+                <input name="password" type="password" placeholder="Senha" autocomplete="current-password" required />
+            </label>
 
-                </form>
-                <p class="info bt">Powered by MikroTik RouterOS</p>
+            <label class="aceite">
+                <input type="checkbox" name="termos" onclick="atualizarBotao()" onchange="atualizarBotao()" />
+                <span>Li e aceito os <button type="button" class="link-termos" onclick="return abrirTermos()">Termos de Uso</button> da rede.</span>
+            </label>
 
+            <input id="conectar" class="botao" type="submit" value="Conectar" disabled />
+        </form>
+    </div>
+
+    <p class="rodape">Escola Estadual Professora Maria Aldineide Pessoa Gomes<br />Coité do Noia - AL</p>
+
+    <div id="termos" class="janela" role="dialog" aria-modal="true" aria-labelledby="termos-titulo">
+        <div class="janela-caixa">
+            <h2 id="termos-titulo">Termos de Uso da Rede Wi-Fi</h2>
+            <div class="janela-texto">
+                <p>Ao usar a rede Wi-Fi da Escola Estadual Professora Maria Aldineide Pessoa Gomes, você concorda com as regras abaixo.</p>
+
+                <h3>1. Finalidade</h3>
+                <p>A rede é oferecida para atividades pedagógicas e administrativas da escola.</p>
+
+                <h3>2. Acesso pessoal</h3>
+                <p>O usuário e a senha são pessoais e intransferíveis. Você é responsável por tudo o que for feito com o seu acesso. Não empreste nem divulgue sua senha.</p>
+
+                <h3>3. É proibido</h3>
+                <ul>
+                    <li>acessar ou divulgar conteúdo ilegal, pornográfico, violento ou discriminatório;</li>
+                    <li>praticar ou incentivar cyberbullying, ameaças ou ofensas;</li>
+                    <li>publicar fotos, vídeos ou dados de colegas e funcionários sem autorização;</li>
+                    <li>baixar ou compartilhar material pirata;</li>
+                    <li>acessar sites de apostas e jogos de azar;</li>
+                    <li>tentar burlar os bloqueios da rede (VPN, proxy etc.), invadir sistemas ou prejudicar o funcionamento da rede.</li>
+                </ul>
+
+                <h3>4. Registros e privacidade</h3>
+                <p>Como determina o Marco Civil da Internet (Lei nº 12.965/2014), a escola guarda os registros de conexão (usuário, endereço IP, endereço MAC do aparelho, data e hora) pelo prazo legal. O conteúdo das comunicações não é monitorado. Esses dados são tratados conforme a Lei Geral de Proteção de Dados (Lei nº 13.709/2018) e só são usados para a segurança da rede ou fornecidos mediante ordem judicial.</p>
+
+                <h3>5. Limites e sanções</h3>
+                <p>A escola pode bloquear sites, limitar a velocidade e o tempo de uso e suspender o acesso de quem descumprir estes termos. As infrações são tratadas conforme o regimento escolar e a legislação.</p>
+
+                <h3>6. Responsabilidade</h3>
+                <p>A escola não garante que a rede estará sempre disponível e não se responsabiliza por dados ou aparelhos pessoais. Para estudantes menores de idade, os pais ou responsáveis também respondem pelo uso.</p>
+            </div>
+            <div class="janela-acoes">
+                <button type="button" class="botao" onclick="return fecharTermos(true)">Li e aceito</button>
             </div>
         </div>
     </div>
