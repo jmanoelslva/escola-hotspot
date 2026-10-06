@@ -6,7 +6,7 @@ Aplicação web para administrar o hotspot do MikroTik (RouterOS 7) da escola, s
 - **Usuários:** listar, buscar, filtrar por turma e perfil, cadastrar, alterar, gerar senha nova com um clique, prender a um aparelho (MAC). Em lote: ativar, desativar, mudar de perfil, imprimir e excluir. Exportar para Excel (com ou sem senhas).
 - **Conectados:** quem está usando a rede agora (IP, MAC, tempo, consumo), com botões para desconectar e para liberar ou bloquear o aparelho. Atualiza a cada 30 segundos.
 - **Aparelhos:** liberar (bypass) TVs, impressoras e computadores da escola, ou bloquear um aparelho, pelo MAC. Dá para escolher o aparelho na lista do que está conectado, com o nome que ele informou à rede (ex.: `SamsungTV-Sala5`).
-- **Visitantes:** senhas temporárias que expiram sozinhas (o MikroTik apaga na hora marcada), com cartões para imprimir.
+- **Visitantes:** senhas temporárias que expiram sozinhas (o MikroTik apaga na hora marcada), com cartões para imprimir com QR code para entrar no Wi-Fi e fazer o login.
 - **Perfis e horário:** velocidade de download e envio, aparelhos por usuário e tempo máximo de conexão de cada perfil; horário de acesso por perfil (ex.: alunos só das 7h às 17h, de segunda a sexta).
 - **Sites bloqueados:** bloqueio pelo DNS do MikroTik (o site e todos os subdomínios), com pausa e motivo.
 - **Consumo:** ranking de uso por usuário e por turma, desde o último "Zerar contadores".
@@ -14,7 +14,7 @@ Aplicação web para administrar o hotspot do MikroTik (RouterOS 7) da escola, s
 - **Importar:** cadastrar uma turma inteira por planilha (.xlsx ou .csv). Senhas em branco são criadas pelo painel.
 - **Imprimir credenciais:** cartões com usuário e senha (3 por linha numa folha A4).
 - **Histórico:** quem fez o quê e quando, com busca e filtro por operador e período.
-- **Configurações:** endereço (domínio) da tela de login do hotspot, ex.: `wifi.pmapg.internal`, e envio das páginas do hotspot da escola para o roteador (sem Winbox).
+- **Configurações:** endereço (domínio) da tela de login do hotspot, ex.: `wifi.pmapg.internal`, e a rede Wi-Fi usada no QR code dos cartões.
 - **Backup:** uma cópia automática por dia (últimas 30) e restauração do que faltar no MikroTik.
 
 Cada pessoa entra com um **usuário admin do próprio MikroTik**. O painel não guarda senhas em disco: a senha fica na memória só enquanto a sessão está aberta (60 minutos sem uso, por padrão). As alterações ficam registradas em `dados\acoes.log` e no log do MikroTik.
@@ -58,7 +58,7 @@ O usuário precisa das permissões `read`, `write`, `rest-api` e `sensitive` (o 
 - **Aviso:** o painel grava `aviso.txt` (o texto, para o painel ler de volta) e `aviso-escola.js` (o que as páginas carregam) na pasta de páginas do hotspot (`html-directory` do perfil, normalmente `hotspot`). As páginas do hotspot da escola (pasta `hotspot`, versão de 06/10/2026 ou mais nova) mostram o texto no login e na tela de conectado.
 - **Consumo:** usa os contadores de cada usuário do hotspot. "Zerar contadores" zera todos e anota a data em `dados\relatorio.json`.
 - **Visitantes:** usuários `vis-xxxxx` com comentário `painel-visitante até AAAA-MM-DD HH:MM | descrição` e um agendamento `painel-visitante-<usuário>` em `/system scheduler` que remove o usuário na hora marcada. Precisa do relógio do MikroTik certo.
-- **Enviar páginas do hotspot:** o painel lê a pasta `PASTA_PAGINAS_HOTSPOT` (padrão: a pasta `hotspot` ao lado da pasta do painel) e pede ao MikroTik `/tool fetch url=http://IP-DO-PAINEL:8080/hotspot-envio/<código>/<arquivo>`. O roteador precisa alcançar o computador do painel na porta 8080 (o `instalar.bat` libera a porta para a rede local; se o roteador estiver em outra sub-rede, libere no Firewall do Windows). O código vale só durante o envio.
+- **QR codes dos visitantes:** o do Wi-Fi usa o formato padrão `WIFI:T:...;S:...;P:...;;` com o nome e a senha guardados em `dados\wifi.json` (só neste PC). O do login abre `http://<endereço do hotspot>/login?visitante=...&senha=...`; o `login.html` da escola (versão de 06/10/2026 ou mais nova) preenche os campos.
 - **Backup:** feito no primeiro login de cada dia em `dados\backups` (contém as senhas dos alunos; a pasta fica só neste computador).
 
 ## 4. Planilha de importação

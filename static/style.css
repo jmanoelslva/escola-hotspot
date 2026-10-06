@@ -304,6 +304,14 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
 .lista-senhas b { font-size: 15px; }
 .titulo-lista { margin: 8px 0 0; flex: 1; }
 
+/* QR codes */
+.wifi-qr { display: flex; gap: 16px; align-items: flex-start; }
+.wifi-qr .grade-form { flex: 1; }
+.previa-qr { width: 132px; height: 132px; border: 1px solid var(--borda); border-radius: 8px; background: #fff; }
+.qr-miniatura { width: 64px; height: 64px; vertical-align: middle; margin-right: 10px; border: 1px solid var(--borda); border-radius: 4px; background: #fff; }
+.lista-senhas { list-style: none; padding-left: 0; }
+.lista-senhas li { display: flex; align-items: center; margin-bottom: 8px; }
+
 /* Celular: tabela vira lista de cartões */
 @media (max-width: 760px) {
     .topo-texto span { display: none; }
@@ -386,4 +394,8 @@ summary { cursor: pointer; color: var(--azul); font-weight: 600; margin-bottom: 
     .credencial-nome { font-size: 8.5pt; color: #333; margin-bottom: 1.5mm; min-height: 1em; }
     .credencial-campo { display: flex; justify-content: space-between; align-items: baseline; gap: 2mm; border-top: 1px solid #ddd; padding-top: 1mm; margin-top: 1mm; }
     .credencial-campo b { font-family: Consolas, monospace; font-size: 11pt; word-break: break-all; text-align: right; }
+    .credencial-qrs { display: flex; justify-content: space-around; gap: 2mm; margin-top: 2mm; }
+    .credencial-qrs figure { margin: 0; text-align: center; }
+    .credencial-qrs img { width: 24mm; height: 24mm; display: block; margin: 0 auto; }
+    .credencial-qrs figcaption { font-size: 7pt; color: #333; margin-top: .5mm; }
 }

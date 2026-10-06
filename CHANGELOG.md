@@ -2,6 +2,14 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.7.0] - 2026-10-06
+
+### Adicionado
+- Cartões de visitante com QR codes: "1. Conecte ao Wi-Fi" (QR padrão de rede, com nome e senha configurados em Configurações → Rede Wi-Fi dos QR codes) e "2. Faça o login" (abre a tela de login do hotspot com usuário e senha preenchidos; o aceite dos termos continua obrigatório). QR gerado no próprio painel (biblioteca `segno`).
+
+### Removido
+- Envio das páginas do hotspot pelo painel (a pedido); as páginas continuam sendo enviadas pelo Winbox.
+
 ## [1.6.0] - 2026-10-06
 
 ### Adicionado

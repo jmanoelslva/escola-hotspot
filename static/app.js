@@ -746,6 +746,9 @@ function imprimir(lista) {
         el('div', { class: 'credencial-nome', texto: c.comentario || '' }),
         el('div', { class: 'credencial-campo' }, 'Usuário', el('b', { texto: c.usuario })),
         el('div', { class: 'credencial-campo' }, 'Senha', el('b', { texto: c.senha || '(não disponível)' })),
+        (c.qr_wifi || c.qr_login) ? el('div', { class: 'credencial-qrs' },
+            c.qr_wifi ? el('figure', {}, el('img', { src: c.qr_wifi, alt: '' }), el('figcaption', { texto: '1. Conecte ao Wi-Fi' })) : null,
+            c.qr_login ? el('figure', {}, el('img', { src: c.qr_login, alt: '' }), el('figcaption', { texto: (c.qr_wifi ? '2. ' : '') + 'Faça o login' })) : null) : null,
     )));
     window.print();
 }

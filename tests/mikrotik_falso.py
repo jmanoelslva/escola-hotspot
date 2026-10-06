@@ -60,7 +60,6 @@ class MikrotikFalso:
         self.verificacoes = 0
         self.trafego_aleatorio = False
         self.aceita_data_iso = True  # False imita RouterOS antigo (data mmm/dd/aaaa)
-        self.baixar = None  # função(url) -> bytes, usada pelo /tool/fetch nos testes
 
     def adicionar(self, tabela: str, dados: dict) -> dict:
         item = {".id": f"*{self.proximo:X}", **dados}
@@ -94,19 +93,6 @@ class MikrotikFalso:
             estado["latest-version"] = self.versao_disponivel
             estado["status"] = "New version is available" if self.versao_disponivel != estado["installed-version"] else "System is already up to date"
             return httpx.Response(200, json=[{"status": estado["status"]}])
-        if pedido.method == "POST" and caminho == "/tool/fetch":
-            try:
-                conteudo = self.baixar(corpo["url"])
-            except Exception as erro:  # noqa: BLE001 - imita "failure: ..." do RouterOS
-                return self._erro(400, f"failure: {erro}")
-            destino = corpo["dst-path"]
-            existente = next((a for a in self.tabelas["/file"] if a["name"] == destino), None)
-            dados = {"name": destino, "type": "file", "size": str(len(conteudo))}
-            if existente:
-                existente.update(dados)
-            else:
-                self.adicionar("/file", dados)
-            return httpx.Response(200, json=[{"status": "finished", "downloaded": str(len(conteudo))}])
         if pedido.method == "POST" and caminho == "/interface/monitor-traffic":
             nomes = (corpo or {}).get("interface", "").split(",")
             if self.trafego_aleatorio:  # só para a demonstração visual

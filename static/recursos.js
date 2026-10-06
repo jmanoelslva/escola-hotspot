@@ -567,14 +567,18 @@ function validoAte(iso) {
         : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' + hora;
 }
 
+estado.qrWifi = '';
+
 function cartaoVisitante(v) {
     return { usuario: v.usuario, senha: v.senha,
-        comentario: 'Visitante · válido até ' + validoAte(v.ate) + (v.descricao ? ' · ' + v.descricao : '') };
+        comentario: 'Visitante · válido até ' + validoAte(v.ate) + (v.descricao ? ' · ' + v.descricao : ''),
+        qr_wifi: estado.qrWifi, qr_login: v.qr_login };
 }
 
 async function carregarVisitantes() {
-    const [lista] = await Promise.all([api('GET', '/api/visitantes'), carregarPerfis()]);
+    const [lista, , wifi] = await Promise.all([api('GET', '/api/visitantes'), carregarPerfis(), api('GET', '/api/configuracoes/wifi')]);
     estado.visitantes = lista;
+    estado.qrWifi = wifi.qr || '';
     const select = $('#perfil-visitantes');
     const atual = select.value || lembrado('perfil-visitante') || '';
     select.replaceChildren(...estado.perfis.map((p) => el('option', { value: p, texto: p })));
@@ -619,8 +623,9 @@ $('#form-visitantes').addEventListener('submit', async (evento) => {
             $('#visitantes-criados').hidden = false;
             $('#resumo-visitantes-criados').textContent = `${r.criados.length} senha(s) válida(s) até ${validoAte(r.criados[0].ate)}.`;
             $('#lista-visitantes-criados').replaceChildren(...r.criados.map((c) =>
-                el('li', {}, el('span', { texto: 'Usuário ' }), el('b', { class: 'mono', texto: c.usuario }),
-                    el('span', { texto: '  ·  Senha ' }), el('b', { class: 'mono', texto: c.senha }))));
+                el('li', {},
+                    c.qr_login ? el('img', { src: c.qr_login, alt: 'QR code do login de ' + c.usuario, class: 'qr-miniatura' }) : null,
+                    el('span', {}, 'Usuário ', el('b', { class: 'mono', texto: c.usuario }), '  ·  Senha ', el('b', { class: 'mono', texto: c.senha })))));
             aviso(`${r.criados.length} senha(s) de visitante criada(s).`);
             await carregarVisitantes();
         } catch (e) { aviso(e.message, true); }
@@ -639,61 +644,32 @@ async function encerrarVisitante(v) {
     } catch (e) { aviso(e.message, true); }
 }
 
-// ------------------------------------------------------------------ configurações: páginas do hotspot
+// ------------------------------------------------------------------ configurações: Wi-Fi dos QR codes
 
-const NOMES_SITUACAO = { igual: ['Igual', 'ok'], diferente: ['Diferente', 'alerta-amarelo'], falta: ['Falta no roteador', 'bloqueado'], desconhecido: ['Sem tamanho', 'off'] };
-
-function tamanhoArquivo(n) {
-    return n === null || n === undefined ? '—' : bytes(n);
+function mostrarWifi(w) {
+    const form = $('#form-wifi');
+    form.ssid.value = w.ssid;
+    form.seguranca.value = w.seguranca;
+    form.senha.value = w.senha;
+    $('#campo-senha-wifi').hidden = w.seguranca !== 'wpa';
+    const previa = $('#previa-qr-wifi');
+    previa.hidden = !w.qr;
+    if (w.qr) previa.src = w.qr;
 }
 
-async function carregarPaginas() {
-    const corpo = $('#lista-paginas');
-    let r;
-    try {
-        r = await api('GET', '/api/paginas');
-    } catch (e) {
-        corpo.replaceChildren();
-        linhaVazia(corpo, 4, e.message);
-        $('#resumo-paginas').textContent = '';
-        return;
-    }
-    $('#pastas-paginas').textContent = `Neste computador: ${r.pasta_local}  →  no roteador: ${r.pasta_roteador}/`;
-    corpo.replaceChildren();
-    const ordem = { falta: 0, diferente: 1, desconhecido: 2, igual: 3 };
-    for (const a of r.arquivos.sort((x, y) => ordem[x.situacao] - ordem[y.situacao] || x.arquivo.localeCompare(y.arquivo))) {
-        const [texto, classe] = NOMES_SITUACAO[a.situacao] || [a.situacao, 'off'];
-        corpo.append(el('tr', {},
-            el('td', {}, el('span', { class: 'mono', texto: a.arquivo })),
-            el('td', { 'data-rotulo': 'Neste computador', texto: tamanhoArquivo(a.tamanho_painel) }),
-            el('td', { 'data-rotulo': 'No roteador', texto: tamanhoArquivo(a.tamanho_roteador) }),
-            el('td', {}, el('span', { class: 'etiqueta ' + classe, texto }))));
-    }
-    const pendentes = r.arquivos.filter((a) => a.situacao !== 'igual').length;
-    $('#resumo-paginas').textContent = pendentes
-        ? `${pendentes} de ${r.arquivos.length} arquivo(s) para enviar.`
-        : `Os ${r.arquivos.length} arquivos estão iguais no roteador.`;
-    $('#enviar-paginas').disabled = pendentes === 0;
-}
-
-async function enviarPaginas(todos, botao) {
-    const texto = todos
-        ? 'Enviar TODOS os arquivos das páginas para o roteador, substituindo os que estão lá?'
-        : 'Enviar para o roteador os arquivos diferentes ou que faltam?';
-    if (!await confirmar('Enviar páginas do hotspot', texto, 'Enviar')) return;
-    await comBotao(botao, async () => {
+$('#form-wifi').seguranca.addEventListener('change', (e) => { $('#campo-senha-wifi').hidden = e.target.value !== 'wpa'; });
+$('#form-wifi').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    const form = evento.target;
+    await comBotao(form.querySelector('[type=submit]'), async () => {
         try {
-            const r = await api('POST', '/api/paginas/enviar', { todos });
-            if (r.erros.length) aviso(`${r.enviados.length} enviado(s). Erros: ${r.erros.join('; ')}`, true);
-            else aviso(r.enviados.length ? `${r.enviados.length} arquivo(s) enviado(s) ao roteador.` : 'Nada para enviar.');
-            await carregarPaginas();
+            const w = await api('PUT', '/api/configuracoes/wifi', { ssid: form.ssid.value.trim(), seguranca: form.seguranca.value, senha: form.senha.value });
+            mostrarWifi(w);
+            estado.qrWifi = w.qr || '';
+            aviso(w.ssid ? 'Rede Wi-Fi dos QR codes salva.' : 'QR code do Wi-Fi desligado.');
         } catch (e) { aviso(e.message, true); }
     });
-}
-
-$('#comparar-paginas').addEventListener('click', (e) => comBotao(e.target, carregarPaginas));
-$('#enviar-paginas').addEventListener('click', (e) => enviarPaginas(false, e.target));
-$('#enviar-todas-paginas').addEventListener('click', (e) => enviarPaginas(true, e.target));
+});
 
 // ------------------------------------------------------------------ registro das abas
 
@@ -704,6 +680,6 @@ Object.assign(CARREGAR, {
     aviso: carregarAviso,
     historico: carregarHistorico,
     backup: carregarBackups,
-    config: () => Promise.all([carregarConfig(), carregarPaginas()]),
+    config: async () => { await carregarConfig(); mostrarWifi(await api('GET', '/api/configuracoes/wifi')); },
     visitantes: carregarVisitantes,
 });

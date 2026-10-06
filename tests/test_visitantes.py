@@ -1,6 +1,5 @@
-"""Senhas temporárias de visitantes e envio das páginas do hotspot ao roteador."""
+"""Senhas temporárias de visitantes."""
 
-import dataclasses
 from datetime import datetime, timedelta
 
 import pytest
@@ -83,71 +82,36 @@ def test_visitantes_validacoes(logado):
     assert logado.post("/api/visitantes", json={"quantidade": 1}).status_code == 400  # sem validade
 
 
-# ------------------------------------------------------------- páginas do hotspot
+# ------------------------------------------------------------- QR codes
 
-@pytest.fixture
-def pasta_paginas(tmp_path, monkeypatch):
-    from app import main, paginas
-    pasta = tmp_path / "hotspot"
-    (pasta / "css").mkdir(parents=True)
-    (pasta / "img").mkdir()
-    (pasta / ".git").mkdir()
-    (pasta / "login.html").write_text("<html>login novo</html>", encoding="utf-8")
-    (pasta / "status.html").write_text("<html>status</html>", encoding="utf-8")
-    (pasta / "css" / "style.css").write_text("body{}", encoding="utf-8")
-    (pasta / "img" / "logo.png").write_bytes(b"\x89PNG" + bytes(range(200)))
-    (pasta / ".git" / "config").write_text("x", encoding="utf-8")
-    (pasta / "aviso-escola.js").write_text("var AVISO_ESCOLA = '';", encoding="utf-8")
-    monkeypatch.setattr(main, "config", dataclasses.replace(main.config, pasta_paginas=pasta))
-    monkeypatch.setattr(paginas, "ip_do_painel", lambda url: "127.0.0.1")
-    return pasta
+def test_texto_do_qr_wifi():
+    from app import qrcodes
+    assert qrcodes.texto_wifi("Escola PMAPG", "aberta", "") == "WIFI:T:nopass;S:Escola PMAPG;;"
+    assert qrcodes.texto_wifi('Rede;"1"', "wpa", r"a:b,c\d") == r'WIFI:T:WPA;S:Rede\;\"1\";P:a\:b\,c\\d;;'
+    url = qrcodes.url_login("http://wifi.pmapg.internal", "vis-abc12", "k7m2pq")
+    assert url == "http://wifi.pmapg.internal/login?visitante=vis-abc12&senha=k7m2pq"
+    assert qrcodes.imagem(url).startswith("data:image/svg+xml")
 
 
-def test_comparar_paginas(logado, mk, pasta_paginas):
-    mk.adicionar("/file", {"name": "hotspot/status.html", "type": "file", "size": str(len("<html>status</html>"))})
-    mk.adicionar("/file", {"name": "hotspot/login.html", "type": "file", "size": "6550"})
-    mk.adicionar("/file", {"name": "hotspot/css", "type": "directory"})
-    r = logado.get("/api/paginas").json()
-    assert r["pasta_roteador"] == "hotspot"
-    situacoes = {a["arquivo"]: a["situacao"] for a in r["arquivos"]}
-    assert situacoes == {"css/style.css": "falta", "img/logo.png": "falta", "login.html": "diferente", "status.html": "igual"}
+def test_visitantes_com_qr_de_login(logado, mk):
+    r = logado.post("/api/visitantes", json={"quantidade": 1, "minutos": 60}).json()
+    assert r["criados"][0]["qr_login"].startswith("data:image/svg+xml")
+    assert logado.get("/api/visitantes").json()[0]["qr_login"].startswith("data:image/svg+xml")
 
 
-def test_enviar_paginas(logado, mk, pasta_paginas):
-    pedidos = []
-
-    def baixar(url):
-        caminho = url.replace("http://127.0.0.1:8080", "")
-        pedidos.append(caminho)
-        resposta = logado.get(caminho)
-        assert resposta.status_code == 200, caminho
-        return resposta.content
-
-    mk.baixar = baixar
-    mk.adicionar("/file", {"name": "hotspot/status.html", "type": "file", "size": str(len("<html>status</html>"))})
-    r = logado.post("/api/paginas/enviar", json={"todos": False})
-    assert r.status_code == 200, r.text
-    assert sorted(r.json()["enviados"]) == ["css/style.css", "img/logo.png", "login.html"] and r.json()["erros"] == []
-    arquivos = {a["name"]: a for a in mk.tabelas["/file"]}
-    assert arquivos["hotspot/img/logo.png"]["size"] == str(204)
-    assert "hotspot/aviso-escola.js" not in arquivos  # arquivo do painel nunca é enviado
-    assert all("/.git/" not in p for p in pedidos)
-
-    # Depois do envio, o código temporário não vale mais.
-    assert logado.get(pedidos[0]).status_code == 404
-
-    # Tudo igual: nada a enviar; "todos" reenvia os 4.
-    assert logado.post("/api/paginas/enviar", json={"todos": False}).json()["enviados"] == []
-    assert len(logado.post("/api/paginas/enviar", json={"todos": True}).json()["enviados"]) == 4
+def test_sem_hotspot_nao_gera_qr_de_login(logado, mk):
+    mk.tabelas["/ip/hotspot"].clear()
+    r = logado.post("/api/visitantes", json={"quantidade": 1, "minutos": 60}).json()
+    assert r["criados"][0]["qr_login"] == ""
 
 
-def test_endereco_de_envio_sem_codigo_valido(cliente):
-    assert cliente.get("/hotspot-envio/inventado/login.html").status_code == 404
-    assert cliente.get("/hotspot-envio/x/..%2F.env").status_code == 404
-
-
-def test_pasta_das_paginas_inexistente(logado, monkeypatch, tmp_path):
-    from app import main
-    monkeypatch.setattr(main, "config", dataclasses.replace(main.config, pasta_paginas=tmp_path / "nao-existe"))
-    r = logado.get("/api/paginas")
-    assert r.status_code == 400 and "PASTA_PAGINAS_HOTSPOT" in r.json()["erro"]
+def test_configurar_wifi_do_qr(logado):
+    r = logado.get("/api/configuracoes/wifi").json()
+    assert r["ssid"] == "" and r["qr"] == ""
+    r = logado.put("/api/configuracoes/wifi", json={"ssid": "Wi-Fi Escola", "seguranca": "wpa", "senha": "curta"})
+    assert r.status_code == 400
+    r = logado.put("/api/configuracoes/wifi", json={"ssid": "Wi-Fi Escola", "seguranca": "wpa", "senha": "senha-do-wifi"}).json()
+    assert r["ssid"] == "Wi-Fi Escola" and r["qr"].startswith("data:image/svg+xml")
+    r = logado.put("/api/configuracoes/wifi", json={"ssid": "Wi-Fi Escola", "seguranca": "aberta", "senha": "ignorada"}).json()
+    assert r["senha"] == "" and logado.get("/api/configuracoes/wifi").json()["seguranca"] == "aberta"
+    logado.put("/api/configuracoes/wifi", json={"ssid": ""})

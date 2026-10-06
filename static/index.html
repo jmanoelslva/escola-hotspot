@@ -383,23 +383,30 @@
                     <button class="botao cor-azul" type="submit">Aplicar em todos</button>
                 </form>
             </div>
-            <div class="cartao">
-                <h2>Páginas do hotspot</h2>
-                <p class="dica">Compara a pasta das páginas da escola neste computador com a pasta do hotspot no MikroTik e envia o que estiver diferente (o roteador baixa os arquivos deste computador). Não envia nem apaga os arquivos do aviso, e não apaga nada no roteador.</p>
-                <p class="dica" id="pastas-paginas"></p>
-                <div class="barra-acoes">
-                    <button id="comparar-paginas" class="botao cor-azul" type="button">Comparar de novo</button>
-                    <button id="enviar-paginas" class="botao cor-verde" type="button">Enviar arquivos diferentes</button>
-                    <button id="enviar-todas-paginas" class="botao cor-laranja" type="button">Enviar todos</button>
+            <form id="form-wifi" class="cartao">
+                <h2>Rede Wi-Fi dos QR codes</h2>
+                <p class="dica">Usada no QR code "Conecte ao Wi-Fi" dos cartões de visitante: a câmera do celular oferece entrar na rede sem digitar o nome. Deixe o nome em branco para imprimir só o QR code do login.</p>
+                <div class="wifi-qr">
+                    <div class="grade-form">
+                        <label>Nome da rede (SSID)
+                            <input name="ssid" maxlength="32" placeholder="ex.: Wi-Fi Escola PMAPG" spellcheck="false">
+                        </label>
+                        <label>Segurança
+                            <select name="seguranca">
+                                <option value="aberta">Aberta (sem senha)</option>
+                                <option value="wpa">Com senha (WPA/WPA2)</option>
+                            </select>
+                        </label>
+                        <label id="campo-senha-wifi">Senha do Wi-Fi
+                            <input name="senha" maxlength="63" spellcheck="false" autocomplete="off">
+                        </label>
+                    </div>
+                    <img id="previa-qr-wifi" class="previa-qr" alt="QR code da rede Wi-Fi" hidden>
                 </div>
-                <p class="resumo" id="resumo-paginas"></p>
-                <div class="tabela-rolagem">
-                    <table class="tabela">
-                        <thead><tr><th>Arquivo</th><th>Neste computador</th><th>No roteador</th><th>Situação</th></tr></thead>
-                        <tbody id="lista-paginas"></tbody>
-                    </table>
+                <div class="janela-botoes">
+                    <button class="botao cor-azul" type="submit">Salvar</button>
                 </div>
-            </div>
+            </form>
             <h2 class="titulo-lista">Perfis do servidor</h2>
             <div class="tabela-rolagem">
                 <table class="tabela">

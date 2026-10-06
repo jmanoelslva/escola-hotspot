@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-APP_VERSION = "1.6.0"
+APP_VERSION = "1.7.0"
 
 PASTA_PROJETO = Path(__file__).resolve().parent.parent
 
@@ -37,7 +37,6 @@ class Config:
     nome_escola: str
     cidade_escola: str
     pasta_dados: Path
-    pasta_paginas: Path
 
 
 def carregar() -> Config:
@@ -55,8 +54,6 @@ def carregar() -> Config:
         nome_escola=os.environ.get("NOME_ESCOLA", "Escola"),
         cidade_escola=os.environ.get("CIDADE_ESCOLA", ""),
         pasta_dados=pasta_dados,
-        # Páginas do hotspot da escola (para o botão "Enviar ao roteador").
-        pasta_paginas=Path(os.environ.get("PASTA_PAGINAS_HOTSPOT") or PASTA_PROJETO.parent / "hotspot"),
     )
 
 
