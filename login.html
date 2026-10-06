@@ -63,7 +63,25 @@
             return false;
         }
 
+        // QR code do cartão de visitante: /login?visitante=vis-xxxxx&senha=...
+        // Preenche os campos; o aceite dos termos continua obrigatório.
+        function parametro(nome) {
+            var m = new RegExp('[?&]' + nome + '=([^&#]*)').exec(location.search);
+            return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+        }
+
+        function preencherPeloQr() {
+            var usuario = parametro('visitante'), senha = parametro('senha');
+            if (!usuario || !senha) return;
+            document.login.username.value = usuario;
+            document.login.password.value = senha;
+            var info = document.getElementById('info-login');
+            if (info) info.textContent = 'Usuário e senha do cartão já preenchidos. Marque o aceite dos Termos de Uso e toque em Conectar.';
+            document.login.termos.focus();
+        }
+
         function iniciar() {
+            preencherPeloQr();
             if (aceiteLembrado()) {
                 document.login.termos.checked = true;
                 atualizarBotao();
@@ -125,7 +143,7 @@
             $(if error)
             <p class="alerta">$(error)</p>
             $(else)
-            <p class="info">Entre com o usuário e a senha fornecidos pela escola.</p>
+            <p class="info" id="info-login">Entre com o usuário e a senha fornecidos pela escola.</p>
             $(endif)
             <div id="aviso-escola" class="aviso-escola" hidden></div>
 
