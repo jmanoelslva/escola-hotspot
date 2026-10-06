@@ -280,6 +280,20 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
 .legenda-entrada::before { background: var(--azul); }
 .legenda-saida::before { background: #ea580c; }
 
+/* Forçar DNS: chave liga/desliga */
+.forcar-dns-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.forcar-dns h2 { margin-bottom: 4px; }
+.forcar-dns .dica { margin-bottom: 4px; }
+.texto-alerta { color: var(--vermelho-escuro); font-weight: 600; }
+.chave { position: relative; display: inline-block; flex: none; margin: 4px 0 0; cursor: pointer; }
+.chave input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.chave-trilho { display: block; width: 52px; height: 30px; border-radius: 999px; background: #cbd2d9; transition: background .2s; }
+.chave-bola { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .2s; }
+.chave input:checked + .chave-trilho { background: var(--verde); }
+.chave input:checked + .chave-trilho .chave-bola { transform: translateX(22px); }
+.chave input:focus-visible + .chave-trilho { box-shadow: 0 0 0 3px rgba(13, 74, 125, .3); }
+.chave input:disabled + .chave-trilho { opacity: .6; cursor: wait; }
+
 /* Celular: tabela vira lista de cartões */
 @media (max-width: 760px) {
     .topo-texto span { display: none; }

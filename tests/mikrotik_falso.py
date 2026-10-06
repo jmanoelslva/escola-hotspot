@@ -27,6 +27,7 @@ class MikrotikFalso:
             "/ip/dns/static": [],
             "/file": [],
             "/ip/hotspot/cookie": [],
+            "/ip/firewall/nat": [],
             "/interface": [
                 {".id": "*1", "name": "ether1", "type": "ether", "running": "true", "disabled": "false", "comment": "internet"},
                 {".id": "*2", "name": "bridge-hotspot", "type": "bridge", "running": "true", "disabled": "false"},
@@ -37,6 +38,7 @@ class MikrotikFalso:
                            "immediate-gw": "192.168.0.1%ether1", "active": "true", "disabled": "false"}],
         }
         self.tabelas["/ip/hotspot"][0]["profile"] = "hsprof1"
+        self.tabelas["/ip/hotspot"][0]["interface"] = "bridge-hotspot"
         self.adicionar("/ip/hotspot/user", {"name": "default-trial", "default": "true"})
         self.pedidos: list[tuple[str, str, dict | None]] = []
         self.https = True  # False imita o www-ssl desligado
@@ -48,6 +50,7 @@ class MikrotikFalso:
                                {".id": "*2", "name": "temperature", "value": "41", "type": "C"}],
             "/system/package/update": {"channel": "stable", "installed-version": "7.15.3"},
             "/system/routerboard": {"current-firmware": "7.15.3", "upgrade-firmware": "7.15.3"},
+            "/ip/dns": {"servers": "8.8.8.8", "allow-remote-requests": "true"},
         }
         self.versao_disponivel = "7.16.1"
         self.verificacoes = 0

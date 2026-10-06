@@ -311,3 +311,39 @@ def test_excluir_backup(logado):
     assert all(b["nome"] != nome for b in logado.get("/api/backups").json())
     assert logado.delete(f"/api/backups/{nome}").status_code == 400  # já não existe
     assert logado.delete("/api/backups/..%2F.env").status_code in (400, 404)
+
+
+# ------------------------------------------------------------- forçar DNS
+
+def test_forcar_dns_ligar_desligar_religar(logado, mk):
+    nat = mk.tabelas["/ip/firewall/nat"]
+    alheia = mk.adicionar("/ip/firewall/nat", {"chain": "srcnat", "action": "masquerade", "comment": "internet"})
+    assert logado.get("/api/forcar-dns").json() == {"ativo": False, "regras": 0, "interfaces": ["bridge-hotspot"], "dns_remoto": True}
+
+    r = logado.put("/api/forcar-dns", json={"ativo": True}).json()
+    assert r["ativo"] and r["regras"] == 2
+    novas = [x for x in nat if x is not alheia]
+    assert sorted(x["protocol"] for x in novas) == ["tcp", "udp"]
+    assert all(x["chain"] == "dstnat" and x["action"] == "redirect" and x["dst-port"] == "53"
+               and x["in-interface"] == "bridge-hotspot" and x["disabled"] == "false" for x in novas)
+
+    # Desligar só desativa (as regras continuam lá).
+    r = logado.put("/api/forcar-dns", json={"ativo": False}).json()
+    assert not r["ativo"] and r["regras"] == 2
+    assert all(x["disabled"] == "true" for x in novas) and len(nat) == 3
+
+    # Religar reaproveita as mesmas regras, sem duplicar.
+    r = logado.put("/api/forcar-dns", json={"ativo": True}).json()
+    assert r["ativo"] and len(nat) == 3 and all(x["disabled"] == "false" for x in novas)
+    assert alheia.get("disabled", "false") == "false" and alheia in nat  # regra de outra pessoa intacta
+
+
+def test_forcar_dns_sem_hotspot(logado, mk):
+    mk.tabelas["/ip/hotspot"].clear()
+    r = logado.put("/api/forcar-dns", json={"ativo": True})
+    assert r.status_code == 400 and "hotspot" in r.json()["erro"]
+
+
+def test_forcar_dns_avisa_dns_remoto_desligado(logado, mk):
+    mk.objetos["/ip/dns"]["allow-remote-requests"] = "false"
+    assert logado.get("/api/forcar-dns").json()["dns_remoto"] is False

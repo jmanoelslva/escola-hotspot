@@ -171,6 +171,19 @@
 
         <!-- Sites bloqueados -->
         <section id="aba-sites" class="painel-aba" hidden>
+            <div class="cartao forcar-dns">
+                <div class="forcar-dns-topo">
+                    <div>
+                        <h2>Forçar o DNS do roteador</h2>
+                        <p class="dica">Faz o bloqueio valer também para quem configurou outro DNS no aparelho (ex.: 8.8.8.8): toda consulta DNS vinda do hotspot é atendida pelo MikroTik. Não afeta a rede da secretaria. Pode desligar e religar a qualquer momento.</p>
+                    </div>
+                    <label class="chave" title="Ligar ou desligar">
+                        <input type="checkbox" id="chave-forcar-dns" role="switch" aria-label="Forçar o DNS do roteador">
+                        <span class="chave-trilho"><span class="chave-bola"></span></span>
+                    </label>
+                </div>
+                <p class="dica" id="estado-forcar-dns">Carregando…</p>
+            </div>
             <form id="form-bloqueio" class="cartao linha-form">
                 <label class="campo-largo">Site
                     <input name="dominio" required maxlength="300" placeholder="ex.: bet365.com" spellcheck="false" autocapitalize="off">

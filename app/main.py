@@ -263,6 +263,10 @@ class NovoBloqueio(BaseModel):
     motivo: str = Field(default="", max_length=100)
 
 
+class Ligar(BaseModel):
+    ativo: bool
+
+
 class Aviso(BaseModel):
     texto: str = Field(default="", max_length=500)
 
@@ -756,6 +760,18 @@ def remover_bloqueio(item_id: str, mk: Mikrotik = Depends(mikrotik), s: Sessao =
     mk.remover(controle.DNS_ESTATICO, item_id)
     registrar(s, f"desbloqueou o site {atual.get('name')}")
     return {"ok": True}
+
+
+@app.get("/api/forcar-dns")
+def ver_forcar_dns(mk: Mikrotik = Depends(mikrotik)):
+    return controle.estado_forcar_dns(mk)
+
+
+@app.put("/api/forcar-dns")
+def mudar_forcar_dns(dados: Ligar, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    controle.aplicar_forcar_dns(mk, dados.ativo)
+    registrar(s, "ligou o forçar DNS do roteador" if dados.ativo else "desligou o forçar DNS do roteador")
+    return controle.estado_forcar_dns(mk)
 
 
 # ---------------------------------------------------------------- relatório de consumo

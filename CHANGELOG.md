@@ -2,6 +2,12 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.4.0] - 2026-10-06
+
+### Adicionado
+- Sites bloqueados: chave "Forçar o DNS do roteador". Ligada, regras de NAT (dstnat, redirect da porta 53 UDP/TCP, comentário `painel-forcar-dns`) mandam ao MikroTik as consultas DNS vindas das interfaces do hotspot, e o bloqueio vale também para quem configurou outro DNS. Desligar só desativa as regras; religar reaproveita. Avisa se o DNS do roteador não aceita consultas da rede.
+- `painel.log` registra o resultado da verificação de atualização e as demoras do MikroTik.
+
 ## [1.3.0] - 2026-10-06
 
 ### Adicionado

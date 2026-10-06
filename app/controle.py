@@ -8,7 +8,11 @@ from .mikrotik import ErroAutenticacao, ErroMikrotik, Mikrotik
 
 PERFIS = "/ip/hotspot/user/profile"
 FILTROS = "/ip/firewall/filter"
+NAT = "/ip/firewall/nat"
+DNS = "/ip/dns"
 DNS_ESTATICO = "/ip/dns/static"
+SERVIDORES_HOTSPOT = "/ip/hotspot"
+PREFIXO_FORCAR_DNS = "painel-forcar-dns"
 
 PREFIXO_HORARIO = "painel-horario:"
 PREFIXO_LISTA = "painel-"
@@ -230,3 +234,58 @@ def criar_bloqueio(mk: Mikrotik, dominio: str, motivo: str) -> dict:
                 raise
             erro_final = erro
     raise erro_final or ErroMikrotik("Não foi possível bloquear o site.")
+
+
+# ------------------------------------------------------------------ forçar o DNS do roteador
+
+def interfaces_hotspot(mk: Mikrotik) -> list[str]:
+    return sorted({s.get("interface", "") for s in mk.listar(SERVIDORES_HOTSPOT) if s.get("interface")})
+
+
+def _regras_forcar_dns(mk: Mikrotik) -> list[dict]:
+    return [r for r in mk.listar(NAT) if r.get("comment", "").startswith(PREFIXO_FORCAR_DNS)
+            and not util.sim(r.get("dynamic"))]
+
+
+def estado_forcar_dns(mk: Mikrotik) -> dict:
+    regras = _regras_forcar_dns(mk)
+    try:
+        dns = mk.ler(DNS) or {}
+        if isinstance(dns, list):
+            dns = dns[0] if dns else {}
+        remoto = util.sim(dns.get("allow-remote-requests"))
+    except ErroAutenticacao:
+        raise
+    except ErroMikrotik:
+        remoto = None
+    return {
+        "ativo": bool(regras) and all(not util.sim(r.get("disabled")) for r in regras),
+        "regras": len(regras),
+        "interfaces": interfaces_hotspot(mk),
+        "dns_remoto": remoto,
+    }
+
+
+def aplicar_forcar_dns(mk: Mikrotik, ativo: bool) -> None:
+    """Liga: cria (se faltar) e ativa as regras de redirecionamento da porta 53.
+    Desliga: só desativa as regras, que ficam no roteador para reativar depois."""
+    regras = _regras_forcar_dns(mk)
+    if ativo:
+        interfaces = interfaces_hotspot(mk)
+        if not interfaces:
+            raise util.ErroDados("Nenhum servidor de hotspot encontrado no MikroTik.")
+        existentes = {(r.get("in-interface"), r.get("protocol")) for r in regras}
+        for interface in interfaces:
+            for protocolo in ("udp", "tcp"):
+                if (interface, protocolo) in existentes:
+                    continue
+                mk.criar(NAT, {
+                    "chain": "dstnat", "action": "redirect", "protocol": protocolo, "dst-port": "53",
+                    "to-ports": "53", "in-interface": interface,
+                    "comment": f"{PREFIXO_FORCAR_DNS}: consultas DNS do hotspot vão para o roteador",
+                })
+        regras = _regras_forcar_dns(mk)
+    for regra in regras:
+        desejado = "false" if ativo else "true"
+        if regra.get("disabled", "false") != desejado:
+            mk.alterar(NAT, regra[".id"], {"disabled": desejado})

@@ -166,9 +166,46 @@ $('#form-horario').addEventListener('submit', async (evento) => {
 estado.sites = [];
 
 async function carregarSites() {
-    estado.sites = await api('GET', '/api/bloqueios');
+    const [sites] = await Promise.all([api('GET', '/api/bloqueios'), carregarForcarDns()]);
+    estado.sites = sites;
     renderSites();
 }
+
+function renderForcarDns(e) {
+    const chave = $('#chave-forcar-dns');
+    chave.checked = e.ativo;
+    chave.setAttribute('aria-checked', e.ativo ? 'true' : 'false');
+    let texto = e.ativo
+        ? `Ligado: as consultas DNS de ${e.interfaces.join(', ') || 'hotspot'} vão para o roteador.`
+        : (e.regras ? 'Desligado (as regras continuam no MikroTik, desativadas).' : 'Desligado.');
+    if (e.dns_remoto === false) texto += ' Atenção: o DNS do MikroTik não aceita consultas da rede (IP → DNS → Allow Remote Requests); sem isso, os aparelhos ficam sem internet com esta opção ligada.';
+    const caixa = $('#estado-forcar-dns');
+    caixa.textContent = texto;
+    caixa.classList.toggle('texto-alerta', e.dns_remoto === false);
+}
+
+async function carregarForcarDns() {
+    try {
+        renderForcarDns(await api('GET', '/api/forcar-dns'));
+    } catch (e) {
+        $('#estado-forcar-dns').textContent = 'Não foi possível ler: ' + e.message;
+    }
+}
+
+$('#chave-forcar-dns').addEventListener('change', async (evento) => {
+    const chave = evento.target;
+    const ativo = chave.checked;
+    chave.disabled = true;
+    try {
+        renderForcarDns(await api('PUT', '/api/forcar-dns', { ativo }));
+        aviso(ativo ? 'DNS do roteador forçado no hotspot.' : 'Forçar DNS desligado.');
+    } catch (e) {
+        chave.checked = !ativo;
+        aviso(e.message, true);
+    } finally {
+        chave.disabled = false;
+    }
+});
 
 function renderSites() {
     const busca = normalizar($('#busca-sites').value);
