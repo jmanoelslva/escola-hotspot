@@ -40,7 +40,7 @@ shutting-down = o serviço de Wi-Fi está sendo desligado.
 # If user profile has limit of shared-users, then this error will be shown
 # after reaching this limit
 
-user-session-limit = o usuário $(username) já está conectado no limite de aparelhos permitido.
+user-session-limit = o usuário $(username) já está conectado no limite de aparelhos permitido. Saia da rede em outro aparelho e tente de novo.
 
 # license-session-limit
 # Depending on licence number of active hotspot clients is limited to
@@ -72,7 +72,7 @@ chap-missing = o navegador não enviou a senha corretamente. Tente de novo (o Ja
 # has sent an error string with Access-Reject message, then it will
 # override this setting.
 
-invalid-username = usuário ou senha incorretos.
+invalid-username = usuário ou senha incorretos. Se o erro continuar, seu acesso pode estar desativado: procure a coordenação.
 
 # invalid-mac
 # Local users (on hotspot server) can be bound to some MAC address. If login
@@ -83,8 +83,8 @@ invalid-mac = o usuário $(username) não pode entrar por este aparelho.
 # uptime-limit, traffic-limit
 # For local hotspot users in case if limits are reached
 
-uptime-limit = o usuário $(username) atingiu o limite de tempo de uso.
-traffic-limit = o usuário $(username) atingiu o limite de dados.
+uptime-limit = o usuário $(username) atingiu o limite de tempo de uso. Procure a coordenação para liberar mais tempo.
+traffic-limit = o usuário $(username) atingiu o limite de dados. Procure a coordenação.
 
 # radius-timeout
 # User is authenticated by RADIUS server, but no response is received from it,

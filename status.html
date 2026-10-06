@@ -11,6 +11,7 @@ $(endif)
 <meta name="theme-color" content="#0d4a7d" />
 <title>Wi-Fi da Escola - Conectado</title>
 <link rel="stylesheet" href="css/style.css">
+<script src="js/aviso.js"></script>
 <script>
 $(if advert-pending == 'yes')
     var popup = '';
@@ -85,6 +86,7 @@ $(endif)
         if (total > 0) document.getElementById('bloco-limite').style.display = 'block';
         atualizar();
         setInterval(atualizar, 1000);
+        carregarAviso();
 $(if advert-pending == 'yes')
         openAdvert();
 $(endif)
@@ -101,6 +103,7 @@ $(endif)
         <h1>Olá, $(username)!</h1>
         $(endif)
         <p class="info">Você já pode navegar. Volte a esta página para ver o tempo de conexão ou sair.</p>
+        <div id="aviso-escola" class="aviso-escola" hidden></div>
 
         <div class="tempo">
             <div class="tempo-rotulo">Tempo conectado</div>

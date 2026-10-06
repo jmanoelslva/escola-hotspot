@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body>
+<body onload="iniciar()">
 
     $(if chap-id)
     <form name="sendin" action="$(link-login-only)" method="post" style="display:none">
@@ -23,7 +23,45 @@
     <script src="/md5.js"></script>
     $(endif)
 
+    <script src="js/aviso.js"></script>
     <script>
+        // Aceite dos termos lembrado neste aparelho por 30 dias. Ao mudar o
+        // texto dos termos, troque TERMOS_VERSAO para pedir o aceite de novo.
+        var TERMOS_VERSAO = '2026-10-06';
+        var TERMOS_DIAS = 30;
+
+        function aceiteLembrado() {
+            try {
+                var dados = JSON.parse(localStorage.getItem('termos-wifi') || 'null');
+                return dados && dados.versao === TERMOS_VERSAO &&
+                    (new Date().getTime() - dados.quando) < TERMOS_DIAS * 86400000;
+            } catch (e) { return false; }
+        }
+
+        function lembrarAceite() {
+            try {
+                localStorage.setItem('termos-wifi', JSON.stringify({ versao: TERMOS_VERSAO, quando: new Date().getTime() }));
+            } catch (e) { /* navegador sem armazenamento: pede de novo na próxima vez */ }
+        }
+
+        function mostrarSenha(botao) {
+            var campo = document.login.password;
+            var mostrar = campo.type === 'password';
+            campo.type = mostrar ? 'text' : 'password';
+            botao.textContent = mostrar ? 'Ocultar' : 'Mostrar';
+            botao.setAttribute('aria-pressed', mostrar ? 'true' : 'false');
+            campo.focus();
+            return false;
+        }
+
+        function iniciar() {
+            if (aceiteLembrado()) {
+                document.login.termos.checked = true;
+                atualizarBotao();
+            }
+            carregarAviso();
+        }
+
         function aceitou() {
             return document.login.termos.checked;
         }
@@ -33,6 +71,7 @@
                 alert('Para conectar, marque que leu e aceita os Termos de Uso.');
                 return false;
             }
+            lembrarAceite();
             $(if chap-id)
             document.sendin.username.value = document.login.username.value;
             document.sendin.password.value = hexMD5('$(chap-id)' + document.login.password.value + '$(chap-challenge)');
@@ -79,6 +118,7 @@
             $(else)
             <p class="info">Entre com o usuário e a senha fornecidos pela escola.</p>
             $(endif)
+            <div id="aviso-escola" class="aviso-escola" hidden></div>
 
             <label class="campo">
                 <img class="ico" src="img/user.svg" alt="" />
@@ -86,10 +126,11 @@
                     autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" required />
             </label>
 
-            <label class="campo">
+            <div class="campo">
                 <img class="ico" src="img/password.svg" alt="" />
-                <input name="password" type="password" placeholder="Senha" autocomplete="current-password" required />
-            </label>
+                <input name="password" type="password" placeholder="Senha" autocomplete="current-password" required aria-label="Senha" />
+                <button type="button" class="mostrar-senha" onclick="return mostrarSenha(this)" aria-pressed="false">Mostrar</button>
+            </div>
 
             <label class="aceite">
                 <input type="checkbox" name="termos" onclick="atualizarBotao()" onchange="atualizarBotao()" />
