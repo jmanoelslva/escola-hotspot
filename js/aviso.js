@@ -1,16 +1,13 @@
-// Mostra o aviso da escola (aviso.txt, gravado pelo Painel do Hotspot) no
-// elemento #aviso-escola. Sem arquivo ou com arquivo vazio, não mostra nada.
+// Mostra o aviso da escola no elemento #aviso-escola.
+// O Painel do Hotspot grava aviso-escola.js (var AVISO_ESCOLA = "...") na pasta
+// do hotspot; a página carrega esse arquivo com <script>, como faz com o CSS.
+// Sem o arquivo, ou com o texto vazio, não mostra nada.
 function carregarAviso() {
     var caixa = document.getElementById('aviso-escola');
-    if (!caixa || !window.XMLHttpRequest) return;
-    var pedido = new XMLHttpRequest();
-    pedido.open('GET', 'aviso.txt?t=' + new Date().getTime(), true);
-    pedido.onreadystatechange = function () {
-        if (pedido.readyState !== 4 || pedido.status !== 200) return;
-        var texto = (pedido.responseText || '').replace(/^\s+|\s+$/g, '');
-        if (!texto || texto.charAt(0) === '<') return; // vazio, ou página de erro do roteador
-        caixa.textContent = texto;
-        caixa.hidden = false;
-    };
-    try { pedido.send(); } catch (e) { /* sem aviso */ }
+    if (!caixa) return;
+    var texto = typeof AVISO_ESCOLA === 'string' ? AVISO_ESCOLA : '';
+    texto = texto.replace(/^\s+|\s+$/g, '');
+    if (!texto) return;
+    caixa.textContent = texto;
+    caixa.hidden = false;
 }
