@@ -12,8 +12,16 @@ $(endif)
 <title>Wi-Fi da Escola - Conectado</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="aviso-escola.js"></script>
-<script src="js/aviso.js"></script>
 <script>
+        // Aviso da escola: o Painel do Hotspot grava aviso-escola.js
+        // (var AVISO_ESCOLA = "...") na pasta do hotspot.
+        function carregarAviso() {
+            var caixa = document.getElementById('aviso-escola');
+            var texto = typeof AVISO_ESCOLA === 'string' ? AVISO_ESCOLA.replace(/^\s+|\s+$/g, '') : '';
+            if (!caixa || !texto) return;
+            caixa.textContent = texto;
+            caixa.hidden = false;
+        }
 $(if advert-pending == 'yes')
     var popup = '';
     function focusAdvert() {

@@ -24,8 +24,16 @@
     $(endif)
 
     <script src="aviso-escola.js"></script>
-    <script src="js/aviso.js"></script>
-    <script>
+        <script>
+        // Aviso da escola: o Painel do Hotspot grava aviso-escola.js
+        // (var AVISO_ESCOLA = "...") na pasta do hotspot.
+        function carregarAviso() {
+            var caixa = document.getElementById('aviso-escola');
+            var texto = typeof AVISO_ESCOLA === 'string' ? AVISO_ESCOLA.replace(/^\s+|\s+$/g, '') : '';
+            if (!caixa || !texto) return;
+            caixa.textContent = texto;
+            caixa.hidden = false;
+        }
         // Aceite dos termos lembrado neste aparelho por 30 dias. Ao mudar o
         // texto dos termos, troque TERMOS_VERSAO para pedir o aceite de novo.
         var TERMOS_VERSAO = '2026-10-06';
