@@ -50,7 +50,7 @@ O usuário precisa das permissões `read`, `write`, `rest-api` e `sensitive` (o 
 
 - **Horário de acesso:** o painel coloca quem entra com o perfil numa *address list* (`painel-<perfil>`, ou a que o perfil já usava) e cria regras de firewall `drop` com horário (`time=`) para os períodos fora do permitido, com o comentário `painel-horario:<perfil> ...`, antes das outras regras da cadeia `forward`. Vale a partir do próximo login de cada usuário, e o relógio do MikroTik precisa estar certo (`/system clock`, de preferência com NTP). Conexões já aceleradas pelo *fasttrack* podem continuar alguns minutos depois do horário.
 - **Sites bloqueados:** entradas em `/ip dns static` com `type=NXDOMAIN` e `match-subdomain=yes` (ou `address=0.0.0.0` em versões mais antigas do RouterOS), comentário `painel-bloqueio`. Só afetam aparelhos que usam o DNS do MikroTik. O painel só lista e remove o que ele mesmo criou.
-- **Aviso:** o painel grava `aviso.txt` na pasta de páginas do hotspot (`html-directory` do perfil, normalmente `hotspot`). As páginas do hotspot da escola (pasta `hotspot`, versão com `js/aviso.js`) mostram o texto.
+- **Aviso:** o painel grava `aviso.txt` (o texto, para o painel ler de volta) e `aviso-escola.js` (o que as páginas carregam) na pasta de páginas do hotspot (`html-directory` do perfil, normalmente `hotspot`). As páginas do hotspot da escola (pasta `hotspot`, versão de 06/10/2026 ou mais nova) mostram o texto no login e na tela de conectado.
 - **Consumo:** usa os contadores de cada usuário do hotspot. "Zerar contadores" zera todos e anota a data em `dados\relatorio.json`.
 - **Backup:** feito no primeiro login de cada dia em `dados\backups` (contém as senhas dos alunos; a pasta fica só neste computador).
 
