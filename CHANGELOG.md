@@ -2,6 +2,12 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.1.2] - 2026-10-06
+
+### Adicionado
+- Backup: botão para excluir uma cópia.
+- Desconectar apaga também o cookie de login automático do aparelho (perfis com login-by=cookie), para ele não entrar sozinho de novo.
+
 ## [1.1.1] - 2026-10-06
 
 ### Corrigido

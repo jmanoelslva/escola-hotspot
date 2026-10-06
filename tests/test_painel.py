@@ -115,8 +115,15 @@ def test_conectados_e_desconectar(logado, mk):
                                                 "uptime": "5m", "bytes-in": "100", "bytes-out": "2000"})
     lista = logado.get("/api/conectados").json()
     assert lista[0]["usuario"] == "ana" and lista[0]["bytes_out"] == 2000
-    assert logado.delete(f"/api/conectados/{ativo['.id']}").status_code == 200
+    cookie_dele = mk.adicionar("/ip/hotspot/cookie", {"user": "ana", "mac-address": "aa:aa:aa:aa:aa:aa"})
+    outro = mk.adicionar("/ip/hotspot/cookie", {"user": "bia", "mac-address": "BB:BB:BB:BB:BB:BB"})
+    r = logado.delete(f"/api/conectados/{ativo['.id']}")
+    assert r.status_code == 200 and r.json()["cookies"] == 1
     assert mk.tabelas["/ip/hotspot/active"] == []
+    assert cookie_dele not in mk.tabelas["/ip/hotspot/cookie"] and outro in mk.tabelas["/ip/hotspot/cookie"]
+    # O cookie sai antes da sessão, para o aparelho não entrar sozinho de novo.
+    remocoes = [c for m, c, _ in mk.pedidos if m == "DELETE"]
+    assert remocoes[-2].startswith("/ip/hotspot/cookie/") and remocoes[-1].startswith("/ip/hotspot/active/")
 
 
 def test_bypass_e_bloqueio(logado, mk):

@@ -302,3 +302,12 @@ def test_restaurar_de_arquivo_e_nome_invalido(logado, mk):
     assert logado.post("/api/backups/restaurar", json={"nome": "../.env"}).status_code == 400
     r = logado.post("/api/backups/restaurar-arquivo", files={"arquivo": ("b.json", BytesIO(b"nada"), "application/json")})
     assert r.status_code == 400
+
+
+def test_excluir_backup(logado):
+    nome = logado.post("/api/backups").json()["nome"]
+    assert any(b["nome"] == nome for b in logado.get("/api/backups").json())
+    assert logado.delete(f"/api/backups/{nome}").status_code == 200
+    assert all(b["nome"] != nome for b in logado.get("/api/backups").json())
+    assert logado.delete(f"/api/backups/{nome}").status_code == 400  # já não existe
+    assert logado.delete("/api/backups/..%2F.env").status_code in (400, 404)

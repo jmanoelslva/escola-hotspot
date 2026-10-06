@@ -26,6 +26,7 @@ class MikrotikFalso:
             "/ip/firewall/filter": [],
             "/ip/dns/static": [],
             "/file": [],
+            "/ip/hotspot/cookie": [],
         }
         self.tabelas["/ip/hotspot"][0]["profile"] = "hsprof1"
         self.adicionar("/ip/hotspot/user", {"name": "default-trial", "default": "true"})

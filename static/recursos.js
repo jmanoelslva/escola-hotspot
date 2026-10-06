@@ -409,7 +409,8 @@ async function carregarBackups() {
             el('td', { 'data-rotulo': 'Sites', texto: String(b.bloqueios) }),
             el('td', {}, el('div', { class: 'acoes' },
                 el('a', { class: 'botao pequeno cor-azul', href: '/api/backups/' + encodeURIComponent(b.nome), download: b.nome, texto: 'Baixar' }),
-                el('button', { class: 'botao pequeno cor-laranja', type: 'button', texto: 'Restaurar', onclick: () => restaurarBackup(b) }))),
+                el('button', { class: 'botao pequeno cor-laranja', type: 'button', texto: 'Restaurar', onclick: () => restaurarBackup(b) }),
+                el('button', { class: 'botao pequeno cor-vermelho', type: 'button', texto: 'Excluir', onclick: () => excluirBackup(b) }))),
         ));
     }
 }
@@ -419,6 +420,15 @@ async function restaurarBackup(b) {
     try {
         const r = await api('POST', '/api/backups/restaurar', { nome: b.nome });
         aviso(resultadoRestauracao(r), r.erros.length > 0);
+    } catch (e) { aviso(e.message, true); }
+}
+
+async function excluirBackup(b) {
+    if (!await confirmar('Excluir backup', `Excluir o backup de ${dataHora(b.criado_em) || b.nome}? O arquivo é apagado deste computador.`, 'Excluir')) return;
+    try {
+        await api('DELETE', '/api/backups/' + encodeURIComponent(b.nome));
+        aviso('Backup excluído.');
+        await carregarBackups();
     } catch (e) { aviso(e.message, true); }
 }
 

@@ -26,6 +26,7 @@ SERVIDORES = "/ip/hotspot"
 LEASES = "/ip/dhcp-server/lease"
 ARQUIVOS = "/file"
 PERFIS_HOTSPOT = "/ip/hotspot/profile"
+COOKIES_HOTSPOT = "/ip/hotspot/cookie"
 
 COOKIE = "painel_hotspot"
 MAC_VAZIO = "00:00:00:00:00:00"
@@ -420,9 +421,25 @@ def conectados(mk: Mikrotik = Depends(mikrotik)):
 def desconectar(item_id: str, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
     _id_valido(item_id)
     atual = mk.obter(ATIVOS, item_id)
+    # Primeiro o cookie (login automático do perfil com login-by=cookie): sem
+    # isso o aparelho entraria sozinho de novo logo depois de desconectado.
+    cookies = _remover_cookies(mk, atual.get("mac-address", ""), atual.get("user", ""))
     mk.remover(ATIVOS, item_id)
-    registrar(s, f"desconectou {atual.get('user')} ({atual.get('mac-address')})")
-    return {"ok": True}
+    registrar(s, f"desconectou {atual.get('user')} ({atual.get('mac-address')})"
+                 + (f" e apagou {cookies} cookie(s)" if cookies else ""))
+    return {"ok": True, "cookies": cookies}
+
+
+def _remover_cookies(mk: Mikrotik, mac: str, usuario: str) -> int:
+    """Apaga os cookies do hotspot deste aparelho (pelo MAC; sem MAC, pelo usuário)."""
+    removidos = 0
+    for cookie in mk.listar(COOKIES_HOTSPOT):
+        mesmo_aparelho = mac and cookie.get("mac-address", "").upper() == mac.upper()
+        mesmo_usuario = not mac and usuario and cookie.get("user") == usuario
+        if mesmo_aparelho or mesmo_usuario:
+            mk.remover(COOKIES_HOTSPOT, cookie[".id"])
+            removidos += 1
+    return removidos
 
 
 # ---------------------------------------------------------------- bypass e bloqueio
@@ -851,6 +868,13 @@ def baixar_backup(nome: str, s: Sessao = Depends(sessao_atual)):
     arquivo = backup.caminho(config.pasta_dados, nome)
     registrar(s, f"baixou o backup {nome}")
     return FileResponse(arquivo, media_type="application/json", filename=nome)
+
+
+@app.delete("/api/backups/{nome}")
+def excluir_backup(nome: str, s: Sessao = Depends(sessao_atual)):
+    backup.caminho(config.pasta_dados, nome).unlink()
+    registrar(s, f"excluiu o backup {nome}")
+    return {"ok": True}
 
 
 @app.post("/api/backups/restaurar")

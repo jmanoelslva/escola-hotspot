@@ -514,10 +514,10 @@ function renderConectados() {
 }
 
 async function desconectar(c) {
-    if (!await confirmar('Desconectar', `Desconectar ${c.usuario} (${c.ip})? Ele poderá entrar de novo pela tela de login.`, 'Desconectar')) return;
+    if (!await confirmar('Desconectar', `Desconectar ${c.usuario} (${c.ip})? O login automático (cookie) deste aparelho também é apagado; para voltar, será preciso entrar de novo pela tela de login.`, 'Desconectar')) return;
     try {
-        await api('DELETE', '/api/conectados/' + encodeURIComponent(c.id));
-        aviso(c.usuario + ' desconectado.');
+        const r = await api('DELETE', '/api/conectados/' + encodeURIComponent(c.id));
+        aviso(c.usuario + ' desconectado' + (r.cookies ? ' e login automático apagado.' : '.'));
         await carregarConectados();
     } catch (e) { aviso(e.message, true); }
 }
