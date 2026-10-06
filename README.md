@@ -31,7 +31,6 @@ Cada pessoa entra com um **usuário admin do próprio MikroTik**. O painel não 
 
 Outros computadores da rede acessam por `http://IP-DO-COMPUTADOR:8080` (o instalador mostra o endereço no final).
 
-- **Instalar como app:** no computador do painel, o Chrome e o Edge também oferecem "Instalar app" (botão no painel ou ícone na barra de endereço). Em outros computadores e celulares, a instalação como app exige o painel em HTTPS; por HTTP dá para usar normalmente pelo navegador ou criar um atalho.
 - **Atualizar:** copie os arquivos novos por cima e rode o `instalar.bat` de novo (ele mantém o `.env`).
 - **Desinstalar o início automático:** `remover-inicio-automatico.bat` como administrador.
 - **Log do painel:** `dados\painel.log`; ações de cada usuário: `dados\acoes.log`.

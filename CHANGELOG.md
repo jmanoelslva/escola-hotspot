@@ -2,6 +2,11 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.2.1] - 2026-10-06
+
+### Removido
+- Instalação como app pelo navegador (PWA: manifesto, service worker e botão "Instalar app"). Os atalhos do `instalar.bat`, que abrem o painel em janela própria, continuam. O painel remove o service worker que a 1.2.0 tenha registrado.
+
 ## [1.2.0] - 2026-10-06
 
 ### Adicionado

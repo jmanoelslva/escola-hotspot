@@ -264,13 +264,7 @@ def test_mikrotik_fora_do_ar(cliente, mk):
     assert "nem por HTTPS nem por HTTP" in r.json()["erro"]
 
 
-def test_arquivos_do_app(cliente):
-    sw = cliente.get("/sw.js")
-    assert sw.status_code == 200 and "javascript" in sw.headers["content-type"]
-    manifesto = cliente.get("/manifest.webmanifest")
-    assert manifesto.headers["content-type"].startswith("application/manifest+json")
-    dados = manifesto.json()
-    assert dados["display"] == "standalone" and dados["start_url"] == "/"
-    for icone in dados["icons"]:
-        assert cliente.get(icone["src"]).status_code == 200
+
+def test_icone_dos_atalhos(cliente):
     assert cliente.get("/static/icone.ico").status_code == 200
+    assert cliente.get("/sw.js").status_code == 404

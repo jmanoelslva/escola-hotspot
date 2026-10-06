@@ -756,31 +756,12 @@ Object.assign(CARREGAR, {
     importar: carregarPerfis,
 });
 
-// ------------------------------------------------------------------ instalar como app
-
-// O navegador só oferece instalar em HTTPS ou no próprio computador (localhost).
-if ('serviceWorker' in navigator && window.isSecureContext) {
-    navigator.serviceWorker.register('/sw.js').catch(() => { /* segue como site */ });
+// A versão 1.2.0 registrava um service worker (app instalável); remove o que sobrou.
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations()
+        .then((registros) => registros.forEach((r) => r.unregister()))
+        .catch(() => {});
 }
-
-let pedidoInstalacao = null;
-window.addEventListener('beforeinstallprompt', (evento) => {
-    evento.preventDefault();
-    pedidoInstalacao = evento;
-    document.querySelectorAll('.instalar-app').forEach((b) => { b.hidden = false; });
-});
-window.addEventListener('appinstalled', () => {
-    pedidoInstalacao = null;
-    document.querySelectorAll('.instalar-app').forEach((b) => { b.hidden = true; });
-    aviso('Painel instalado como app.');
-});
-document.querySelectorAll('.instalar-app').forEach((b) => b.addEventListener('click', async () => {
-    if (!pedidoInstalacao) return;
-    pedidoInstalacao.prompt();
-    await pedidoInstalacao.userChoice;
-    pedidoInstalacao = null;
-    document.querySelectorAll('.instalar-app').forEach((x) => { x.hidden = true; });
-}));
 
 // Depois de todos os scripts (recursos.js registra as abas dele em CARREGAR).
 document.addEventListener('DOMContentLoaded', async function iniciar() {
