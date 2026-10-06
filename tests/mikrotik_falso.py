@@ -31,6 +31,7 @@ class MikrotikFalso:
             "/file": [],
             "/ip/hotspot/cookie": [],
             "/ip/firewall/nat": [],
+            "/system/scheduler": [],
             "/interface": [
                 {".id": "*1", "name": "ether1", "type": "ether", "running": "true", "disabled": "false", "comment": "internet"},
                 {".id": "*2", "name": "bridge-hotspot", "type": "bridge", "running": "true", "disabled": "false"},
@@ -58,6 +59,8 @@ class MikrotikFalso:
         self.versao_disponivel = "7.16.1"
         self.verificacoes = 0
         self.trafego_aleatorio = False
+        self.aceita_data_iso = True  # False imita RouterOS antigo (data mmm/dd/aaaa)
+        self.baixar = None  # função(url) -> bytes, usada pelo /tool/fetch nos testes
 
     def adicionar(self, tabela: str, dados: dict) -> dict:
         item = {".id": f"*{self.proximo:X}", **dados}
@@ -91,6 +94,19 @@ class MikrotikFalso:
             estado["latest-version"] = self.versao_disponivel
             estado["status"] = "New version is available" if self.versao_disponivel != estado["installed-version"] else "System is already up to date"
             return httpx.Response(200, json=[{"status": estado["status"]}])
+        if pedido.method == "POST" and caminho == "/tool/fetch":
+            try:
+                conteudo = self.baixar(corpo["url"])
+            except Exception as erro:  # noqa: BLE001 - imita "failure: ..." do RouterOS
+                return self._erro(400, f"failure: {erro}")
+            destino = corpo["dst-path"]
+            existente = next((a for a in self.tabelas["/file"] if a["name"] == destino), None)
+            dados = {"name": destino, "type": "file", "size": str(len(conteudo))}
+            if existente:
+                existente.update(dados)
+            else:
+                self.adicionar("/file", dados)
+            return httpx.Response(200, json=[{"status": "finished", "downloaded": str(len(conteudo))}])
         if pedido.method == "POST" and caminho == "/interface/monitor-traffic":
             nomes = (corpo or {}).get("interface", "").split(",")
             if self.trafego_aleatorio:  # só para a demonstração visual
@@ -122,6 +138,8 @@ class MikrotikFalso:
                 antes = corpo.pop("place-before", None)
                 if tabela == "/ip/dns/static" and corpo.get("type") == "NXDOMAIN" and not self.aceita_nxdomain:
                     return self._erro(400, "input does not match any value of type")
+                if tabela == "/system/scheduler" and "-" in corpo.get("start-date", "/") and not self.aceita_data_iso:
+                    return self._erro(400, "invalid value for argument start-date")
                 if tabela == "/file" and any(i["name"] == corpo["name"] for i in itens):
                     return self._erro(400, "failure: file already exists")
                 if antes:

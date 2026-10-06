@@ -2,6 +2,12 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.6.0] - 2026-10-06
+
+### Adicionado
+- Aba "Visitantes": senhas temporárias (1 a 50 de uma vez) válidas por 1 h a 7 dias ou até o fim do dia, com perfil e descrição, impressão dos cartões com "válido até" e "Encerrar agora". A expiração é feita pelo próprio MikroTik: um agendamento (`/system scheduler`, nome `painel-visitante-<usuário>`) desconecta, apaga o cookie, remove o usuário e se apaga na hora marcada, mesmo com o painel fechado.
+- Configurações → "Páginas do hotspot": compara a pasta das páginas da escola (`PASTA_PAGINAS_HOTSPOT`, padrão `..\hotspot`) com a pasta do hotspot no roteador e envia os arquivos diferentes ou todos. O roteador baixa cada arquivo do computador do painel (`/tool fetch`) por um endereço com código temporário. Os arquivos do aviso nunca são enviados e nada é apagado no roteador.
+
 ## [1.5.0] - 2026-10-06
 
 ### Adicionado

@@ -554,6 +554,147 @@ $('#form-dominio-todos').addEventListener('submit', async (evento) => {
     });
 });
 
+// ------------------------------------------------------------------ visitantes
+
+estado.visitantes = [];
+estado.visitantesCriados = [];
+
+function validoAte(iso) {
+    const d = new Date(iso);
+    const hoje = new Date();
+    const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return d.toDateString() === hoje.toDateString() ? 'hoje, ' + hora
+        : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' + hora;
+}
+
+function cartaoVisitante(v) {
+    return { usuario: v.usuario, senha: v.senha,
+        comentario: 'Visitante · válido até ' + validoAte(v.ate) + (v.descricao ? ' · ' + v.descricao : '') };
+}
+
+async function carregarVisitantes() {
+    const [lista] = await Promise.all([api('GET', '/api/visitantes'), carregarPerfis()]);
+    estado.visitantes = lista;
+    const select = $('#perfil-visitantes');
+    const atual = select.value || lembrado('perfil-visitante') || '';
+    select.replaceChildren(...estado.perfis.map((p) => el('option', { value: p, texto: p })));
+    if (estado.perfis.includes(atual)) select.value = atual;
+
+    const corpo = $('#lista-visitantes');
+    corpo.replaceChildren();
+    if (!lista.length) linhaVazia(corpo, 6, 'Nenhum visitante com senha válida.');
+    for (const v of lista) {
+        const situacao = v.expirado
+            ? el('span', { class: 'etiqueta bloqueado', texto: 'Expirado' })
+            : v.conectado ? el('span', { class: 'etiqueta ok', texto: 'Conectado' }) : el('span', { class: 'etiqueta off', texto: 'Válido' });
+        corpo.append(el('tr', { class: v.expirado ? 'inativo' : '' },
+            el('td', {}, el('strong', { class: 'mono', texto: v.usuario })),
+            el('td', { 'data-rotulo': 'Senha', class: 'mono', texto: v.senha }),
+            el('td', { 'data-rotulo': 'Descrição', texto: v.descricao || '—' }),
+            el('td', { 'data-rotulo': 'Válido até', texto: validoAte(v.ate) }),
+            el('td', {}, situacao, v.agendado ? null : el('span', { class: 'etiqueta alerta-amarelo', title: 'Sem agendamento no MikroTik: encerre manualmente', texto: ' sem agendamento' })),
+            el('td', {}, el('div', { class: 'acoes' },
+                el('button', { class: 'botao pequeno cor-roxo', type: 'button', texto: 'Imprimir', onclick: () => imprimir([cartaoVisitante(v)]) }),
+                el('button', { class: 'botao pequeno cor-vermelho', type: 'button', texto: 'Encerrar agora', onclick: () => encerrarVisitante(v) }))),
+        ));
+    }
+}
+
+$('#form-visitantes').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    const form = evento.target;
+    const validade = form.validade.value;
+    const dados = {
+        quantidade: parseInt(form.quantidade.value, 10) || 1,
+        minutos: validade === 'fim' ? null : parseInt(validade, 10),
+        ate_fim_do_dia: validade === 'fim',
+        perfil: form.perfil.value,
+        descricao: form.descricao.value.trim(),
+    };
+    lembrar('perfil-visitante', dados.perfil);
+    await comBotao(form.querySelector('[type=submit]'), async () => {
+        try {
+            const r = await api('POST', '/api/visitantes', dados);
+            estado.visitantesCriados = r.criados;
+            $('#visitantes-criados').hidden = false;
+            $('#resumo-visitantes-criados').textContent = `${r.criados.length} senha(s) válida(s) até ${validoAte(r.criados[0].ate)}.`;
+            $('#lista-visitantes-criados').replaceChildren(...r.criados.map((c) =>
+                el('li', {}, el('span', { texto: 'Usuário ' }), el('b', { class: 'mono', texto: c.usuario }),
+                    el('span', { texto: '  ·  Senha ' }), el('b', { class: 'mono', texto: c.senha }))));
+            aviso(`${r.criados.length} senha(s) de visitante criada(s).`);
+            await carregarVisitantes();
+        } catch (e) { aviso(e.message, true); }
+    });
+});
+
+$('#imprimir-visitantes-criados').addEventListener('click', () => imprimir(estado.visitantesCriados.map(cartaoVisitante)));
+$('#imprimir-visitantes').addEventListener('click', () => imprimir(estado.visitantes.filter((v) => !v.expirado).map(cartaoVisitante)));
+
+async function encerrarVisitante(v) {
+    if (!await confirmar('Encerrar visitante', `Encerrar agora a senha ${v.usuario}? Se estiver conectado, é desconectado.`, 'Encerrar')) return;
+    try {
+        await api('DELETE', '/api/visitantes/' + encodeURIComponent(v.id));
+        aviso(v.usuario + ' encerrado.');
+        await carregarVisitantes();
+    } catch (e) { aviso(e.message, true); }
+}
+
+// ------------------------------------------------------------------ configurações: páginas do hotspot
+
+const NOMES_SITUACAO = { igual: ['Igual', 'ok'], diferente: ['Diferente', 'alerta-amarelo'], falta: ['Falta no roteador', 'bloqueado'], desconhecido: ['Sem tamanho', 'off'] };
+
+function tamanhoArquivo(n) {
+    return n === null || n === undefined ? '—' : bytes(n);
+}
+
+async function carregarPaginas() {
+    const corpo = $('#lista-paginas');
+    let r;
+    try {
+        r = await api('GET', '/api/paginas');
+    } catch (e) {
+        corpo.replaceChildren();
+        linhaVazia(corpo, 4, e.message);
+        $('#resumo-paginas').textContent = '';
+        return;
+    }
+    $('#pastas-paginas').textContent = `Neste computador: ${r.pasta_local}  →  no roteador: ${r.pasta_roteador}/`;
+    corpo.replaceChildren();
+    const ordem = { falta: 0, diferente: 1, desconhecido: 2, igual: 3 };
+    for (const a of r.arquivos.sort((x, y) => ordem[x.situacao] - ordem[y.situacao] || x.arquivo.localeCompare(y.arquivo))) {
+        const [texto, classe] = NOMES_SITUACAO[a.situacao] || [a.situacao, 'off'];
+        corpo.append(el('tr', {},
+            el('td', {}, el('span', { class: 'mono', texto: a.arquivo })),
+            el('td', { 'data-rotulo': 'Neste computador', texto: tamanhoArquivo(a.tamanho_painel) }),
+            el('td', { 'data-rotulo': 'No roteador', texto: tamanhoArquivo(a.tamanho_roteador) }),
+            el('td', {}, el('span', { class: 'etiqueta ' + classe, texto }))));
+    }
+    const pendentes = r.arquivos.filter((a) => a.situacao !== 'igual').length;
+    $('#resumo-paginas').textContent = pendentes
+        ? `${pendentes} de ${r.arquivos.length} arquivo(s) para enviar.`
+        : `Os ${r.arquivos.length} arquivos estão iguais no roteador.`;
+    $('#enviar-paginas').disabled = pendentes === 0;
+}
+
+async function enviarPaginas(todos, botao) {
+    const texto = todos
+        ? 'Enviar TODOS os arquivos das páginas para o roteador, substituindo os que estão lá?'
+        : 'Enviar para o roteador os arquivos diferentes ou que faltam?';
+    if (!await confirmar('Enviar páginas do hotspot', texto, 'Enviar')) return;
+    await comBotao(botao, async () => {
+        try {
+            const r = await api('POST', '/api/paginas/enviar', { todos });
+            if (r.erros.length) aviso(`${r.enviados.length} enviado(s). Erros: ${r.erros.join('; ')}`, true);
+            else aviso(r.enviados.length ? `${r.enviados.length} arquivo(s) enviado(s) ao roteador.` : 'Nada para enviar.');
+            await carregarPaginas();
+        } catch (e) { aviso(e.message, true); }
+    });
+}
+
+$('#comparar-paginas').addEventListener('click', (e) => comBotao(e.target, carregarPaginas));
+$('#enviar-paginas').addEventListener('click', (e) => enviarPaginas(false, e.target));
+$('#enviar-todas-paginas').addEventListener('click', (e) => enviarPaginas(true, e.target));
+
 // ------------------------------------------------------------------ registro das abas
 
 Object.assign(CARREGAR, {
@@ -563,5 +704,6 @@ Object.assign(CARREGAR, {
     aviso: carregarAviso,
     historico: carregarHistorico,
     backup: carregarBackups,
-    config: carregarConfig,
+    config: () => Promise.all([carregarConfig(), carregarPaginas()]),
+    visitantes: carregarVisitantes,
 });

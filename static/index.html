@@ -50,6 +50,7 @@
         <button class="aba" data-aba="usuarios" role="tab">Usuários</button>
         <button class="aba" data-aba="conectados" role="tab">Conectados</button>
         <button class="aba" data-aba="aparelhos" role="tab">Aparelhos</button>
+        <button class="aba" data-aba="visitantes" role="tab">Visitantes</button>
         <button class="aba" data-aba="perfis" role="tab">Perfis e horário</button>
         <button class="aba" data-aba="sites" role="tab">Sites bloqueados</button>
         <button class="aba" data-aba="relatorio" role="tab">Consumo</button>
@@ -152,6 +153,56 @@
                         <th>Tipo</th><th>Descrição</th><th>MAC</th><th>IP</th><th>Situação</th><th></th>
                     </tr></thead>
                     <tbody id="lista-aparelhos"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Visitantes -->
+        <section id="aba-visitantes" class="painel-aba" hidden>
+            <form id="form-visitantes" class="cartao">
+                <h2>Senhas temporárias para visitantes</h2>
+                <p class="dica">Para palestrantes, pais em reunião, técnicos. Cada senha some sozinha na hora marcada: o próprio MikroTik desconecta e apaga o usuário, mesmo com o painel fechado (o relógio do roteador precisa estar certo).</p>
+                <div class="grade-form">
+                    <label>Quantidade
+                        <input name="quantidade" type="number" min="1" max="50" value="1" required>
+                    </label>
+                    <label>Válida por
+                        <select name="validade">
+                            <option value="60">1 hora</option>
+                            <option value="120" selected>2 horas</option>
+                            <option value="240">4 horas</option>
+                            <option value="480">8 horas</option>
+                            <option value="fim">Até o fim do dia (23:59)</option>
+                            <option value="1440">1 dia</option>
+                            <option value="4320">3 dias</option>
+                            <option value="10080">7 dias</option>
+                        </select>
+                    </label>
+                    <label>Perfil
+                        <select name="perfil" id="perfil-visitantes"></select>
+                    </label>
+                    <label>Descrição (opcional)
+                        <input name="descricao" maxlength="80" placeholder="ex.: Reunião de pais">
+                    </label>
+                </div>
+                <div class="janela-botoes">
+                    <button class="botao primario" type="submit">Criar senhas</button>
+                </div>
+            </form>
+            <div id="visitantes-criados" class="cartao destaque-verde" hidden>
+                <h2>Senhas criadas</h2>
+                <p class="dica" id="resumo-visitantes-criados"></p>
+                <ul id="lista-visitantes-criados" class="lista-senhas"></ul>
+                <button id="imprimir-visitantes-criados" class="botao cor-roxo" type="button">Imprimir cartões</button>
+            </div>
+            <div class="barra-acoes">
+                <h2 class="titulo-lista">Visitantes válidos</h2>
+                <button id="imprimir-visitantes" class="botao cor-roxo" type="button">Imprimir todos</button>
+            </div>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr><th>Usuário</th><th>Senha</th><th>Descrição</th><th>Válido até</th><th>Situação</th><th></th></tr></thead>
+                    <tbody id="lista-visitantes"></tbody>
                 </table>
             </div>
         </section>
@@ -332,6 +383,24 @@
                     <button class="botao cor-azul" type="submit">Aplicar em todos</button>
                 </form>
             </div>
+            <div class="cartao">
+                <h2>Páginas do hotspot</h2>
+                <p class="dica">Compara a pasta das páginas da escola neste computador com a pasta do hotspot no MikroTik e envia o que estiver diferente (o roteador baixa os arquivos deste computador). Não envia nem apaga os arquivos do aviso, e não apaga nada no roteador.</p>
+                <p class="dica" id="pastas-paginas"></p>
+                <div class="barra-acoes">
+                    <button id="comparar-paginas" class="botao cor-azul" type="button">Comparar de novo</button>
+                    <button id="enviar-paginas" class="botao cor-verde" type="button">Enviar arquivos diferentes</button>
+                    <button id="enviar-todas-paginas" class="botao cor-laranja" type="button">Enviar todos</button>
+                </div>
+                <p class="resumo" id="resumo-paginas"></p>
+                <div class="tabela-rolagem">
+                    <table class="tabela">
+                        <thead><tr><th>Arquivo</th><th>Neste computador</th><th>No roteador</th><th>Situação</th></tr></thead>
+                        <tbody id="lista-paginas"></tbody>
+                    </table>
+                </div>
+            </div>
+            <h2 class="titulo-lista">Perfis do servidor</h2>
             <div class="tabela-rolagem">
                 <table class="tabela">
                     <thead><tr><th>Perfil do servidor</th><th>Usado por</th><th>Endereço IP</th><th>Endereço (domínio)</th><th></th></tr></thead>

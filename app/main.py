@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import backup, controle, historico, importacao, sistema, util
+from . import backup, controle, historico, importacao, paginas, sistema, util, visitantes
 from .config import APP_VERSION, PASTA_PROJETO, config
 from .mikrotik import EnderecoMikrotik, ErroAutenticacao, ErroConexao, ErroMikrotik, Mikrotik
 from .sessoes import LimiteLogin, Sessao, Sessoes
@@ -51,6 +51,7 @@ app.state.limite_login = LimiteLogin()
 app.state.transport = None  # os testes trocam por um MikroTik falso
 app.state.endereco = EnderecoMikrotik(config.mikrotik_url, config.mikrotik_verificar_tls)
 app.state.atualizacao = sistema.VerificadorAtualizacao()
+app.state.envios = paginas.Envios()
 
 
 # ---------------------------------------------------------------- infraestrutura
@@ -265,6 +266,18 @@ class NovoBloqueio(BaseModel):
 
 class Dominio(BaseModel):
     dominio: str = Field(default="", max_length=200)
+
+
+class NovosVisitantes(BaseModel):
+    quantidade: int = Field(ge=1, le=visitantes.MAX_QUANTIDADE)
+    minutos: int | None = Field(default=None, ge=0, le=visitantes.MAX_DIAS * 24 * 60)
+    ate_fim_do_dia: bool = False
+    perfil: str = Field(default="", max_length=64)
+    descricao: str = Field(default="", max_length=80)
+
+
+class EnviarPaginas(BaseModel):
+    todos: bool = False
 
 
 class Ligar(BaseModel):
@@ -959,6 +972,71 @@ def ver_trafego(interfaces: str = "", mk: Mikrotik = Depends(mikrotik)):
 @app.get("/api/atualizacao")
 def ver_atualizacao(forcar: bool = False, mk: Mikrotik = Depends(mikrotik)):
     return app.state.atualizacao.obter(mk, forcar)
+
+
+# ---------------------------------------------------------------- visitantes (senhas temporárias)
+
+@app.get("/api/visitantes")
+def ver_visitantes(mk: Mikrotik = Depends(mikrotik)):
+    return visitantes.listar(mk)
+
+
+@app.post("/api/visitantes")
+def criar_visitantes(dados: NovosVisitantes, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    if dados.perfil and dados.perfil not in _perfis(mk):
+        raise util.ErroDados("Escolha um perfil que exista no MikroTik.")
+    ate = visitantes.validade(dados.minutos, dados.ate_fim_do_dia)
+    criados = visitantes.criar(mk, dados.quantidade, ate, dados.perfil, dados.descricao)
+    registrar(s, f"criou {len(criados)} senha(s) de visitante válida(s) até {ate:%d/%m/%Y %H:%M}"
+                 + (f" ({dados.descricao.strip()})" if dados.descricao.strip() else ""))
+    return {"criados": criados}
+
+
+@app.delete("/api/visitantes/{item_id}")
+def encerrar_visitante(item_id: str, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    _id_valido(item_id)
+    nome = visitantes.encerrar(mk, item_id)
+    registrar(s, f"encerrou o visitante {nome}")
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------- enviar páginas do hotspot
+
+@app.get("/api/paginas")
+def ver_paginas(mk: Mikrotik = Depends(mikrotik)):
+    pasta = _pasta_hotspot(mk)
+    return {"pasta_local": str(config.pasta_paginas), "pasta_roteador": pasta,
+            "arquivos": paginas.comparar(mk, config.pasta_paginas, pasta)}
+
+
+@app.post("/api/paginas/enviar")
+def enviar_paginas(dados: EnviarPaginas, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    pasta = _pasta_hotspot(mk)
+    locais = paginas.arquivos_locais(config.pasta_paginas)
+    if dados.todos:
+        escolhidos = locais
+    else:
+        situacoes = {a["arquivo"]: a["situacao"] for a in paginas.comparar(mk, config.pasta_paginas, pasta)}
+        escolhidos = {n: p for n, p in locais.items() if situacoes.get(n) != "igual"}
+    if not escolhidos:
+        return {"enviados": [], "erros": []}
+    try:
+        ip = paginas.ip_do_painel(app.state.endereco.url())
+    except OSError as erro:
+        raise ErroMikrotik("Não foi possível descobrir o IP deste computador na rede do MikroTik.", 502) from erro
+    resultado = paginas.enviar(mk, app.state.envios, escolhidos, pasta, f"http://{ip}:{config.porta}")
+    registrar(s, f"enviou {len(resultado['enviados'])} arquivo(s) das páginas do hotspot"
+                 + (f" ({len(resultado['erros'])} com erro)" if resultado["erros"] else ""))
+    return resultado
+
+
+@app.get("/hotspot-envio/{codigo}/{nome:path}")
+def arquivo_para_o_roteador(codigo: str, nome: str):
+    """Endereço que o MikroTik usa no /tool fetch; só vale com o código temporário do envio."""
+    arquivo = app.state.envios.arquivo(codigo, nome)
+    if arquivo is None:
+        return JSONResponse({"erro": "Não encontrado."}, status_code=404)
+    return FileResponse(arquivo, media_type="application/octet-stream")
 
 
 # ---------------------------------------------------------------- páginas

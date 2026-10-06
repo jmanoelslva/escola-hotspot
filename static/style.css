@@ -296,6 +296,14 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
 .chave input:focus-visible + .chave-trilho { box-shadow: 0 0 0 3px rgba(13, 74, 125, .3); }
 .chave input:disabled + .chave-trilho { opacity: .6; cursor: wait; }
 
+/* Visitantes e páginas */
+.grade-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0 14px; }
+.destaque-verde { border-color: #9fd3ae; background: #f3fbf5; }
+.lista-senhas { margin: 0 0 12px; padding-left: 18px; }
+.lista-senhas li { margin-bottom: 4px; }
+.lista-senhas b { font-size: 15px; }
+.titulo-lista { margin: 8px 0 0; flex: 1; }
+
 /* Celular: tabela vira lista de cartões */
 @media (max-width: 760px) {
     .topo-texto span { display: none; }
