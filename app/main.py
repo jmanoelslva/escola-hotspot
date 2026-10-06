@@ -908,6 +908,19 @@ def modelo_csv():
 app.mount("/static", StaticFiles(directory=PASTA_STATIC), name="static")
 
 
+@app.get("/sw.js")
+def service_worker():
+    # Na raiz para valer para o site todo (escopo "/"); sem cache para atualizar logo.
+    return FileResponse(PASTA_STATIC / "sw.js", media_type="text/javascript",
+                        headers={"Cache-Control": "no-cache"})
+
+
+@app.get("/manifest.webmanifest")
+def manifesto():
+    return FileResponse(PASTA_STATIC / "manifest.webmanifest", media_type="application/manifest+json",
+                        headers={"Cache-Control": "no-cache"})
+
+
 @app.get("/")
 def inicio():
     return FileResponse(PASTA_STATIC / "index.html", headers={"Cache-Control": "no-cache"})

@@ -243,6 +243,8 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
 .dias label { display: inline-flex; align-items: center; gap: 4px; margin: 0; font-weight: 400; }
 #confirmar-texto { white-space: pre-line; }
 
+.espaco-acima { margin-top: 10px; }
+
 /* Celular: tabela vira lista de cartões */
 @media (max-width: 760px) {
     .topo-texto span { display: none; }

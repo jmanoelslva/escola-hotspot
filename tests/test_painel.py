@@ -262,3 +262,15 @@ def test_mikrotik_fora_do_ar(cliente, mk):
     r = cliente.post("/api/login", json={"usuario": USUARIO, "senha": SENHA})
     assert r.status_code == 502
     assert "nem por HTTPS nem por HTTP" in r.json()["erro"]
+
+
+def test_arquivos_do_app(cliente):
+    sw = cliente.get("/sw.js")
+    assert sw.status_code == 200 and "javascript" in sw.headers["content-type"]
+    manifesto = cliente.get("/manifest.webmanifest")
+    assert manifesto.headers["content-type"].startswith("application/manifest+json")
+    dados = manifesto.json()
+    assert dados["display"] == "standalone" and dados["start_url"] == "/"
+    for icone in dados["icons"]:
+        assert cliente.get(icone["src"]).status_code == 200
+    assert cliente.get("/static/icone.ico").status_code == 200

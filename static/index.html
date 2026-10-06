@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#0d4a7d">
     <title>Painel do Hotspot</title>
-    <link rel="icon" href="/static/logo.png">
+    <link rel="icon" href="/static/icone.ico" sizes="any">
+    <link rel="icon" href="/static/icone-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="/static/icone-192.png">
+    <link rel="manifest" href="/manifest.webmanifest">
     <link rel="stylesheet" href="/static/style.css">
     <script src="/static/app.js" defer></script>
     <script src="/static/recursos.js" defer></script>
@@ -26,6 +29,7 @@
             <input name="senha" type="password" autocomplete="current-password" required>
         </label>
         <button class="botao primario largo" type="submit">Entrar</button>
+        <button class="botao largo instalar-app espaco-acima" type="button" hidden>Instalar como app</button>
     </form>
 </main>
 
@@ -40,6 +44,7 @@
         <div class="topo-usuario">
             <span id="usuario-logado"></span>
             <span id="tipo-conexao" class="conexao" hidden></span>
+            <button class="botao discreto instalar-app" type="button" hidden>Instalar app</button>
             <button id="sair" class="botao discreto" type="button">Sair</button>
         </div>
     </header>

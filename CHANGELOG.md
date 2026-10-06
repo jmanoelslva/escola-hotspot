@@ -2,6 +2,12 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.2.0] - 2026-10-06
+
+### Adicionado
+- Painel como app: o `instalar.bat` cria os atalhos "Painel do Hotspot" na Área de Trabalho e no Menu Iniciar (todos os usuários), que abrem o painel numa janela própria do Edge ou do Chrome, com o ícone da escola (`criar-atalhos.ps1`).
+- Instalável como app (PWA) no computador do painel (`http://localhost`): manifesto, ícones, service worker e botão "Instalar app".
+
 ## [1.1.2] - 2026-10-06
 
 ### Adicionado

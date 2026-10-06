@@ -23,7 +23,7 @@ if defined PYEXE goto temPython
 if exist "%ProgramFiles%\Python313\python.exe" set "PYEXE=%ProgramFiles%\Python313\python.exe"
 if defined PYEXE goto temPython
 
-echo [1/5] Python nao encontrado. Instalando o Python 3.13 pelo winget...
+echo [1/6] Python nao encontrado. Instalando o Python 3.13 pelo winget...
 where winget >nul 2>&1
 if errorlevel 1 goto semWinget
 winget install -e --id Python.Python.3.13 --scope machine --silent --accept-package-agreements --accept-source-agreements
@@ -31,10 +31,10 @@ if exist "%ProgramFiles%\Python313\python.exe" set "PYEXE=%ProgramFiles%\Python3
 if not defined PYEXE goto semPython
 
 :temPython
-echo [1/5] Python: %PYEXE%
+echo [1/6] Python: %PYEXE%
 
 rem ---- 2. Ambiente e bibliotecas
-echo [2/5] Instalando as bibliotecas...
+echo [2/6] Instalando as bibliotecas...
 if not exist ".venv\Scripts\python.exe" "%PYEXE%" -m venv .venv
 if not exist ".venv\Scripts\python.exe" goto erro
 ".venv\Scripts\python.exe" -m pip install --disable-pip-version-check -q -r requirements.txt
@@ -44,10 +44,10 @@ rem ---- 3. Configuracao (so na primeira vez; reinstalar mantem o .env)
 if not exist ".env" copy ".env.example" ".env" >nul
 set "PORTA=8080"
 for /f "usebackq tokens=1,* delims==" %%a in (".env") do if /i "%%a"=="PORTA" set "PORTA=%%b"
-echo [3/5] Configuracao em .env (porta %PORTA%)
+echo [3/6] Configuracao em .env (porta %PORTA%)
 
 rem ---- 4. Iniciar com o Windows e liberar no firewall
-echo [4/5] Criando a tarefa "Painel do Hotspot" e liberando a porta %PORTA% no firewall...
+echo [4/6] Criando a tarefa "Painel do Hotspot" e liberando a porta %PORTA% no firewall...
 schtasks /end /tn "Painel do Hotspot" >nul 2>&1
 powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort %PORTA% -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }" >nul 2>&1
 schtasks /create /tn "Painel do Hotspot" /tr "\"%~dp0servico.bat\"" /sc onstart /ru SYSTEM /rl HIGHEST /f >nul
@@ -56,8 +56,12 @@ netsh advfirewall firewall delete rule name="Painel do Hotspot" >nul 2>&1
 netsh advfirewall firewall add rule name="Painel do Hotspot" dir=in action=allow protocol=TCP localport=%PORTA% remoteip=localsubnet >nul
 if errorlevel 1 goto erro
 
-rem ---- 5. Iniciar agora
-echo [5/5] Iniciando o painel...
+rem ---- 5. Atalhos de app na Area de Trabalho e no Menu Iniciar
+echo [5/6] Criando os atalhos "Painel do Hotspot"...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0criar-atalhos.ps1" -Porta %PORTA%
+
+rem ---- 6. Iniciar agora
+echo [6/6] Iniciando o painel...
 schtasks /run /tn "Painel do Hotspot" >nul
 set /a TENTATIVAS=0
 :esperar
@@ -75,10 +79,11 @@ for /f "delims=" %%i in ('powershell -NoProfile -Command "(Get-NetIPConfiguratio
 echo.
 echo ==== Pronto! ====
 echo O painel ja esta rodando e vai iniciar sozinho sempre que o computador ligar.
+echo Para abrir: atalho "Painel do Hotspot" na Area de Trabalho ou no Menu Iniciar.
 echo   Neste computador:     http://localhost:%PORTA%
 if defined IPPC echo   Em outro aparelho:    http://%IPPC%:%PORTA%
 echo Entre com um usuario admin do MikroTik.
-start "" "http://localhost:%PORTA%"
+if exist "%PUBLIC%\Desktop\Painel do Hotspot.lnk" (start "" "%PUBLIC%\Desktop\Painel do Hotspot.lnk") else (start "" "http://localhost:%PORTA%")
 echo.
 pause
 exit /b 0

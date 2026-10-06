@@ -24,12 +24,14 @@ Cada pessoa entra com um **usuário admin do próprio MikroTik**. O painel não 
    - instala as bibliotecas;
    - cria o `.env` já apontando para o MikroTik `192.168.88.1`;
    - cria a tarefa agendada **"Painel do Hotspot"**, que inicia o painel sempre que o computador liga (mesmo sem ninguém logado);
+   - cria os atalhos **"Painel do Hotspot"** na Área de Trabalho e no Menu Iniciar, que abrem o painel como um programa (janela própria do Edge, sem barra de endereço);
    - libera a porta 8080 no Firewall do Windows, só para a rede local;
    - inicia o painel e abre o navegador.
 3. Entre com um **usuário admin do MikroTik**.
 
 Outros computadores da rede acessam por `http://IP-DO-COMPUTADOR:8080` (o instalador mostra o endereço no final).
 
+- **Instalar como app:** no computador do painel, o Chrome e o Edge também oferecem "Instalar app" (botão no painel ou ícone na barra de endereço). Em outros computadores e celulares, a instalação como app exige o painel em HTTPS; por HTTP dá para usar normalmente pelo navegador ou criar um atalho.
 - **Atualizar:** copie os arquivos novos por cima e rode o `instalar.bat` de novo (ele mantém o `.env`).
 - **Desinstalar o início automático:** `remover-inicio-automatico.bat` como administrador.
 - **Log do painel:** `dados\painel.log`; ações de cada usuário: `dados\acoes.log`.
