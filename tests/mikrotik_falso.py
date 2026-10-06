@@ -22,7 +22,10 @@ class MikrotikFalso:
             "/ip/hotspot/host": [],
             "/ip/hotspot": [{".id": "*1", "name": "hotspot1"}],
             "/ip/dhcp-server/lease": [],
-            "/ip/hotspot/profile": [{".id": "*1", "name": "hsprof1", "html-directory": "hotspot"}],
+            "/ip/hotspot/profile": [
+                {".id": "*1", "name": "hsprof1", "html-directory": "hotspot", "dns-name": "wifi.pmapg.internal", "hotspot-address": "192.168.130.1"},
+                {".id": "*2", "name": "default", "html-directory": "hotspot", "dns-name": "", "hotspot-address": "0.0.0.0", "default": "true"},
+            ],
             "/ip/firewall/filter": [],
             "/ip/dns/static": [],
             "/file": [],

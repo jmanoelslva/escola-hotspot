@@ -131,11 +131,13 @@ input:focus, select:focus { outline: 0; border-color: var(--azul); box-shadow: 0
     border-bottom: 1px solid var(--borda);
     overflow-x: auto;
     scrollbar-width: none;
+    flex-wrap: wrap;
+    row-gap: 0;
 }
 .abas::-webkit-scrollbar { display: none; }
-.aba:first-child { margin-left: -14px; }
+.aba:first-child { margin-left: -10px; }
 .aba {
-    padding: 12px 14px;
+    padding: 11px 10px;
     font: inherit;
     font-weight: 600;
     color: var(--suave);
@@ -297,6 +299,7 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
 /* Celular: tabela vira lista de cartões */
 @media (max-width: 760px) {
     .topo-texto span { display: none; }
+    .abas { flex-wrap: nowrap; }
     #usuario-logado { display: none; }
     .tabela thead { display: none; }
     .tabela, .tabela tbody, .tabela tr, .tabela td { display: block; width: 100%; }

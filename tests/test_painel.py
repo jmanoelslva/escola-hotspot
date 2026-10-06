@@ -234,6 +234,8 @@ def test_validar_tempo():
 def test_pagina_inicial_e_modelo(cliente):
     r = cliente.get("/")
     assert r.status_code == 200 and "Painel do Hotspot" in r.text
+    from app.config import APP_VERSION
+    assert f"/static/app.js?v={APP_VERSION}" in r.text and "__VERSAO__" not in r.text
     assert "default-src 'self'" in r.headers["content-security-policy"]
     assert cliente.get("/modelo.csv").content.startswith(b"\xef\xbb\xbfusuario;senha")
 

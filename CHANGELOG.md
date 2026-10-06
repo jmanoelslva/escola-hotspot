@@ -2,6 +2,16 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.5.0] - 2026-10-06
+
+### Adicionado
+- Aba "Configurações" com o endereço (dns-name) do hotspot: troca por perfil de servidor ou em todos os perfis em uso. Recusa `.local` e domínios em que o navegador obriga HTTPS (`.dev`, `.app` etc.) e avisa quando o nome é de um domínio da internet.
+
+### Alterado
+- CSS e scripts carregados com a versão no endereço: depois de atualizar, o navegador baixa os arquivos novos sozinho (sem Ctrl+F5).
+- Abas mais compactas; no computador quebram em duas linhas quando não cabem.
+- Comentário das regras de forçar DNS sem acento.
+
 ## [1.4.0] - 2026-10-06
 
 ### Adicionado

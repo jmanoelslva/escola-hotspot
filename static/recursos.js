@@ -490,6 +490,70 @@ $('#arquivo-backup').addEventListener('change', async (evento) => {
     } catch (e) { aviso(e.message, true); }
 });
 
+// ------------------------------------------------------------------ configurações: endereço do hotspot
+
+estado.perfisServidor = [];
+
+async function carregarConfig() {
+    estado.perfisServidor = await api('GET', '/api/hotspot/perfis');
+    const corpo = $('#lista-perfis-servidor');
+    corpo.replaceChildren();
+    if (!estado.perfisServidor.length) linhaVazia(corpo, 5, 'Nenhum perfil de servidor de hotspot.');
+    for (const p of estado.perfisServidor) {
+        const campo = el('input', { value: p.dominio, maxlength: '200', spellcheck: 'false', autocapitalize: 'off',
+            placeholder: '(usa o IP)', 'aria-label': 'Endereço do perfil ' + p.nome });
+        const salvar = el('button', { class: 'botao pequeno cor-azul', type: 'button', texto: 'Salvar',
+            onclick: () => comBotao(salvar, () => salvarDominio(p, campo.value)) });
+        campo.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); salvar.click(); } });
+        corpo.append(el('tr', { class: p.servidores.length ? '' : 'inativo' },
+            el('td', {}, el('strong', { texto: p.nome }), p.padrao ? el('span', { class: 'etiqueta off', texto: ' padrão' }) : null),
+            el('td', { 'data-rotulo': 'Usado por', texto: p.servidores.join(', ') || 'nenhum servidor' }),
+            el('td', { 'data-rotulo': 'Endereço IP', class: 'mono', texto: p.endereco || '—' }),
+            el('td', { 'data-rotulo': 'Endereço' }, campo),
+            el('td', {}, el('div', { class: 'acoes' }, salvar)),
+        ));
+    }
+    const emUso = estado.perfisServidor.find((p) => p.servidores.length && p.dominio);
+    const todos = $('#form-dominio-todos').dominio;
+    if (emUso && !todos.value) todos.placeholder = emUso.dominio;
+}
+
+async function salvarDominio(perfil, dominio, silencioso) {
+    try {
+        const r = await api('PATCH', '/api/hotspot/perfis/' + encodeURIComponent(perfil.id), { dominio });
+        if (!silencioso) {
+            aviso(`Perfil ${perfil.nome}: ` + (r.dominio ? `endereço agora é ${r.dominio}.` : 'usando o IP.') + (r.aviso ? ' ' + r.aviso : ''), !!r.aviso);
+            await carregarConfig();
+        }
+        return r;
+    } catch (e) {
+        aviso(e.message, true);
+        throw e;
+    }
+}
+
+$('#form-dominio-todos').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    const form = evento.target;
+    const dominio = form.dominio.value.trim();
+    const alvos = estado.perfisServidor.filter((p) => p.servidores.length);
+    if (!alvos.length) { aviso('Nenhum perfil está em uso por um servidor de hotspot.', true); return; }
+    const texto = dominio
+        ? `Trocar o endereço do hotspot para "${dominio}" nos perfis ${alvos.map((p) => p.nome).join(', ')}?`
+        : `Tirar o domínio dos perfis ${alvos.map((p) => p.nome).join(', ')} (o hotspot passa a usar o IP)?`;
+    if (!await confirmar('Endereço do hotspot', texto, 'Aplicar')) return;
+    await comBotao(form.querySelector('[type=submit]'), async () => {
+        let ultimo = null;
+        try {
+            for (const p of alvos) ultimo = await salvarDominio(p, dominio, true);
+        } catch (e) { await carregarConfig(); return; }
+        aviso('Endereço do hotspot atualizado' + (ultimo && ultimo.dominio ? ` para ${ultimo.dominio}.` : ' (usando o IP).')
+            + (ultimo && ultimo.aviso ? ' ' + ultimo.aviso : ''), !!(ultimo && ultimo.aviso));
+        form.reset();
+        await carregarConfig();
+    });
+});
+
 // ------------------------------------------------------------------ registro das abas
 
 Object.assign(CARREGAR, {
@@ -499,4 +563,5 @@ Object.assign(CARREGAR, {
     aviso: carregarAviso,
     historico: carregarHistorico,
     backup: carregarBackups,
+    config: carregarConfig,
 });

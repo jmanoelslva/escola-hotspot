@@ -6,10 +6,10 @@
     <meta name="theme-color" content="#0d4a7d">
     <title>Painel do Hotspot</title>
     <link rel="icon" href="/static/icone.ico" sizes="any">
-    <link rel="stylesheet" href="/static/style.css">
-    <script src="/static/app.js" defer></script>
-    <script src="/static/recursos.js" defer></script>
-    <script src="/static/geral.js" defer></script>
+    <link rel="stylesheet" href="/static/style.css?v=__VERSAO__">
+    <script src="/static/app.js?v=__VERSAO__" defer></script>
+    <script src="/static/recursos.js?v=__VERSAO__" defer></script>
+    <script src="/static/geral.js?v=__VERSAO__" defer></script>
 </head>
 <body>
 
@@ -57,6 +57,7 @@
         <button class="aba" data-aba="importar" role="tab">Importar</button>
         <button class="aba" data-aba="historico" role="tab">Histórico</button>
         <button class="aba" data-aba="backup" role="tab">Backup</button>
+        <button class="aba" data-aba="config" role="tab">Configurações</button>
     </nav>
 
     <main class="conteudo">
@@ -315,6 +316,26 @@
                 <table class="tabela">
                     <thead><tr><th>Data</th><th>Usuários</th><th>Aparelhos</th><th>Perfis</th><th>Sites</th><th></th></tr></thead>
                     <tbody id="lista-backups"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Configurações -->
+        <section id="aba-config" class="painel-aba" hidden>
+            <div class="cartao">
+                <h2>Endereço do hotspot</h2>
+                <p class="dica">É o nome que aparece na barra do navegador na tela de login do Wi-Fi (ex.: <strong>wifi.pmapg.internal</strong>). Use um nome terminado em <strong>.internal</strong>, que é reservado para redes internas. Deixe em branco para o hotspot usar o próprio IP. Depois de trocar, quem tinha login automático (cookie) precisa entrar de novo uma vez.</p>
+                <form id="form-dominio-todos" class="linha-form">
+                    <label class="campo-largo">Novo endereço para todos os perfis em uso
+                        <input name="dominio" maxlength="200" placeholder="wifi.pmapg.internal" spellcheck="false" autocapitalize="off">
+                    </label>
+                    <button class="botao cor-azul" type="submit">Aplicar em todos</button>
+                </form>
+            </div>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr><th>Perfil do servidor</th><th>Usado por</th><th>Endereço IP</th><th>Endereço (domínio)</th><th></th></tr></thead>
+                    <tbody id="lista-perfis-servidor"></tbody>
                 </table>
             </div>
         </section>

@@ -347,3 +347,32 @@ def test_forcar_dns_sem_hotspot(logado, mk):
 def test_forcar_dns_avisa_dns_remoto_desligado(logado, mk):
     mk.objetos["/ip/dns"]["allow-remote-requests"] = "false"
     assert logado.get("/api/forcar-dns").json()["dns_remoto"] is False
+
+
+# ------------------------------------------------------------- endereço do hotspot
+
+def test_listar_perfis_do_servidor(logado):
+    perfis = logado.get("/api/hotspot/perfis").json()
+    assert perfis[0] == {"id": "*1", "nome": "hsprof1", "dominio": "wifi.pmapg.internal", "endereco": "192.168.130.1",
+                         "pasta": "hotspot", "servidores": ["hotspot1"], "padrao": False}
+    assert perfis[1]["nome"] == "default" and perfis[1]["endereco"] == "" and perfis[1]["servidores"] == []
+
+
+def test_mudar_dominio(logado, mk):
+    r = logado.patch("/api/hotspot/perfis/*1", json={"dominio": "  Login.Escola.Internal. "})
+    assert r.json() == {"dominio": "login.escola.internal", "aviso": ""}
+    assert mk.tabelas["/ip/hotspot/profile"][0]["dns-name"] == "login.escola.internal"
+
+    r = logado.patch("/api/hotspot/perfis/*1", json={"dominio": "wifi.escola.com.br"})
+    assert r.status_code == 200 and "domínio da internet" in r.json()["aviso"]
+
+    r = logado.patch("/api/hotspot/perfis/*1", json={"dominio": ""})  # volta a usar o IP
+    assert r.json()["dominio"] == "" and mk.tabelas["/ip/hotspot/profile"][0]["dns-name"] == ""
+
+
+def test_dominios_recusados(logado, mk):
+    for errado, trecho in (("wifi.escola.local", ".local"), ("wifi.escola.dev", "HTTPS"),
+                           ("wifi.app", "HTTPS"), ("wifi escola", "inválido"), ("http://x.internal/", "inválido")):
+        r = logado.patch("/api/hotspot/perfis/*1", json={"dominio": errado})
+        assert r.status_code == 400 and trecho in r.json()["erro"], errado
+    assert mk.tabelas["/ip/hotspot/profile"][0]["dns-name"] == "wifi.pmapg.internal"

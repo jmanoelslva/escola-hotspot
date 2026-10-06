@@ -9,7 +9,7 @@ from logging.handlers import RotatingFileHandler
 from typing import Literal
 
 from fastapi import Depends, FastAPI, File, Request, Response, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -261,6 +261,10 @@ class DadosHorario(BaseModel):
 class NovoBloqueio(BaseModel):
     dominio: str = Field(max_length=300)
     motivo: str = Field(default="", max_length=100)
+
+
+class Dominio(BaseModel):
+    dominio: str = Field(default="", max_length=200)
 
 
 class Ligar(BaseModel):
@@ -774,6 +778,22 @@ def mudar_forcar_dns(dados: Ligar, mk: Mikrotik = Depends(mikrotik), s: Sessao =
     return controle.estado_forcar_dns(mk)
 
 
+@app.get("/api/hotspot/perfis")
+def ver_perfis_servidor(mk: Mikrotik = Depends(mikrotik)):
+    return controle.perfis_servidor(mk)
+
+
+@app.patch("/api/hotspot/perfis/{item_id}")
+def mudar_dominio(item_id: str, dados: Dominio, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    _id_valido(item_id)
+    dominio, aviso_dominio = controle.validar_dominio_hotspot(dados.dominio)
+    atual = mk.obter(controle.PERFIS_SERVIDOR, item_id)
+    mk.alterar(controle.PERFIS_SERVIDOR, item_id, {"dns-name": dominio})
+    registrar(s, f"mudou o endereço do hotspot no perfil {atual.get('name')}: "
+                 f"{atual.get('dns-name') or '(IP)'} -> {dominio or '(IP)'}")
+    return {"dominio": dominio, "aviso": aviso_dominio}
+
+
 # ---------------------------------------------------------------- relatório de consumo
 
 def _estado_relatorio() -> dict:
@@ -955,4 +975,7 @@ app.mount("/static", StaticFiles(directory=PASTA_STATIC), name="static")
 
 @app.get("/")
 def inicio():
-    return FileResponse(PASTA_STATIC / "index.html", headers={"Cache-Control": "no-cache"})
+    # A versão no endereço do CSS e dos scripts faz o navegador baixar os
+    # arquivos novos depois de cada atualização (sem precisar de Ctrl+F5).
+    html = (PASTA_STATIC / "index.html").read_text(encoding="utf-8").replace("__VERSAO__", APP_VERSION)
+    return HTMLResponse(html, headers={"Cache-Control": "no-cache"})

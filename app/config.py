@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-APP_VERSION = "1.4.0"
+APP_VERSION = "1.5.0"
 
 PASTA_PROJETO = Path(__file__).resolve().parent.parent
 

@@ -13,6 +13,7 @@ Aplicação web para administrar o hotspot do MikroTik (RouterOS 7) da escola, s
 - **Importar:** cadastrar uma turma inteira por planilha (.xlsx ou .csv). Senhas em branco são criadas pelo painel.
 - **Imprimir credenciais:** cartões com usuário e senha (3 por linha numa folha A4).
 - **Histórico:** quem fez o quê e quando, com busca e filtro por operador e período.
+- **Configurações:** endereço (domínio) da tela de login do hotspot, ex.: `wifi.pmapg.internal`.
 - **Backup:** uma cópia automática por dia (últimas 30) e restauração do que faltar no MikroTik.
 
 Cada pessoa entra com um **usuário admin do próprio MikroTik**. O painel não guarda senhas em disco: a senha fica na memória só enquanto a sessão está aberta (60 minutos sem uso, por padrão). As alterações ficam registradas em `dados\acoes.log` e no log do MikroTik.

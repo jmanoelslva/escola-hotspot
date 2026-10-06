@@ -13,6 +13,7 @@ DNS = "/ip/dns"
 DNS_ESTATICO = "/ip/dns/static"
 SERVIDORES_HOTSPOT = "/ip/hotspot"
 PREFIXO_FORCAR_DNS = "painel-forcar-dns"
+PERFIS_SERVIDOR = "/ip/hotspot/profile"
 
 PREFIXO_HORARIO = "painel-horario:"
 PREFIXO_LISTA = "painel-"
@@ -289,3 +290,47 @@ def aplicar_forcar_dns(mk: Mikrotik, ativo: bool) -> None:
         desejado = "false" if ativo else "true"
         if regra.get("disabled", "false") != desejado:
             mk.alterar(NAT, regra[".id"], {"disabled": desejado})
+
+
+# ------------------------------------------------------------------ endereço (dns-name) do hotspot
+
+_NOME_HOST = re.compile(r"^(?=.{1,200}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{0,62}$")
+# Domínios em que o navegador obriga HTTPS (lista HSTS embutida): o login por HTTP não abriria.
+TLDS_SO_HTTPS = {"app", "dev", "page", "new", "day", "foo", "bank", "mov", "esq", "insurance", "meme", "nexus", "phd", "prof", "boo", "zip"}
+# Nomes reservados para redes internas, que nunca existirão na internet.
+TLDS_INTERNOS = {"internal", "lan", "home.arpa", "intranet", "corp", "private"}
+
+
+def validar_dominio_hotspot(valor: str) -> tuple[str, str]:
+    """Devolve (domínio normalizado, aviso). Vazio = o hotspot usa o próprio IP."""
+    dominio = (valor or "").strip().lower().rstrip(".")
+    if not dominio:
+        return "", ""
+    if not _NOME_HOST.match(dominio):
+        raise util.ErroDados("Domínio inválido. Exemplo: wifi.escola.internal")
+    tld = dominio.rsplit(".", 1)[-1]
+    if tld == "local":
+        raise util.ErroDados("Não use .local: ele é usado por impressoras e aparelhos Apple (mDNS) e causa falhas. Prefira .internal.")
+    if tld in TLDS_SO_HTTPS:
+        raise util.ErroDados(f"Não use .{tld}: os navegadores obrigam HTTPS nesse domínio e a tela de login não abriria. Prefira .internal.")
+    interno = tld in TLDS_INTERNOS or dominio.endswith(".home.arpa")
+    aviso = "" if interno else (f"\".{tld}\" é um domínio da internet: se esse nome existir lá fora, pode haver conflito. "
+                                 "Para uso só interno, prefira .internal.")
+    return dominio, aviso
+
+
+def perfis_servidor(mk: Mikrotik) -> list[dict]:
+    servidores = mk.listar(SERVIDORES_HOTSPOT)
+    lista = []
+    for p in mk.listar(PERFIS_SERVIDOR):
+        nome = p.get("name", "")
+        lista.append({
+            "id": p.get(".id"),
+            "nome": nome,
+            "dominio": p.get("dns-name", ""),
+            "endereco": "" if p.get("hotspot-address") in (None, "", "0.0.0.0") else p.get("hotspot-address"),
+            "pasta": p.get("html-directory", ""),
+            "servidores": sorted(s.get("name", "") for s in servidores if s.get("profile", "default") == nome),
+            "padrao": util.sim(p.get("default")) or nome == "default",
+        })
+    return sorted(lista, key=lambda p: (not p["servidores"], p["padrao"], p["nome"].lower()))
