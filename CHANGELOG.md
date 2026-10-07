@@ -2,6 +2,12 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.9.1] - 2026-10-06
+
+### Alterado
+- Botões com cores leves (fundo claro, texto e borda na cor da função: azul principal, verde liberar/ativar, vermelho excluir/encerrar, laranja alterar/desativar, roxo imprimir, verde-azulado pausar, cinza cancelar). Só o "Entrar" e o botão final da janela de confirmação continuam cheios.
+- Cada aba do topo tem a sua cor (Início azul, Usuários verde, Conectados verde-azulado, Aparelhos laranja, Regras de acesso roxo, Sistema cinza); a aba aberta e a subaba selecionada ganham fundo claro nessa cor.
+
 ## [1.9.0] - 2026-10-06
 
 ### Alterado

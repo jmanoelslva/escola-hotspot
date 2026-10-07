@@ -56,18 +56,30 @@ input:focus, select:focus { outline: 0; border-color: var(--azul); box-shadow: 0
     padding: 0 14px;
     font: inherit;
     font-weight: 600;
-    color: var(--azul);
-    background: var(--branco);
-    border: 1px solid var(--borda);
+    /* Cores leves: fundo claro, texto e borda na cor (cinza = neutro). */
+    --cor: var(--suave);
+    --cor-fundo: #f3f5f8;
+    --cor-fundo-hover: #e6eaef;
+    --cor-borda: var(--borda);
+    color: var(--cor);
+    background: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
     border-radius: 8px;
     cursor: pointer;
     white-space: nowrap;
 }
-.botao:hover { background: var(--azul-claro); }
-.botao.primario { color: #fff; background: var(--azul); border-color: var(--azul); }
-.botao.primario:hover { background: var(--azul-escuro); }
-.botao.perigo { color: #fff; background: var(--vermelho); border-color: var(--vermelho); }
-.botao.perigo:hover { background: var(--vermelho-escuro); }
+.botao:hover { background: var(--cor-fundo-hover); }
+.botao.primario, .botao.cor-azul { --cor: var(--azul); --cor-fundo: #e7eff7; --cor-fundo-hover: #d3e2f0; --cor-borda: #b9cfe4; }
+.botao.cor-verde { --cor: #1e6b30; --cor-fundo: #e6f4ea; --cor-fundo-hover: #d2ebd9; --cor-borda: #b7dcc1; }
+.botao.perigo, .botao.cor-vermelho { --cor: #a3181d; --cor-fundo: #fdeaea; --cor-fundo-hover: #f9d6d7; --cor-borda: #f2bcbe; }
+.botao.cor-laranja { --cor: #9a4708; --cor-fundo: #fdf0e3; --cor-fundo-hover: #fae0c6; --cor-borda: #f3cfa8; }
+.botao.cor-roxo { --cor: #5b21b6; --cor-fundo: #f1ebfd; --cor-fundo-hover: #e4d9fb; --cor-borda: #d6c6f7; }
+.botao.cor-teal { --cor: #0f5f59; --cor-fundo: #e3f4f2; --cor-fundo-hover: #cdeae6; --cor-borda: #b3dfd9; }
+/* Cheio só no "Entrar" e no botão final da confirmação (não clicar sem querer). */
+.botao.cheio.primario { color: #fff; background: var(--azul); border-color: var(--azul); }
+.botao.cheio.primario:hover { background: var(--azul-escuro); }
+.botao.cheio.perigo { color: #fff; background: var(--vermelho); border-color: var(--vermelho); }
+.botao.cheio.perigo:hover { background: var(--vermelho-escuro); }
 .botao.discreto { background: transparent; color: #fff; border-color: rgba(255, 255, 255, .4); }
 .botao.discreto:hover { background: rgba(255, 255, 255, .12); }
 .botao.pequeno { height: 30px; padding: 0 10px; font-size: 13px; }
@@ -147,7 +159,17 @@ input:focus, select:focus { outline: 0; border-color: var(--azul); box-shadow: 0
     cursor: pointer;
     white-space: nowrap;
 }
-.aba.ativa { color: var(--azul); border-bottom-color: var(--azul); }
+.aba.ativa { color: var(--cor); background: var(--cor-fundo); border-bottom-color: var(--cor); border-radius: 6px 6px 0 0; }
+.aba:hover { color: var(--cor); }
+
+/* Cor de cada aba (vale também para as subabas dela) */
+[data-grupo] { --cor: var(--azul); --cor-fundo: #e7eff7; --cor-borda: #b9cfe4; }
+[data-grupo=usuarios] { --cor: #1e6b30; --cor-fundo: #e6f4ea; --cor-borda: #7fbf8f; }
+[data-grupo=conectados] { --cor: #0f5f59; --cor-fundo: #e3f4f2; --cor-borda: #7cc3ba; }
+[data-grupo=aparelhos] { --cor: #9a4708; --cor-fundo: #fdf0e3; --cor-borda: #e8b27a; }
+[data-grupo=regras] { --cor: #5b21b6; --cor-fundo: #f1ebfd; --cor-borda: #b9a0ef; }
+[data-grupo=sistema] { --cor: var(--suave); --cor-fundo: #eef0f3; --cor-borda: #aab4bf; }
+.aba[data-grupo] { color: var(--cor); }
 
 .subabas {
     display: flex;
@@ -167,8 +189,8 @@ input:focus, select:focus { outline: 0; border-color: var(--azul); box-shadow: 0
     cursor: pointer;
     white-space: nowrap;
 }
-.subaba:hover { color: var(--azul); border-color: var(--azul); }
-.subaba.ativa { color: #fff; background: var(--azul); border-color: var(--azul); }
+.subaba:hover { color: var(--cor); border-color: var(--cor-borda); }
+.subaba.ativa { color: var(--cor); background: var(--cor-fundo); border-color: var(--cor-borda); }
 
 .conteudo { padding: 16px; max-width: 1200px; margin: 0 auto; }
 
@@ -205,19 +227,6 @@ input:focus, select:focus { outline: 0; border-color: var(--azul); box-shadow: 0
 .tabela td strong { overflow-wrap: anywhere; }
 .tabela td.mono { white-space: nowrap; }
 .tabela td:has(> .acoes) { width: 1%; white-space: nowrap; }
-/* Cores dos botões de ação */
-.botao.cor-azul { color: #fff; background: var(--azul); border-color: var(--azul); }
-.botao.cor-azul:hover { background: var(--azul-escuro); }
-.botao.cor-verde { color: #fff; background: var(--verde); border-color: var(--verde); }
-.botao.cor-verde:hover { background: #17652a; }
-.botao.cor-vermelho { color: #fff; background: var(--vermelho); border-color: var(--vermelho); }
-.botao.cor-vermelho:hover { background: var(--vermelho-escuro); }
-.botao.cor-laranja { color: #fff; background: #b45309; border-color: #b45309; }
-.botao.cor-laranja:hover { background: #92400e; }
-.botao.cor-roxo { color: #fff; background: #6d28d9; border-color: #6d28d9; }
-.botao.cor-roxo:hover { background: #5b21b6; }
-.botao.cor-teal { color: #fff; background: #0f766e; border-color: #0f766e; }
-.botao.cor-teal:hover { background: #115e59; }
 .vazio { text-align: center; color: var(--suave); padding: 28px 12px !important; }
 
 .etiqueta { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
@@ -243,7 +252,7 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
 .botao.discreto-escuro:hover { color: var(--azul); background: transparent; }
 .campo-largo { flex: 1 1 260px; margin: 0; }
 .alternador { display: inline-flex; border: 1px solid var(--borda); border-radius: 8px; overflow: hidden; }
-.alternador .botao { border: 0; border-radius: 0; height: 36px; }
+.alternador .botao { --cor: var(--azul); --cor-fundo: var(--branco); --cor-fundo-hover: var(--azul-claro); border: 0; border-radius: 0; height: 36px; }
 .alternador .botao.ativo { background: var(--azul); color: #fff; }
 .cartoes-resumo { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
 .cartao-numero { flex: 1 1 180px; background: var(--branco); border: 1px solid var(--borda); border-radius: 12px; padding: 10px 14px; }

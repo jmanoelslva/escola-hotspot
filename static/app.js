@@ -226,6 +226,7 @@ function abrirAba(nome) {
     const sub = $('#subabas');
     const telas = GRUPOS[grupo];
     sub.hidden = telas.length < 2;
+    sub.dataset.grupo = grupo;
     sub.replaceChildren(...(telas.length < 2 ? [] : telas.map(([tela, titulo]) =>
         el('button', { class: 'subaba', type: 'button', role: 'tab', 'data-tela': tela, texto: titulo, onclick: () => abrirAba(tela) }))));
     marcarAtiva(sub.querySelectorAll('.subaba'), nome, 'tela');
