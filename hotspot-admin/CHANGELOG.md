@@ -1,132 +1,114 @@
 # Changelog
 
-Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
+Todas as mudanças notáveis do Painel do Hotspot são documentadas neste arquivo.
+
+O formato é baseado no [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
+e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/spec/v2.0.0.html).
+
+As versões 1.11.0, 1.12.0, 1.12.1, 1.13.0, 1.14.0, 1.14.1, 1.15.0, 1.16.0, 1.17.0, 1.17.1, 1.19.0 e 1.19.1
+foram juntadas na versão seguinte que tem release. As versões antes da 1.10.0 não têm tag no repositório.
+
+## [Não publicado]
 
 ## [1.19.2] - 2026-10-07
+
+Uso da internet, relatório mensal, troca de senha pelo Wi-Fi e teste dos APs com 5 pings (inclui 1.19.0 e 1.19.1).
+
+### Adicionado
+- **Serviço do painel** (Sistema → Configurações): um administrador full ativa e o painel cria no MikroTik o usuário `painel-servico` (grupo painel) com senha aleatória guardada só neste PC (`dados/servico.json`). Com ele o painel trabalha sem ninguém logado.
+- **Histórico de uso** (Início → Uso da internet): a cada 5 minutos o painel registra o tráfego da interface da internet, os logados no hotspot e os aparelhos no DHCP (`dados/uso/AAAA-MM.csv`, 13 meses). Gráfico de Hoje (Mbps), 7 dias (por hora) e 30 dias (GB por dia).
+- **Relatório mensal** (Sistema → Relatório): internet baixada e enviada, picos de logados e de aparelhos, uso por dia, visitantes criados, o que foi feito no painel no mês, consumo por turma e quem mais usou. O mês, "Gerar" e "Imprimir / salvar em PDF" ficam num cartão, e trocar o mês já gera o relatório.
+- **Troca da própria senha pelo Wi-Fi** (`/senha`): usuário, senha atual e senha nova; visitantes não trocam; 5 erros seguidos bloqueiam o IP por 15 minutos. Ligar em Configurações cria `senha.<domínio do hotspot>` no DNS do MikroTik apontando para este PC e põe o link "Trocar minha senha" na tela de conectado do Wi-Fi. Quem vem das redes do Wi-Fi (`REDES_WIFI`, padrão `10.0.0.0/22`) só acessa essa página; o `instalar.bat` libera essas redes no Firewall do Windows só para a porta do painel.
 
 ### Alterado
 - Teste dos APs: a cada 30 segundos o MikroTik manda 5 pings (Netwatch tipo icmp) e só marca "fora do ar" quando nenhum volta, para um pacote perdido não virar alarme falso. APs já cadastrados passam para o teste novo sozinhos; RouterOS sem o tipo icmp continua no ping simples.
 - Configurações → Escola: o texto explica que o nome e a cidade também vão para o rodapé da tela de login do Wi-Fi.
 
-## [1.19.1] - 2026-10-07
-
-### Corrigido
-- Sistema → Relatório: o campo do mês e os botões Gerar e Imprimir ficavam desalinhados. Agora ficam num cartão alinhado, e trocar o mês já gera o relatório.
-
-## [1.19.0] - 2026-10-07
-
-### Adicionado
-- **Serviço do painel** (Sistema → Configurações): um administrador full ativa e o painel cria no MikroTik o usuário `painel-servico` (grupo painel) com senha aleatória guardada só neste PC (`dados/servico.json`). Com ele o painel trabalha sem ninguém logado.
-- **Histórico de uso** (Início → Uso da internet): a cada 5 minutos o painel registra o tráfego da interface da internet, os logados no hotspot e os aparelhos no DHCP (`dados/uso/AAAA-MM.csv`, 13 meses). Gráfico de Hoje (Mbps), 7 dias (por hora) e 30 dias (GB por dia).
-- **Relatório mensal** (Sistema → Relatório): internet baixada e enviada, picos de logados e de aparelhos, uso por dia, visitantes criados, o que foi feito no painel no mês, consumo por turma e quem mais usou. Botão para imprimir ou salvar em PDF.
-- **Troca da própria senha pelo Wi-Fi** (`/senha`): usuário, senha atual e senha nova; visitantes não trocam; 5 erros seguidos bloqueiam o IP por 15 minutos. Ligar em Configurações cria `senha.<domínio do hotspot>` no DNS do MikroTik apontando para este PC e põe o link "Trocar minha senha" na tela de conectado do Wi-Fi. Quem vem das redes do Wi-Fi (`REDES_WIFI`, padrão `10.0.0.0/22`) só acessa essa página; o `instalar.bat` libera essas redes no Firewall do Windows só para a porta do painel.
-
 ## [1.18.0] - 2026-10-07
 
+Pontos de acesso e nome da escola nas páginas do hotspot.
+
 ### Adicionado
-- **Pontos de acesso (APs):** cadastro em Sistema → Configurações (nome e IP). O próprio MikroTik vigia cada AP a cada 30 segundos (`/tool netwatch`, comentário `painel-ap:`), mesmo com o painel fechado. No Início, o cartão **APs** mostra quantos estão no ar e fica vermelho com o nome de quem caiu.
-- **Nome da escola nas páginas do hotspot:** ao salvar Escola em Configurações, o painel grava `escola-info.js` na pasta do hotspot (nome, cidade e, no futuro, o link de troca de senha). As páginas `login.html` e `status.html` novas mostram esse nome no rodapé e nos termos de uso; é preciso enviá-las uma vez pelo Winbox.
+- **Pontos de acesso (APs):** cadastro em Sistema → Configurações (nome e IP). O próprio MikroTik vigia cada AP (`/tool netwatch`, comentário `painel-ap:`), mesmo com o painel fechado. No Início, o cartão **APs** mostra quantos estão no ar e fica vermelho com o nome de quem caiu.
+- **Nome da escola nas páginas do hotspot:** ao salvar Escola em Configurações, o painel grava `escola-info.js` na pasta do hotspot (nome, cidade e link de troca de senha). As páginas `login.html` e `status.html` novas mostram esse nome no rodapé e nos termos de uso; é preciso enviá-las uma vez pelo Winbox.
 
 ### Alterado
 - Usuários → Cadastrados não mostra mais os visitantes (eles têm a própria tela). O resumo diz quantos visitantes há; o Início conta só os usuários comuns.
 
 ## [1.17.2] - 2026-10-07
 
-### Corrigido
-- Impressão dos cartões: a primeira impressão saía sem os QR codes (e às vezes sem o logotipo), porque abria antes de as imagens carregarem. Agora espera as imagens (até 5 segundos) antes de abrir a janela de impressão.
-
-## [1.17.1] - 2026-10-07
-
-### Alterado
-- Visitantes: o aviso de limite aparece **antes** de criar (o painel nem tenta criar quando a quantidade passa do que cabe) e diz "Limite atingido" quando não cabe mais nenhum.
-- Usuários: o resumo mostra o limite da licença, quantos estão conectados e quantas sessões ainda estão disponíveis.
-- Listas de usuários e visitantes em ordem natural: `visita2` antes de `visita10`.
-
-## [1.17.0] - 2026-10-07
+Limite da licença e impressão dos cartões (inclui 1.17.0 e 1.17.1).
 
 ### Adicionado
 - Início: cartão **Sessões do hotspot** ("37 de 200"), com o limite lido da licença do MikroTik (nível 4 = 200, nível 5 = 500, nível 6 = sem limite). Fica amarelo a partir de 80% e vermelho a partir de 95%. O resumo de Conectados também mostra "de 200 sessões da licença".
 
 ### Alterado
-- Visitantes: até **200** senhas de uma vez (antes 50), contando as que já existem. O campo Quantidade mostra quantas ainda cabem e avisa em vermelho quando o número passa disso; o painel recusa criar além do limite.
+- Visitantes: até **200** senhas de uma vez (antes 50), contando as que já existem. O campo Quantidade mostra quantas ainda cabem; o aviso aparece **antes** de criar (o painel nem tenta quando a quantidade passa do que cabe) e diz "Limite atingido" quando não cabe mais nenhum.
+- Usuários: o resumo mostra o limite da licença, quantos estão conectados e quantas sessões ainda estão disponíveis.
+- Listas de usuários e visitantes em ordem natural: `visita2` antes de `visita10`.
+
+### Corrigido
+- Impressão dos cartões: a primeira impressão saía sem os QR codes (e às vezes sem o logotipo), porque abria antes de as imagens carregarem. Agora espera as imagens (até 5 segundos) antes de abrir a janela de impressão.
 
 ## [1.16.1] - 2026-10-07
 
-### Alterado
-- Visitantes: criar senhas não abre mais o cartão "Senhas criadas" com os QR codes; só avisa quantas foram criadas e até quando valem (elas aparecem na lista, de onde se imprime).
-- Nome do usuário: a ajuda mostra o limite de 10 letras e avisa em vermelho quando o nome passa disso e será cortado.
-
-## [1.16.0] - 2026-10-07
+Visitantes com usuário e senha fáceis de digitar (inclui 1.15.0 e 1.16.0).
 
 ### Adicionado
-- Visitantes: campo **Nome do usuário** (opcional). Digitando `pais`, as senhas saem como `pais1`, `pais2`, `pais3`… (o menor número livre, sem repetir usuários que já existem). O nome vira letras minúsculas sem acento, até 10 ("Reunião" fica `reuniao`); em branco, fica `visita1`, `visita2`… O formulário mostra o exemplo enquanto se digita.
-
-## [1.15.0] - 2026-10-07
+- Visitantes: campo **Nome do usuário** (opcional). Digitando `pais`, as senhas saem como `pais1`, `pais2`, `pais3`… (o menor número livre, sem repetir usuários que já existem). O nome vira letras minúsculas sem acento, até 10 ("Reunião" fica `reuniao`); a ajuda mostra o exemplo enquanto se digita e avisa em vermelho quando o nome passa de 10 letras e será cortado.
 
 ### Alterado
-- Visitantes com usuário e senha mais fáceis de digitar: usuário `visita1`, `visita2`... (o menor número livre; números de visitantes encerrados voltam a ser usados) e senha de 6 números. Antes: `vis-k7m2p` e senha com letras e números.
+- Visitantes: usuário `visita1`, `visita2`… quando o nome fica em branco (números de visitantes encerrados voltam a ser usados) e senha de 6 números. Antes: `vis-k7m2p` e senha com letras e números.
+- Visitantes: criar senhas não abre mais o cartão "Senhas criadas" com os QR codes; só avisa quantas foram criadas e até quando valem (elas aparecem na lista, de onde se imprime).
 
 ## [1.14.2] - 2026-10-07
+
+Rede Alunos editável pelo painel (inclui 1.14.0 e 1.14.1).
+
+### Adicionado
+- Rede Alunos → **Interface e horários**: escolher a interface (lista do roteador, com VLANs primeiro e se está ligada) e editar os horários, cada um com início, fim e **dias da semana** próprios; "+ Adicionar horário", "Excluir", "Desfazer" e "Salvar". O painel escreve o script `painel-alunos` (formato `"08:50-09:10 12345"`, dias 0=dom … 6=sáb) e cria o script e o agendador se faltarem, então o `mikrotik-redes.rsc` deixa de ser obrigatório para esta parte. Trocar de interface religa a antiga.
+- Rede Alunos → **modo**: Por horário, Sempre aberta ou Sempre fechada (agendador parado e interface ligada ou desligada), em três cartões de escolha com a cor da situação (azul, verde, vermelho).
+
+### Alterado
+- O script antigo (horários sem dias) continua funcionando e aparece como segunda a sexta; o primeiro "Salvar" grava o formato novo.
 
 ### Corrigido
 - `instalar.bat` encerrava **qualquer** programa que estivesse usando a porta do painel. Num PC em que a porta 8080 é redirecionada pelo Windows (`netsh portproxy`, ex.: controladora UniFi), isso mirava um `svchost` com serviços do sistema. Agora encerra só o painel antigo desta pasta (`verificar-porta.ps1`) e, se a porta estiver em uso por outro programa, para e explica como trocar a `PORTA` no `.env`.
 - Rede Alunos: não aceita mais como interface a da internet (rota padrão) nem a que tem o IP pelo qual o painel fala com o MikroTik. Na lista elas aparecem como "internet/painel: não pode". Escolher a da internet e deixar "Sempre fechada" derrubava a conexão.
 
-## [1.14.1] - 2026-10-07
-
-### Alterado
-- Rede Alunos: o modo (Por horário, Sempre aberta, Sempre fechada) virou três cartões de escolha maiores, com uma linha de explicação e a cor da situação (azul, verde, vermelho) no escolhido.
-
-## [1.14.0] - 2026-10-07
-
-### Adicionado
-- Rede Alunos → **Interface e horários**: escolher a interface (lista do roteador, com VLANs primeiro e se está ligada) e editar os horários, cada um com início, fim e **dias da semana** próprios; "+ Adicionar horário", "Excluir", "Desfazer" e "Salvar". O painel escreve o script `painel-alunos` (formato `"08:50-09:10 12345"`, dias 0=dom … 6=sáb) e cria o script e o agendador se faltarem, então o `mikrotik-redes.rsc` deixa de ser obrigatório para esta parte. Trocar de interface religa a antiga.
-- Rede Alunos → **modo**: Por horário, Sempre aberta ou Sempre fechada (agendador parado e interface ligada ou desligada).
-
-### Alterado
-- O script antigo (horários sem dias) continua funcionando e aparece como segunda a sexta; o primeiro "Salvar" grava o formato novo.
-
 ## [1.13.1] - 2026-10-07
 
-### Alterado
-- Todos os aparelhos: os totais (Logados, Sem login, Liberados, Rede sem login) têm as mesmas cores das etiquetas da lista.
-
-## [1.13.0] - 2026-10-07
+Todos os aparelhos da rede (inclui 1.13.0).
 
 ### Adicionado
-- Conectados → **Todos os aparelhos**: todos os aparelhos na rede, logados no hotspot ou não. Junta o que o hotspot vê (`/ip hotspot host`, com o usuário de quem está logado) com o DHCP de todas as redes (inclusive a Alunos, que não tem login). Situação de cada um (logado, sem login, liberado, bloqueado, rede sem login), totais, filtros por rede e situação, busca, botões Liberar e Bloquear e atualização a cada 30 segundos.
+- Conectados → **Todos os aparelhos**: todos os aparelhos na rede, logados no hotspot ou não. Junta o que o hotspot vê (`/ip hotspot host`, com o usuário de quem está logado) com o DHCP de todas as redes (inclusive a Alunos, que não tem login). Situação de cada um (logado, sem login, liberado, bloqueado, rede sem login), totais com as mesmas cores das etiquetas da lista, filtros por rede e situação, busca, botões Liberar e Bloquear e atualização a cada 30 segundos.
 
 ## [1.12.2] - 2026-10-07
 
-### Removido
-- Textos explicativos da tela Administradores (a dica dos grupos e o aviso para quem não é full).
-
-## [1.12.1] - 2026-10-07
-
-### Alterado
-- Administradores: só quem entrou com um usuário do grupo **full** vê os botões (novo, editar, desativar, excluir). Os demais veem só a lista e um aviso. Excluir administrador também é recusado pelo painel para quem não é full.
-
-## [1.12.0] - 2026-10-07
+Administradores do MikroTik pelo painel (inclui 1.12.0 e 1.12.1).
 
 ### Adicionado
 - Sistema → **Administradores**: usuários do próprio MikroTik (os que entram no painel). Cadastrar (senha de pelo menos 8 caracteres, com "Gerar"), trocar senha, grupo e comentário, desativar e excluir, com o último acesso de cada um. Grupo **painel** (padrão, criado sozinho: ler, alterar, REST API, ver senhas e rodar scripts; sem Winbox, SSH, reboot nem cadastrar administradores) ou **full**. Ninguém exclui, desativa ou tira do full o próprio usuário, e o último full ativo não pode sair. Trocar a própria senha mantém a sessão aberta.
+- Só quem entrou com um usuário do grupo **full** vê os botões (novo, editar, desativar, excluir); os demais veem só a lista. Excluir administrador também é recusado pelo painel para quem não é full.
 
 ### Alterado
 - Agendadores criados pelo painel (visitantes e rede Alunos) têm só a política `read,write,test`, para funcionarem também com usuários do grupo painel.
 
 ## [1.11.1] - 2026-10-07
 
-### Alterado
-- "Perfis e horário" passou de Regras de acesso para **Usuários** (Cadastrados, Visitantes, Perfis e horário, Importar planilha).
-- Clicar numa aba do topo sempre abre a primeira subaba (ex.: Usuários → Cadastrados); o painel não lembra mais a última subaba de cada aba. O F5 continua na mesma tela, e abrir o painel de novo começa no Início.
-
-## [1.11.0] - 2026-10-07
+Escola, logotipo e conexão com o MikroTik pelo painel (inclui 1.11.0).
 
 ### Adicionado
 - Sistema → Configurações → **Escola**: nome, cidade e logotipo (PNG ou JPG, até 2 MB) do painel, da tela de entrada e dos cartões impressos, com "Voltar ao padrão". Guardados em `dados/ajustes.json` e `dados/logo.png`/`logo.jpg`, por cima do `.env`.
 - Sistema → Configurações → **Conexão com o MikroTik**: IP e porta da REST API. Sem IP, fica o padrão 192.168.88.1 (ex.: só a porta mudou); sem porta, o painel tenta HTTPS e HTTP. O endereço novo é testado com o usuário logado antes de salvar; se não responder ou recusar o usuário, nada muda e a sessão continua.
 
+### Alterado
+- "Perfis e horário" passou de Regras de acesso para **Usuários** (Cadastrados, Visitantes, Perfis e horário, Importar planilha).
+- Clicar numa aba do topo sempre abre a primeira subaba (ex.: Usuários → Cadastrados); o painel não lembra mais a última subaba de cada aba. O F5 continua na mesma tela, e abrir o painel de novo começa no Início.
+
 ## [1.10.0] - 2026-10-06
+
+Redes Administrativo e Alunos no MikroTik e controle da Rede Alunos pelo painel.
 
 ### Adicionado
 - `mikrotik-redes.rsc`: redes da escola no MikroTik. Administrativo (VLAN 200, 10.0.1.1/22) com hotspot e IPv6 liberado só para quem fez login (regra por MAC criada no login e conferida a cada minuto); Alunos (VLAN 300, 10.1.0.1/21) aberta, com IPv6, isolada das outras redes e ligada só de segunda a sexta nos horários 08:50–09:10, 12:00–12:50 e 14:40–15:00 (script `painel-alunos` no próprio MikroTik, a cada minuto).
@@ -239,3 +221,14 @@ Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelo
 ### Adicionado
 - Usuários, conectados, aparelhos (bypass e bloqueio), importação por planilha e impressão de credenciais.
 - Instalação automática no Windows (`instalar.bat`), REST API do RouterOS 7 com HTTPS ou HTTP escolhido sozinho e `mikrotik-https.rsc` para ativar o www-ssl.
+
+[Não publicado]: https://github.com/jmanoelslva/escola-hotspot/compare/v1.19.2...HEAD
+[1.19.2]: https://github.com/jmanoelslva/escola-hotspot/compare/v1.18.0...v1.19.2
+[1.18.0]: https://github.com/jmanoelslva/escola-hotspot/compare/v1.17.2...v1.18.0
+[1.17.2]: https://github.com/jmanoelslva/escola-hotspot/compare/v1.16.1...v1.17.2
+[1.16.1]: https://github.com/jmanoelslva/escola-hotspot/compare/v1.14.2...v1.16.1
+[1.14.2]: https://github.com/jmanoelslva/escola-hotspot/compare/v1.13.1...v1.14.2
+[1.13.1]: https://github.com/jmanoelslva/escola-hotspot/compare/v1.12.2...v1.13.1
+[1.12.2]: https://github.com/jmanoelslva/escola-hotspot/compare/v1.11.1...v1.12.2
+[1.11.1]: https://github.com/jmanoelslva/escola-hotspot/compare/v1.10.0...v1.11.1
+[1.10.0]: https://github.com/jmanoelslva/escola-hotspot/releases/tag/v1.10.0
