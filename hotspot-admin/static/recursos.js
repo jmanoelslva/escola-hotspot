@@ -556,7 +556,7 @@ $('#form-dominio-todos').addEventListener('submit', async (evento) => {
 
 // ------------------------------------------------------------------ administradores do MikroTik
 
-estado.administradores = { usuarios: [], grupos: [], eu: '' };
+estado.administradores = { usuarios: [], grupos: [], eu: '', eu_full: false };
 estado.editandoAdministrador = null;
 
 const AJUDA_GRUPO = {
@@ -566,7 +566,10 @@ const AJUDA_GRUPO = {
 
 async function carregarAdministradores() {
     estado.administradores = await api('GET', '/api/administradores');
-    const { usuarios, eu } = estado.administradores;
+    const { usuarios, eu, eu_full: full } = estado.administradores;
+    // Quem não é full só vê a lista: o MikroTik não deixa esse grupo cadastrar, alterar nem excluir administradores.
+    $('#novo-administrador').hidden = !full;
+    $('#aviso-administradores').hidden = full;
     const corpo = $('#lista-administradores');
     corpo.replaceChildren();
     if (!usuarios.length) linhaVazia(corpo, 6, 'Nenhum usuário.');
@@ -578,12 +581,12 @@ async function carregarAdministradores() {
             el('td', { 'data-rotulo': 'Comentário', texto: u.comentario || '—' }),
             el('td', { 'data-rotulo': 'Último acesso', texto: u.ultimo_acesso ? dataHora(u.ultimo_acesso) : 'nunca' }),
             el('td', {}, u.desativado ? el('span', { class: 'etiqueta off', texto: 'Desativado' }) : el('span', { class: 'etiqueta ok', texto: 'Ativo' })),
-            el('td', {}, el('div', { class: 'acoes' },
+            el('td', {}, full ? el('div', { class: 'acoes' },
                 el('button', { class: 'botao pequeno cor-azul', type: 'button', texto: 'Editar', onclick: () => abrirAdministrador(u) }),
                 proprio ? null : el('button', { class: 'botao pequeno ' + (u.desativado ? 'cor-verde' : 'cor-laranja'), type: 'button',
                     texto: u.desativado ? 'Ativar' : 'Desativar', onclick: () => alternarAdministrador(u) }),
                 proprio ? null : el('button', { class: 'botao pequeno cor-vermelho', type: 'button', texto: 'Excluir', onclick: () => excluirAdministrador(u) }),
-            )),
+            ) : null),
         ));
     }
 }

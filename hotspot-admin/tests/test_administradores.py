@@ -10,7 +10,7 @@ def _por_nome(mk, nome):
 
 def test_listar_sem_mostrar_senha(logado, mk):
     r = logado.get("/api/administradores").json()
-    assert r["eu"] == "admin" and r["grupos"][:2] == ["painel", "full"]
+    assert r["eu"] == "admin" and r["eu_full"] is True and r["grupos"][:2] == ["painel", "full"]
     assert r["usuarios"] == [{"id": "*1", "nome": "admin", "grupo": "full", "comentario": "system default user",
                               "ultimo_acesso": "2026-10-07 08:00:00", "desativado": False}]
 
@@ -75,3 +75,12 @@ def test_trocar_a_propria_senha_mantem_a_sessao(logado, mk):
 def test_agendadores_do_painel_tem_politica_minima(logado, mk):
     logado.post("/api/visitantes", json={"quantidade": 1, "minutos": 60})
     assert mk.tabelas["/system/scheduler"][-1]["policy"] == "read,write,test"
+
+
+def test_so_full_exclui_administradores(logado, mk):
+    alvo = mk.adicionar(USUARIOS, {"name": "outro", "group": "painel", "disabled": "false"})
+    mk.tabelas[USUARIOS][0]["group"] = "painel"  # o admin logado deixa de ser full
+    assert logado.get("/api/administradores").json()["eu_full"] is False
+    r = logado.delete(f"/api/administradores/{alvo['.id']}")
+    assert r.status_code == 400 and "grupo full" in r.json()["erro"]
+    assert alvo in mk.tabelas[USUARIOS]

@@ -412,8 +412,9 @@
         <!-- Administradores do MikroTik -->
         <section id="aba-administradores" class="painel-aba" hidden>
             <div class="barra-acoes">
-                <button id="novo-administrador" class="botao primario" type="button">+ Novo administrador</button>
+                <button id="novo-administrador" class="botao primario" type="button" hidden>+ Novo administrador</button>
             </div>
+            <p class="alerta" id="aviso-administradores" hidden>Você entrou com um usuário que não é do grupo <strong>full</strong>: pode ver a lista, mas só um administrador full cadastra, altera ou exclui administradores.</p>
             <p class="dica">Usuários do próprio MikroTik: são eles que entram neste painel. Grupo <strong>painel</strong>: usa o painel, sem Winbox, sem reiniciar o roteador e sem cadastrar administradores. Grupo <strong>full</strong>: tudo no MikroTik. Para cadastrar aqui é preciso estar com um usuário <strong>full</strong>.</p>
             <div class="tabela-rolagem">
                 <table class="tabela">

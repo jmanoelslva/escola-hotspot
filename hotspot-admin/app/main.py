@@ -927,7 +927,8 @@ def gravar_conexao(dados: ConexaoMikrotik, s: Sessao = Depends(sessao_atual)):
 
 @app.get("/api/administradores")
 def ver_administradores(mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
-    return {"usuarios": administradores.listar(mk), "grupos": administradores.grupos(mk), "eu": s.usuario}
+    return {"usuarios": administradores.listar(mk), "grupos": administradores.grupos(mk), "eu": s.usuario,
+            "eu_full": administradores.eh_full(mk, s.usuario)}
 
 
 @app.post("/api/administradores")

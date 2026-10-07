@@ -2,6 +2,11 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.12.1] - 2026-10-07
+
+### Alterado
+- Administradores: só quem entrou com um usuário do grupo **full** vê os botões (novo, editar, desativar, excluir). Os demais veem só a lista e um aviso. Excluir administrador também é recusado pelo painel para quem não é full.
+
 ## [1.12.0] - 2026-10-07
 
 ### Adicionado

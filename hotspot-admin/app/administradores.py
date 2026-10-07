@@ -112,7 +112,13 @@ def alterar(mk: Mikrotik, item_id: str, eu: str, senha: str | None, grupo: str |
     return next(u for u in listar(mk) if u["id"] == item_id), campos
 
 
+def eh_full(mk: Mikrotik, nome: str) -> bool:
+    return any(u.get("name") == nome and u.get("group") == GRUPO_FULL for u in mk.listar(USUARIOS))
+
+
 def excluir(mk: Mikrotik, item_id: str, eu: str) -> str:
+    if not eh_full(mk, eu):
+        raise util.ErroDados("Só administradores do grupo full podem excluir administradores.")
     atual = mk.obter(USUARIOS, item_id)
     nome = atual.get("name", "")
     if nome == eu:
