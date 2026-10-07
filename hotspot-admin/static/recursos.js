@@ -815,7 +815,6 @@ $('#form-mikrotik').addEventListener('submit', async (evento) => {
 // ------------------------------------------------------------------ visitantes
 
 estado.visitantes = [];
-estado.visitantesCriados = [];
 estado.visitantesSelecionados = new Set();
 
 function validoAte(iso) {
@@ -874,14 +873,22 @@ async function carregarVisitantes() {
 }
 
 // Mesmo tratamento do painel: minúsculas sem acento, só letras, até 10.
+function letrasVisitante(texto) {
+    return (texto || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+}
+
 function prefixoVisitante(texto) {
-    const letras = (texto || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '').slice(0, 10);
-    return letras || 'visita';
+    return letrasVisitante(texto).slice(0, 10) || 'visita';
 }
 
 $('#form-visitantes').nome.addEventListener('input', (e) => {
     const p = prefixoVisitante(e.target.value);
-    $('#exemplo-nome-visitante').textContent = `Fica ${p}1, ${p}2…`;
+    const passou = letrasVisitante(e.target.value).length > 10;
+    const ajuda = $('#exemplo-nome-visitante');
+    ajuda.textContent = passou
+        ? `Passou de 10 letras: o nome será cortado e fica ${p}1, ${p}2…`
+        : `Até 10 letras. Fica ${p}1, ${p}2…`;
+    ajuda.classList.toggle('texto-alerta', passou);
 });
 
 $('#form-visitantes').addEventListener('submit', async (evento) => {
@@ -900,14 +907,7 @@ $('#form-visitantes').addEventListener('submit', async (evento) => {
     await comBotao(form.querySelector('[type=submit]'), async () => {
         try {
             const r = await api('POST', '/api/visitantes', dados);
-            estado.visitantesCriados = r.criados;
-            $('#visitantes-criados').hidden = false;
-            $('#resumo-visitantes-criados').textContent = `${r.criados.length} senha(s) válida(s) até ${validoAte(r.criados[0].ate)}.`;
-            $('#lista-visitantes-criados').replaceChildren(...r.criados.map((c) =>
-                el('li', {},
-                    c.qr_login ? el('img', { src: c.qr_login, alt: 'QR code do login de ' + c.usuario, class: 'qr-miniatura' }) : null,
-                    el('span', {}, 'Usuário ', el('b', { class: 'mono', texto: c.usuario }), '  ·  Senha ', el('b', { class: 'mono', texto: c.senha })))));
-            aviso(`${r.criados.length} senha(s) de visitante criada(s).`);
+            aviso(`${r.criados.length} senha(s) de visitante criada(s), válida(s) até ${validoAte(r.criados[0].ate)}.`);
             await carregarVisitantes();
         } catch (e) { aviso(e.message, true); }
     });
@@ -950,12 +950,6 @@ $('#encerrar-visitantes-selecionados').addEventListener('click', () => {
 });
 $('#encerrar-todos-visitantes').addEventListener('click', () =>
     encerrarVarios({ todos: true }, `Encerrar TODAS as ${estado.visitantes.length} senha(s) de visitante? Quem estiver conectado é desconectado.`));
-$('#fechar-visitantes-criados').addEventListener('click', () => {
-    $('#visitantes-criados').hidden = true;
-    estado.visitantesCriados = [];
-});
-
-$('#imprimir-visitantes-criados').addEventListener('click', () => imprimir(estado.visitantesCriados.map(cartaoVisitante)));
 $('#imprimir-visitantes').addEventListener('click', () => imprimir(estado.visitantes.filter((v) => !v.expirado).map(cartaoVisitante)));
 
 async function encerrarVisitante(v) {

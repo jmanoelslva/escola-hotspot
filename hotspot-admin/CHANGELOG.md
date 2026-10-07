@@ -2,6 +2,12 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.16.1] - 2026-10-07
+
+### Alterado
+- Visitantes: criar senhas não abre mais o cartão "Senhas criadas" com os QR codes; só avisa quantas foram criadas e até quando valem (elas aparecem na lista, de onde se imprime).
+- Nome do usuário: a ajuda mostra o limite de 10 letras e avisa em vermelho quando o nome passa disso e será cortado.
+
 ## [1.16.0] - 2026-10-07
 
 ### Adicionado
