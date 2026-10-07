@@ -393,6 +393,10 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
 .legenda-uso .cor-baixa { background: #0d4a7d; margin-left: 0; }
 .legenda-uso .cor-envia { background: #ea8a4a; }
 #resumo-uso { margin-left: 12px; }
+.controles-relatorio .espaco { flex: 1; }
+.controles-relatorio input[type=month] { height: 40px; margin-top: 4px; }
+.controles-relatorio .botao { height: 40px; }
+@media (max-width: 760px) { .controles-relatorio .espaco { display: none; } }
 .relatorio h3 { color: var(--azul); margin: 18px 0 8px; }
 .relatorio-topo { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
 .relatorio-topo img { width: 64px; height: auto; }

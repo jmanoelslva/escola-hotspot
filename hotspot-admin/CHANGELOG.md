@@ -2,6 +2,11 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.19.1] - 2026-10-07
+
+### Corrigido
+- Sistema → Relatório: o campo do mês e os botões Gerar e Imprimir ficavam desalinhados. Agora ficam num cartão alinhado, e trocar o mês já gera o relatório.
+
 ## [1.19.0] - 2026-10-07
 
 ### Adicionado

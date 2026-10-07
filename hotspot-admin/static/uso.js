@@ -168,6 +168,7 @@ async function carregarMensal() {
 }
 
 $('#gerar-relatorio').addEventListener('click', (e) => comBotao(e.target, gerarRelatorio));
+$('#mes-relatorio').addEventListener('change', () => { if ($('#mes-relatorio').value) gerarRelatorio(); });
 $('#imprimir-relatorio').addEventListener('click', async () => {
     if (!estado.relatorioMensal) return;
     const area = $('#impressao');
