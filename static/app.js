@@ -175,19 +175,61 @@ function mostrarPainel(sessao) {
     conexao.title = sessao.conexao === 'HTTP'
         ? 'Conexão com o MikroTik sem criptografia (serviço www). Ative o www-ssl para usar HTTPS: veja mikrotik-https.rsc.'
         : 'Conexão com o MikroTik criptografada (www-ssl).';
-    abrirAba(lembrado('aba') || 'geral');
+    abrirAba(telaDoEndereco() || lembrado('aba') || 'geral');
     AO_ENTRAR.forEach((funcao) => { try { funcao(); } catch (e) { /* não impede o painel */ } });
 }
 
-function abrirAba(nome) {
-    if (!document.getElementById('aba-' + nome)) nome = 'usuarios';
-    estado.abaAtual = nome;
-    lembrar('aba', nome);
-    document.querySelectorAll('.aba').forEach((b) => {
-        const ativa = b.dataset.aba === nome;
+// Abas do topo (grupos) e as telas de cada uma; a tela é a <section id="aba-...">.
+const GRUPOS = {
+    inicio: [['geral', 'Painel geral']],
+    usuarios: [['usuarios', 'Cadastrados'], ['visitantes', 'Visitantes'], ['importar', 'Importar planilha']],
+    conectados: [['conectados', 'Conectados agora'], ['relatorio', 'Consumo']],
+    aparelhos: [['aparelhos', 'Liberados e bloqueados']],
+    regras: [['perfis', 'Perfis e horário'], ['sites', 'Sites bloqueados']],
+    sistema: [['aviso', 'Aviso'], ['config', 'Configurações'], ['backup', 'Backup'], ['historico', 'Histórico']],
+};
+
+function grupoDaTela(tela) {
+    return Object.keys(GRUPOS).find((g) => GRUPOS[g].some(([t]) => t === tela));
+}
+
+// Endereço #grupo/tela (ex.: #usuarios/visitantes): F5 volta para a mesma tela.
+function telaDoEndereco() {
+    const [grupo, tela] = decodeURIComponent(location.hash.slice(1)).split('/');
+    if (tela && grupoDaTela(tela) === grupo) return tela;
+    if (GRUPOS[grupo]) return lembrado('tela.' + grupo) || GRUPOS[grupo][0][0];
+    return null;
+}
+
+function abrirGrupo(grupo) {
+    const lembrada = lembrado('tela.' + grupo);
+    abrirAba(grupoDaTela(lembrada) === grupo ? lembrada : GRUPOS[grupo][0][0]);
+}
+
+function marcarAtiva(botoes, ativo, chave) {
+    botoes.forEach((b) => {
+        const ativa = b.dataset[chave] === ativo;
         b.classList.toggle('ativa', ativa);
         b.setAttribute('aria-selected', ativa ? 'true' : 'false');
     });
+}
+
+function abrirAba(nome) {
+    if (!grupoDaTela(nome) || !document.getElementById('aba-' + nome)) nome = 'geral';
+    const grupo = grupoDaTela(nome);
+    estado.abaAtual = nome;
+    lembrar('aba', nome);
+    lembrar('tela.' + grupo, nome);
+    if (location.hash !== '#' + grupo + '/' + nome) history.replaceState(null, '', '#' + grupo + '/' + nome);
+    marcarAtiva(document.querySelectorAll('.aba'), grupo, 'grupo');
+
+    const sub = $('#subabas');
+    const telas = GRUPOS[grupo];
+    sub.hidden = telas.length < 2;
+    sub.replaceChildren(...(telas.length < 2 ? [] : telas.map(([tela, titulo]) =>
+        el('button', { class: 'subaba', type: 'button', role: 'tab', 'data-tela': tela, texto: titulo, onclick: () => abrirAba(tela) }))));
+    marcarAtiva(sub.querySelectorAll('.subaba'), nome, 'tela');
+
     document.querySelectorAll('.painel-aba').forEach((s) => { s.hidden = s.id !== 'aba-' + nome; });
     clearInterval(estado.relogioConectados);
     const carregar = CARREGAR[nome];
@@ -219,7 +261,11 @@ $('#sair').addEventListener('click', async () => {
     mostrarLogin();
 });
 
-document.querySelectorAll('.aba').forEach((b) => b.addEventListener('click', () => abrirAba(b.dataset.aba)));
+document.querySelectorAll('.aba').forEach((b) => b.addEventListener('click', () => abrirGrupo(b.dataset.grupo)));
+window.addEventListener('hashchange', () => {
+    const tela = telaDoEndereco();
+    if (tela && tela !== estado.abaAtual && !$('#tela-painel').hidden) abrirAba(tela);
+});
 document.querySelectorAll('[data-fechar]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
 
 // ------------------------------------------------------------------ perfis

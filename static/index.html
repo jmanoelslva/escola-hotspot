@@ -46,19 +46,12 @@
     </header>
 
     <nav class="abas" role="tablist">
-        <button class="aba" data-aba="geral" role="tab">Painel geral</button>
-        <button class="aba" data-aba="usuarios" role="tab">Usuários</button>
-        <button class="aba" data-aba="conectados" role="tab">Conectados</button>
-        <button class="aba" data-aba="aparelhos" role="tab">Aparelhos</button>
-        <button class="aba" data-aba="visitantes" role="tab">Visitantes</button>
-        <button class="aba" data-aba="perfis" role="tab">Perfis e horário</button>
-        <button class="aba" data-aba="sites" role="tab">Sites bloqueados</button>
-        <button class="aba" data-aba="relatorio" role="tab">Consumo</button>
-        <button class="aba" data-aba="aviso" role="tab">Aviso</button>
-        <button class="aba" data-aba="importar" role="tab">Importar</button>
-        <button class="aba" data-aba="historico" role="tab">Histórico</button>
-        <button class="aba" data-aba="backup" role="tab">Backup</button>
-        <button class="aba" data-aba="config" role="tab">Configurações</button>
+        <button class="aba" data-grupo="inicio" role="tab">Início</button>
+        <button class="aba" data-grupo="usuarios" role="tab">Usuários</button>
+        <button class="aba" data-grupo="conectados" role="tab">Conectados</button>
+        <button class="aba" data-grupo="aparelhos" role="tab">Aparelhos</button>
+        <button class="aba" data-grupo="regras" role="tab">Regras de acesso</button>
+        <button class="aba" data-grupo="sistema" role="tab">Sistema</button>
     </nav>
 
     <main class="conteudo">
@@ -67,6 +60,8 @@
             <button id="ver-atualizacao" class="botao pequeno cor-azul" type="button">Ver detalhes</button>
             <button id="fechar-faixa-atualizacao" class="botao pequeno discreto-escuro" type="button" aria-label="Fechar aviso">✕</button>
         </div>
+
+        <nav id="subabas" class="subabas" role="tablist" hidden></nav>
 
         <!-- Painel geral -->
         <section id="aba-geral" class="painel-aba" hidden>

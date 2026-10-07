@@ -149,6 +149,27 @@ input:focus, select:focus { outline: 0; border-color: var(--azul); box-shadow: 0
 }
 .aba.ativa { color: var(--azul); border-bottom-color: var(--azul); }
 
+.subabas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+.subaba {
+    padding: 6px 14px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--suave);
+    background: var(--branco);
+    border: 1px solid var(--borda);
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.subaba:hover { color: var(--azul); border-color: var(--azul); }
+.subaba.ativa { color: #fff; background: var(--azul); border-color: var(--azul); }
+
 .conteudo { padding: 16px; max-width: 1200px; margin: 0 auto; }
 
 .barra-acoes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }

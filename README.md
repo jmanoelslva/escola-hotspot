@@ -2,6 +2,8 @@
 
 Aplicação web para administrar o hotspot do MikroTik (RouterOS 7) da escola, sem precisar abrir o Winbox:
 
+O painel tem 6 abas: **Início**, **Usuários** (Cadastrados, Visitantes, Importar planilha), **Conectados** (Conectados agora, Consumo), **Aparelhos**, **Regras de acesso** (Perfis e horário, Sites bloqueados) e **Sistema** (Aviso, Configurações, Backup, Histórico).
+
 - **Painel geral:** saúde do roteador (CPU, memória, temperatura, tempo ligado), gráfico ao vivo do tráfego das interfaces e aviso quando há RouterOS ou firmware novo.
 - **Usuários:** listar, buscar, filtrar por turma e perfil, cadastrar, alterar, gerar senha nova com um clique, prender a um aparelho (MAC). Em lote: ativar, desativar, mudar de perfil, imprimir e excluir. Exportar para Excel (com ou sem senhas).
 - **Conectados:** quem está usando a rede agora (IP, MAC, tempo, consumo), com botões para desconectar e para liberar ou bloquear o aparelho. Atualiza a cada 30 segundos.
@@ -27,7 +29,7 @@ Cada pessoa entra com um **usuário admin do próprio MikroTik**. O painel não 
    - instala as bibliotecas;
    - cria o `.env` já apontando para o MikroTik `192.168.88.1`;
    - cria a tarefa agendada **"Painel do Hotspot"**, que inicia o painel sempre que o computador liga (mesmo sem ninguém logado);
-   - cria os atalhos **"Painel do Hotspot"** na Área de Trabalho e no Menu Iniciar, que abrem o painel como um programa (janela própria do Edge, sem barra de endereço);
+   - cria os atalhos **"Painel do Hotspot"** na Área de Trabalho e no Menu Iniciar, que abrem o painel como um programa (janela própria do Chrome, ou do Edge se não houver Chrome, sem barra de endereço);
    - libera a porta 8080 no Firewall do Windows, só para a rede local;
    - inicia o painel e abre o navegador.
 3. Entre com um **usuário admin do MikroTik**.
@@ -63,7 +65,7 @@ O usuário precisa das permissões `read`, `write`, `rest-api` e `sensitive` (o 
 
 ## 4. Planilha de importação
 
-Baixe o modelo na aba **Importar**. A primeira linha tem os títulos; maiúsculas e acentos não importam:
+Baixe o modelo em **Usuários → Importar planilha**. A primeira linha tem os títulos; maiúsculas e acentos não importam:
 
 | usuario | senha | nome | turma | perfil |
 |---|---|---|---|---|

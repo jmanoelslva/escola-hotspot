@@ -2,6 +2,15 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.9.0] - 2026-10-06
+
+### Alterado
+- Menus unificados: 6 abas (Início, Usuários, Conectados, Aparelhos, Regras de acesso, Sistema) com subabas. Usuários: Cadastrados, Visitantes, Importar planilha. Conectados: Conectados agora, Consumo. Regras de acesso: Perfis e horário, Sites bloqueados. Sistema: Aviso, Configurações, Backup, Histórico. O painel lembra a última subaba de cada aba e o endereço (ex.: `#usuarios/visitantes`) mantém a tela no F5.
+- Atalhos "Painel do Hotspot" abrem no Chrome quando ele está instalado (também o instalado só para um usuário, achado pelo registro do Windows); o Edge fica de reserva.
+
+### Corrigido
+- `criar-atalhos.ps1 -Remover` não apagava o atalho quando recebia uma pasta só.
+
 ## [1.8.0] - 2026-10-06
 
 ### Adicionado
