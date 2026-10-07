@@ -258,12 +258,19 @@
                     <span id="etiqueta-rede-alunos" class="etiqueta off">…</span>
                 </div>
                 <p class="rede-alunos-estado" id="estado-rede-alunos">Carregando…</p>
-                <div class="barra-acoes" id="modo-rede-alunos" hidden>
-                    <span class="alternador" role="group" aria-label="Modo">
-                        <button class="botao pequeno" type="button" data-modo="horario">Por horário</button>
-                        <button class="botao pequeno" type="button" data-modo="aberta">Sempre aberta</button>
-                        <button class="botao pequeno" type="button" data-modo="fechada">Sempre fechada</button>
-                    </span>
+                <div class="modos-alunos" id="modo-rede-alunos" role="radiogroup" aria-label="Modo de funcionamento" hidden>
+                    <button class="modo modo-horario" type="button" role="radio" data-modo="horario">
+                        <strong>Por horário</strong>
+                        <span>Abre e fecha sozinha nos horários</span>
+                    </button>
+                    <button class="modo modo-aberta" type="button" role="radio" data-modo="aberta">
+                        <strong>Sempre aberta</strong>
+                        <span>Ignora os horários</span>
+                    </button>
+                    <button class="modo modo-fechada" type="button" role="radio" data-modo="fechada">
+                        <strong>Sempre fechada</strong>
+                        <span>Ignora os horários</span>
+                    </button>
                 </div>
                 <div class="barra-acoes" id="acoes-rede-alunos" hidden>
                     <span class="grupo-lote">

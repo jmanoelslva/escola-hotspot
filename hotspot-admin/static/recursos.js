@@ -1015,7 +1015,10 @@ function renderRedeAlunos(e) {
         texto.textContent = e.erro || 'Escolha a interface e os horários abaixo e salve.';
         return;
     }
-    document.querySelectorAll('[data-modo]').forEach((b) => b.classList.toggle('ativo', b.dataset.modo === e.modo));
+    document.querySelectorAll('[data-modo]').forEach((b) => {
+        b.classList.toggle('ativo', b.dataset.modo === e.modo);
+        b.setAttribute('aria-checked', b.dataset.modo === e.modo ? 'true' : 'false');
+    });
     etiqueta.className = 'etiqueta ' + (e.aberta ? 'ok' : 'off');
     etiqueta.textContent = e.aberta ? 'Aberta' : 'Fechada';
     const abre = quandoRelativo(e.abre_em, e.agora);
@@ -1115,13 +1118,14 @@ document.querySelectorAll('[data-modo]').forEach((b) => b.addEventListener('clic
         aberta: 'Deixar a rede Alunos sempre aberta (os horários param de valer)?',
         fechada: 'Deixar a rede Alunos sempre fechada? Os alunos conectados ficam sem internet agora.',
     };
-    if (!await confirmar('Modo da rede Alunos', textos[modo], b.textContent)) return;
+    const nome = b.querySelector('strong').textContent;
+    if (!await confirmar('Modo da rede Alunos', textos[modo], nome)) return;
     await comBotao(b, async () => {
         try {
             const e = await api('PUT', '/api/rede-alunos/modo', { modo });
             estado.interfacesAlunos = null;  // a interface pode ter ligado ou desligado
             renderRedeAlunos(e);
-            aviso('Rede Alunos: ' + b.textContent.toLowerCase() + '.');
+            aviso('Rede Alunos: ' + nome.toLowerCase() + '.');
         } catch (erro) { aviso(erro.message, true); }
     });
 }));

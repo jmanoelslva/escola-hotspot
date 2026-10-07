@@ -2,6 +2,11 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.14.1] - 2026-10-07
+
+### Alterado
+- Rede Alunos: o modo (Por horário, Sempre aberta, Sempre fechada) virou três cartões de escolha maiores, com uma linha de explicação e a cor da situação (azul, verde, vermelho) no escolhido.
+
 ## [1.14.0] - 2026-10-07
 
 ### Adicionado

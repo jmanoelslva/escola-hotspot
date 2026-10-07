@@ -326,6 +326,27 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
 .rede-alunos-topo h2 { margin: 0; }
 .rede-alunos-topo .etiqueta { font-size: 13px; padding: 3px 10px; }
 .campo-interface { max-width: 420px; }
+/* Modo da rede Alunos: três cartões de escolha */
+.modos-alunos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.modo {
+    --cor: var(--azul); --cor-fundo: #e7eff7; --cor-borda: #b9cfe4;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
+    padding: 10px 14px 10px 36px; position: relative; font: inherit; cursor: pointer;
+    color: var(--texto); background: var(--branco); border: 1px solid var(--borda); border-radius: 10px;
+}
+.modo strong { font-size: 15px; }
+.modo span { font-size: 13px; color: var(--suave); }
+.modo::before {
+    content: ""; position: absolute; left: 12px; top: 13px; width: 14px; height: 14px;
+    border: 2px solid var(--borda); border-radius: 50%; background: var(--branco);
+}
+.modo:hover { border-color: var(--cor-borda); }
+.modo-aberta { --cor: #1e6b30; --cor-fundo: #e6f4ea; --cor-borda: #7fbf8f; }
+.modo-fechada { --cor: #a3181d; --cor-fundo: #fdeaea; --cor-borda: #e8a4a7; }
+.modo.ativo { background: var(--cor-fundo); border: 2px solid var(--cor); padding: 9px 13px 9px 35px; }
+.modo.ativo strong { color: var(--cor); }
+.modo.ativo::before { border-color: var(--cor); background: var(--cor); box-shadow: inset 0 0 0 3px #fff; top: 12px; left: 11px; }
+@media (max-width: 760px) { .modos-alunos { grid-template-columns: 1fr; } }
 .tabela-horarios input[type=time] { width: 120px; margin: 0; }
 .tabela-horarios .dias { display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .tabela-horarios .dias label { display: inline-flex; align-items: center; gap: 4px; margin: 0; font-weight: 400; }
