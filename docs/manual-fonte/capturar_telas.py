@@ -4,7 +4,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 BASE = "http://127.0.0.1:8770"
-SAIDA = Path(__file__).parent / "manual" / "telas"
+SAIDA = Path(__file__).parent / "telas"
 SAIDA.mkdir(parents=True, exist_ok=True)
 
 
@@ -61,10 +61,16 @@ with sync_playwright() as p:
     api(page, "PUT", "/api/perfis/*1/horario", {"ativo": True, "inicio": "07:00", "fim": "17:00", "dias": ["mon", "tue", "wed", "thu", "fri"]})
     api(page, "PUT", "/api/forcar-dns", {"ativo": True})
     api(page, "POST", "/api/backups")
+    api(page, "PUT", "/api/configuracoes/escola", {"nome": "Escola Estadual Professora Maria Aldineide Pessoa Gomes", "cidade": "Coité do Noia - AL"})
+    api(page, "PUT", "/api/configuracoes/troca-senha", {"ativo": True})
     page.reload()
     esperar(page, 2500)
 
     tela(page, "02-inicio", "geral", ms=40000, pagina_inteira=False)
+    page.click('[data-periodo="30d"]')
+    esperar(page, 1500)
+    page.locator(".topo-uso").locator("..").screenshot(path=str(SAIDA / "02b-uso.png"))
+    print("ok 02b-uso")
     tela(page, "03-usuarios", "usuarios")
     tela(page, "04-novo-usuario", None, antes="document.querySelector('#novo-usuario').click()", pagina_inteira=False)
     page.keyboard.press("Escape")
@@ -78,8 +84,16 @@ with sync_playwright() as p:
     tela(page, "12-rede-alunos", "alunos", ms=1800)
     tela(page, "13-sites", "sites")
     tela(page, "14-aviso", "aviso")
-    tela(page, "15-configuracoes", "config", ms=1800)
+    page.evaluate("abrirAba('config')")
+    esperar(page, 2000)
+    limpar(page)
+    page.locator("#form-escola").screenshot(path=str(SAIDA / "15a-escola.png"))
+    page.locator("#form-ap").locator("..").screenshot(path=str(SAIDA / "15b-aps.png"))
+    page.locator("#ativar-servico").locator("../..").screenshot(path=str(SAIDA / "15c-servico.png"))
+    page.locator("#form-mikrotik").screenshot(path=str(SAIDA / "15d-conexao.png"))
+    print("ok 15-configuracoes")
     tela(page, "16-administradores", "administradores")
+    tela(page, "20-relatorio", "mensal", ms=2500)
     tela(page, "17-backup", "backup")
     tela(page, "18-historico", "historico")
 
@@ -94,4 +108,9 @@ with sync_playwright() as p:
     page.locator("#impressao").screenshot(path=str(SAIDA / "19-cartoes.png"))
     page.emulate_media(media="screen")
     print("ok 19-cartoes")
+    celular = navegador.new_page(viewport={"width": 390, "height": 780}, device_scale_factor=2, locale="pt-BR")
+    celular.goto(BASE + "/senha")
+    esperar(celular, 1200)
+    celular.screenshot(path=str(SAIDA / "21-senha.png"))
+    print("ok 21-senha")
     navegador.close()

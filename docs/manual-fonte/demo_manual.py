@@ -5,6 +5,30 @@ import tempfile
 
 os.environ["PORTA"] = "8770"
 os.environ["PASTA_DADOS"] = tempfile.mkdtemp(prefix="manual-")
+# Histórico de uso fictício (30 dias, a cada 5 minutos) e serviço do painel ativo.
+import json, math, random
+from datetime import datetime, timedelta
+from pathlib import Path as _P
+_dados = _P(os.environ["PASTA_DADOS"]); (_dados / "uso").mkdir(parents=True, exist_ok=True)
+(_dados / "servico.json").write_text(json.dumps({"usuario": "admin", "senha": "segredo"}), encoding="utf-8")
+random.seed(7)
+_agora = datetime.now().replace(second=0, microsecond=0)
+_t = _agora - timedelta(days=30)
+_arquivos = {}
+while _t < _agora:
+    hora = _t.hour + _t.minute / 60
+    util = _t.weekday() < 5
+    aula = 7 <= hora <= 17
+    fator = (0.9 if util else 0.25) * (1.0 if aula else 0.08) * (1.6 if (8.8 <= hora <= 9.2 or 12 <= hora <= 12.8) else 1)
+    mbps = max(0.3, 60 * fator * random.uniform(0.6, 1.3))
+    baixado = int(mbps * 1e6 / 8 * 300)
+    sessoes = int((70 if util else 10) * (1 if aula else 0.1) * random.uniform(0.7, 1.2))
+    aparelhos = sessoes + int((220 if (util and (8.8 <= hora <= 9.2 or 12 <= hora <= 12.8)) else 10) * random.uniform(0.7, 1))
+    linha = f"{_t.isoformat()};300;{baixado};{int(baixado*0.12)};{sessoes};{aparelhos}" + chr(10)
+    _arquivos.setdefault(f"{_t:%Y-%m}", []).append(linha)
+    _t += timedelta(minutes=5)
+for _mes, _linhas in _arquivos.items():
+    (_dados / "uso" / f"{_mes}.csv").write_text("".join(_linhas), encoding="utf-8")
 os.environ["MIKROTIK_URL"] = "192.168.88.1"
 os.environ["NOME_ESCOLA"] = "Escola Estadual Professora Maria Aldineide Pessoa Gomes"
 os.environ["CIDADE_ESCOLA"] = "Coité do Noia - AL"
@@ -79,6 +103,11 @@ mk.adicionar("/user", {"name": "coordenacao", "group": "painel", "disabled": "fa
                        "last-logged-in": "2026-10-08 07:45:00"})
 mk.adicionar("/user/group", {"name": "painel", "policy": "read,write,test,sensitive,api,rest-api"})
 
+for _n, (_nome, _st) in enumerate([("AP1 – secretaria", "up"), ("AP2 – sala dos professores", "up"),
+                                   ("AP3 – pátio", "down"), ("AP4 – biblioteca", "up"),
+                                   ("AP5 – bloco B", "up"), ("AP6 – quadra", "up")], start=11):
+    mk.adicionar("/tool/netwatch", {"host": f"172.16.1.{_n}", "type": "icmp", "interval": "30s", "status": _st,
+                                    "since": "2026-10-08 11:52:00", "comment": f"painel-ap: {_nome}", "disabled": "false"})
 app.state.transport = mk.transport()
 app.state.endereco = EnderecoMikrotik("192.168.88.1", transport=app.state.transport)
 uvicorn.run(app, host="127.0.0.1", port=8770, log_level="warning")
