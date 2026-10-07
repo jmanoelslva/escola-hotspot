@@ -34,7 +34,8 @@ def test_criar_listar_e_encerrar_visitantes(logado, mk):
     assert r.status_code == 200, r.text
     criados = r.json()["criados"]
     assert len(criados) == 3 and len({c["usuario"] for c in criados}) == 3
-    assert all(c["usuario"].startswith("vis-") and len(c["senha"]) == 6 for c in criados)
+    assert [c["usuario"] for c in criados] == ["visita1", "visita2", "visita3"]
+    assert all(len(c["senha"]) == 6 and c["senha"].isdigit() for c in criados)
 
     usuario = next(u for u in mk.tabelas[USUARIOS] if u["name"] == criados[0]["usuario"])
     assert usuario["profile"] == "alunos" and usuario["comment"].startswith("painel-visitante até ")
@@ -134,3 +135,11 @@ def test_encerrar_selecionados_e_todos(logado, mk):
     assert not [a for a in mk.tabelas[AGENDA] if a["name"].startswith("painel-visitante-")]
     assert comum in mk.tabelas[USUARIOS]
     assert logado.post("/api/visitantes/encerrar", json={}).status_code == 400
+
+
+def test_nome_do_visitante_reaproveita_o_menor_numero_livre(logado, mk):
+    logado.post("/api/visitantes", json={"quantidade": 3, "minutos": 60})
+    lista = logado.get("/api/visitantes").json()
+    logado.delete(f"/api/visitantes/{next(v['id'] for v in lista if v['usuario'] == 'visita2')}")
+    novo = logado.post("/api/visitantes", json={"quantidade": 2, "minutos": 60}).json()["criados"]
+    assert [c["usuario"] for c in novo] == ["visita2", "visita4"]

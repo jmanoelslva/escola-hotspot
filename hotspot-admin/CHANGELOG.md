@@ -2,6 +2,11 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.15.0] - 2026-10-07
+
+### Alterado
+- Visitantes com usuário e senha mais fáceis de digitar: usuário `visita1`, `visita2`... (o menor número livre; números de visitantes encerrados voltam a ser usados) e senha de 6 números. Antes: `vis-k7m2p` e senha com letras e números.
+
 ## [1.14.2] - 2026-10-07
 
 ### Corrigido

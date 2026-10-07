@@ -24,7 +24,6 @@ MAX_QUANTIDADE = 50
 MAX_DIAS = 30
 
 _COMENTARIO = re.compile(r"^painel-visitante até (\d{4}-\d{2}-\d{2} \d{2}:\d{2})(?: \| (.*))?$")
-_ALFABETO = "abcdefghjkmnpqrstuvwxyz23456789"
 _MESES = ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
 
 
@@ -51,14 +50,20 @@ def ler_comentario(texto: str) -> tuple[datetime | None, str]:
 
 
 def _nome_novo(existentes: set[str]) -> str:
-    while True:
-        nome = "vis-" + "".join(secrets.choice(_ALFABETO) for _ in range(5))
-        if nome not in existentes:
-            return nome
+    """visita1, visita2...: o menor número livre (fácil de ditar e digitar)."""
+    numero = 1
+    while f"visita{numero}" in existentes:
+        numero += 1
+    return f"visita{numero}"
+
+
+def _senha_nova() -> str:
+    """6 números: no celular é só trocar uma vez para o teclado numérico."""
+    return "".join(secrets.choice("0123456789") for _ in range(6))
 
 
 def _script_expirar(nome: str) -> str:
-    # Nomes vis-xxxxx só têm letras, números e hífen: seguros dentro das aspas.
+    # Nomes visitaN só têm letras e números: seguros dentro das aspas.
     return (f':do {{ /ip hotspot active remove [find user="{nome}"] }} on-error={{}}; '
             f':do {{ /ip hotspot cookie remove [find user="{nome}"] }} on-error={{}}; '
             f':do {{ /ip hotspot user remove [find name="{nome}"] }} on-error={{}}; '
@@ -96,7 +101,7 @@ def criar(mk: Mikrotik, quantidade: int, ate: datetime, perfil: str, descricao: 
     for _ in range(quantidade):
         nome = _nome_novo(existentes)
         existentes.add(nome)
-        senha = util.gerar_senha()
+        senha = _senha_nova()
         corpo = {"name": nome, "password": senha, "comment": texto}
         if perfil:
             corpo["profile"] = perfil
