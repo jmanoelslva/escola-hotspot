@@ -8,6 +8,7 @@ def test_cadastrar_listar_alterar_e_remover_ap(logado, mk):
     assert r.status_code == 200, r.text
     item = mk.tabelas[NETWATCH][-1]
     assert item["host"] == "172.16.1.13" and item["comment"] == "painel-ap: AP3 – pátio" and item["interval"] == "30s"
+    assert item["type"] == "icmp" and item["packet-count"] == "5" and item["thr-loss-percent"] == "100%"
     assert logado.post("/api/aps", json={"nome": "Outro", "ip": "172.16.1.13"}).status_code == 400
     assert logado.post("/api/aps", json={"nome": "X", "ip": "172.16.1"}).status_code == 400
     assert logado.post("/api/aps", json={"nome": " ", "ip": "172.16.1.20"}).status_code == 400
@@ -40,3 +41,10 @@ def test_nome_da_escola_vai_para_o_hotspot(logado, mk):
         assert '"nome": "Escola Nova"' in arquivo["contents"]
     finally:
         (config.pasta_dados / ajustes.ARQUIVO).unlink(missing_ok=True)
+
+
+def test_ap_antigo_passa_para_5_pings(logado, mk):
+    antigo = mk.adicionar(NETWATCH, {"host": "172.16.1.12", "interval": "30s", "timeout": "1s",
+                                     "comment": "painel-ap: AP2", "status": "up"})
+    logado.get("/api/aps")
+    assert antigo["type"] == "icmp" and antigo["packet-count"] == "5"

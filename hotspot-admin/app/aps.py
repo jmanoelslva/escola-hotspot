@@ -1,8 +1,9 @@
 """Pontos de acesso (APs) vigiados pelo próprio MikroTik (/tool netwatch).
 
-Cada AP é uma entrada do Netwatch com comentário "painel-ap: <nome>": o
-roteador testa o IP a cada 30 segundos, mesmo com o painel fechado, e o painel
-só lê se está no ar (status up/down) e desde quando.
+Cada AP é uma entrada do Netwatch com comentário "painel-ap: <nome>": a cada
+30 segundos o roteador manda 5 pings ao IP e só marca "fora do ar" se nenhum
+voltar (type=icmp, 100% de perda), para um pacote perdido não virar alarme.
+Funciona mesmo com o painel fechado; o painel só lê o status e desde quando.
 """
 
 import re
@@ -19,6 +20,31 @@ def _nome(item: dict) -> str:
     return item.get("comment", "")[len(PREFIXO):].strip()
 
 
+# 5 pings a cada 30 s; "fora do ar" só com 100% de perda. Os limites de tempo
+# de resposta ficam folgados (os de fábrica marcam "fora" com rede lenta).
+TESTE = {"type": "icmp", "interval": "30s", "packet-count": "5", "packet-interval": "200ms",
+         "thr-loss-percent": "100%", "thr-avg": "2s", "thr-max": "3s", "thr-jitter": "3s", "thr-stdev": "2s"}
+# RouterOS antigo, sem o tipo icmp no Netwatch: um ping simples a cada 30 s.
+TESTE_SIMPLES = {"interval": "30s", "timeout": "1s"}
+
+
+def _aplicar_teste(mk: Mikrotik, item_id: str | None, corpo: dict) -> None:
+    """Cria (item_id None) ou atualiza a entrada com o teste de 5 pings; se o
+    roteador não aceitar, usa o ping simples."""
+    for teste in (TESTE, TESTE_SIMPLES):
+        try:
+            if item_id:
+                mk.alterar(NETWATCH, item_id, {**corpo, **teste})
+            else:
+                mk.criar(NETWATCH, {**corpo, **teste})
+            return
+        except ErroAutenticacao:
+            raise
+        except ErroMikrotik:
+            if teste is TESTE_SIMPLES:
+                raise
+
+
 def listar(mk: Mikrotik) -> list[dict]:
     try:
         itens = mk.listar(NETWATCH)
@@ -26,6 +52,16 @@ def listar(mk: Mikrotik) -> list[dict]:
         raise
     except ErroMikrotik:
         return []
+    # APs cadastrados antes (ping simples) passam para o teste de 5 pings.
+    for i in itens:
+        if i.get("comment", "").startswith(PREFIXO) and i.get("type", "simple") != "icmp":
+            try:
+                mk.alterar(NETWATCH, i[".id"], TESTE)
+                i.update(TESTE)
+            except ErroAutenticacao:
+                raise
+            except ErroMikrotik:
+                break  # roteador sem o tipo icmp: fica no ping simples
     lista = [{
         "id": i.get(".id"),
         "nome": _nome(i),
@@ -57,7 +93,7 @@ def criar(mk: Mikrotik, nome: str, ip: str) -> dict:
     nome, ip = _validar(nome, ip)
     if any(a["ip"] == ip for a in listar(mk)):
         raise util.ErroDados("Esse IP já está na lista.")
-    mk.criar(NETWATCH, {"host": ip, "interval": "30s", "timeout": "1s", "comment": f"{PREFIXO} {nome}"})
+    _aplicar_teste(mk, None, {"host": ip, "comment": f"{PREFIXO} {nome}"})
     return next(a for a in listar(mk) if a["ip"] == ip)
 
 
@@ -71,7 +107,7 @@ def _do_painel(mk: Mikrotik, item_id: str) -> dict:
 def alterar(mk: Mikrotik, item_id: str, nome: str, ip: str) -> dict:
     _do_painel(mk, item_id)
     nome, ip = _validar(nome, ip)
-    mk.alterar(NETWATCH, item_id, {"host": ip, "comment": f"{PREFIXO} {nome}"})
+    _aplicar_teste(mk, item_id, {"host": ip, "comment": f"{PREFIXO} {nome}"})
     return next(a for a in listar(mk) if a["id"] == item_id)
 
 

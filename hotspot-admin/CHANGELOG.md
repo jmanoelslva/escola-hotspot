@@ -2,6 +2,12 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.19.2] - 2026-10-07
+
+### Alterado
+- Teste dos APs: a cada 30 segundos o MikroTik manda 5 pings (Netwatch tipo icmp) e só marca "fora do ar" quando nenhum volta, para um pacote perdido não virar alarme falso. APs já cadastrados passam para o teste novo sozinhos; RouterOS sem o tipo icmp continua no ping simples.
+- Configurações → Escola: o texto explica que o nome e a cidade também vão para o rodapé da tela de login do Wi-Fi.
+
 ## [1.19.1] - 2026-10-07
 
 ### Corrigido
