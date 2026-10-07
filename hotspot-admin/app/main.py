@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import administradores, ajustes, backup, controle, historico, importacao, qrcodes, rede_alunos, sistema, util, visitantes
+from . import administradores, ajustes, backup, controle, historico, importacao, qrcodes, rede, rede_alunos, sistema, util, visitantes
 from .config import APP_VERSION, PASTA_PROJETO, config
 from .mikrotik import EnderecoMikrotik, ErroAutenticacao, ErroConexao, ErroMikrotik, Mikrotik
 from .sessoes import LimiteLogin, Sessao, Sessoes
@@ -533,6 +533,12 @@ def aparelhos(mk: Mikrotik = Depends(mikrotik)):
             "bypass": util.sim(host.get("bypassed")),
         })
     return sorted(resultado, key=lambda h: (h["nome"] == "", h["nome"].lower(), h["ip"]))
+
+
+@app.get("/api/rede")
+def ver_rede(mk: Mikrotik = Depends(mikrotik)):
+    """Todos os aparelhos: no hotspot (com ou sem login) e no DHCP de qualquer rede."""
+    return rede.todos(mk)
 
 
 @app.post("/api/dispositivos")

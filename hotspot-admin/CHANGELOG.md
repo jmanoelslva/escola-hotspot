@@ -2,6 +2,11 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.13.0] - 2026-10-07
+
+### Adicionado
+- Conectados → **Todos os aparelhos**: todos os aparelhos na rede, logados no hotspot ou não. Junta o que o hotspot vê (`/ip hotspot host`, com o usuário de quem está logado) com o DHCP de todas as redes (inclusive a Alunos, que não tem login). Situação de cada um (logado, sem login, liberado, bloqueado, rede sem login), totais, filtros por rede e situação, busca, botões Liberar e Bloquear e atualização a cada 30 segundos.
+
 ## [1.12.2] - 2026-10-07
 
 ### Removido

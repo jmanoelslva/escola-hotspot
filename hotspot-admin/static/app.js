@@ -183,7 +183,7 @@ function mostrarPainel(sessao) {
 const GRUPOS = {
     inicio: [['geral', 'Painel geral']],
     usuarios: [['usuarios', 'Cadastrados'], ['visitantes', 'Visitantes'], ['perfis', 'Perfis e horário'], ['importar', 'Importar planilha']],
-    conectados: [['conectados', 'Conectados agora'], ['relatorio', 'Consumo']],
+    conectados: [['conectados', 'Conectados agora'], ['rede', 'Todos os aparelhos'], ['relatorio', 'Consumo']],
     aparelhos: [['aparelhos', 'Liberados e bloqueados']],
     regras: [['alunos', 'Rede Alunos'], ['sites', 'Sites bloqueados']],
     sistema: [['aviso', 'Aviso'], ['config', 'Configurações'], ['administradores', 'Administradores'], ['backup', 'Backup'], ['historico', 'Histórico']],
@@ -233,7 +233,7 @@ function abrirAba(nome) {
     clearInterval(estado.relogioConectados);
     const carregar = CARREGAR[nome];
     if (carregar) carregar().catch((e) => aviso(e.message, true));
-    if (nome === 'conectados' || nome === 'alunos') {
+    if (nome === 'conectados' || nome === 'rede' || nome === 'alunos') {
         estado.relogioConectados = setInterval(() => CARREGAR[nome]().catch(() => {}), 30000);
     }
 }
@@ -682,6 +682,7 @@ $('#form-aparelho').addEventListener('submit', async (evento) => {
             }
             $('#janela-aparelho').close();
             if (estado.abaAtual === 'aparelhos') await carregarAparelhos();
+            if (estado.abaAtual === 'rede') await carregarRedeToda();
         } catch (e) {
             mostrarErroForm(form, e.message);
         }

@@ -554,6 +554,74 @@ $('#form-dominio-todos').addEventListener('submit', async (evento) => {
     });
 });
 
+// ------------------------------------------------------------------ todos os aparelhos na rede
+
+estado.redeToda = { aparelhos: [], resumo: {}, redes: [] };
+
+const SITUACAO_REDE = {
+    logado: ['ok', 'Logado'],
+    sem_login: ['alerta-amarelo', 'Sem login'],
+    liberado: ['bypass', 'Liberado (bypass)'],
+    bloqueado: ['bloqueado', 'Bloqueado'],
+    sem_hotspot: ['off', 'Rede sem login'],
+};
+
+async function carregarRedeToda() {
+    estado.redeToda = await api('GET', '/api/rede');
+    const filtro = $('#filtro-rede');
+    const atual = filtro.value;
+    filtro.replaceChildren(el('option', { value: '', texto: 'Todas as redes' }),
+        ...estado.redeToda.redes.map((r) => el('option', { value: r, texto: r })));
+    filtro.value = estado.redeToda.redes.includes(atual) ? atual : '';
+    renderRedeToda();
+}
+
+function renderRedeToda() {
+    const { aparelhos, resumo } = estado.redeToda;
+    const busca = normalizar($('#busca-rede-toda').value);
+    const redeEscolhida = $('#filtro-rede').value;
+    const situacao = $('#filtro-situacao').value;
+    const lista = aparelhos.filter((a) =>
+        (!redeEscolhida || a.rede === redeEscolhida) && (!situacao || a.situacao === situacao) &&
+        (!busca || normalizar(`${a.nome} ${a.usuario} ${a.ip} ${a.mac}`).includes(busca)));
+
+    $('#resumo-rede').replaceChildren(
+        cartaoNumero('Aparelhos', aparelhos.length),
+        cartaoNumero('Logados', resumo.logado || 0),
+        cartaoNumero('Sem login', resumo.sem_login || 0),
+        cartaoNumero('Liberados', resumo.liberado || 0),
+        cartaoNumero('Rede sem login', resumo.sem_hotspot || 0));
+
+    const corpo = $('#lista-rede-toda');
+    corpo.replaceChildren();
+    if (!lista.length) linhaVazia(corpo, 6, aparelhos.length ? 'Nenhum aparelho encontrado.' : 'Nenhum aparelho na rede agora.');
+    for (const a of lista) {
+        const [classe, rotulo] = SITUACAO_REDE[a.situacao];
+        const podeMudar = a.situacao !== 'bloqueado' && a.situacao !== 'liberado' && a.situacao !== 'sem_hotspot';
+        corpo.append(el('tr', { class: a.situacao === 'bloqueado' ? 'inativo' : '' },
+            el('td', {}, el('strong', { texto: a.nome || '(sem nome)' }), a.usuario ? el('div', { class: 'ajuda', texto: 'usuário ' + a.usuario }) : null),
+            el('td', { 'data-rotulo': 'IP', class: 'mono', texto: a.ip || '—' }),
+            el('td', { 'data-rotulo': 'MAC', class: 'mono', texto: a.mac }),
+            el('td', { 'data-rotulo': 'Rede', texto: a.rede || '—' }),
+            el('td', {}, el('span', { class: 'etiqueta ' + classe, texto: rotulo })),
+            el('td', {}, podeMudar ? el('div', { class: 'acoes' },
+                el('button', { class: 'botao pequeno cor-verde', type: 'button', texto: 'Liberar', title: 'Bypass: navega sem login',
+                    onclick: () => abrirAparelho('bypassed', null, { mac: a.mac, comentario: a.nome || a.usuario }) }),
+                el('button', { class: 'botao pequeno cor-vermelho', type: 'button', texto: 'Bloquear',
+                    onclick: () => abrirAparelho('blocked', null, { mac: a.mac, comentario: a.nome || a.usuario }) })) : null),
+        ));
+    }
+}
+
+function cartaoNumero(rotulo, valor) {
+    return el('div', { class: 'cartao-numero' }, el('span', { texto: rotulo }), el('strong', { texto: String(valor) }));
+}
+
+$('#busca-rede-toda').addEventListener('input', renderRedeToda);
+$('#filtro-rede').addEventListener('change', renderRedeToda);
+$('#filtro-situacao').addEventListener('change', renderRedeToda);
+$('#atualizar-rede').addEventListener('click', (e) => comBotao(e.target, () => carregarRedeToda().catch((erro) => aviso(erro.message, true))));
+
 // ------------------------------------------------------------------ administradores do MikroTik
 
 estado.administradores = { usuarios: [], grupos: [], eu: '', eu_full: false };
@@ -1003,4 +1071,5 @@ Object.assign(CARREGAR, {
     visitantes: carregarVisitantes,
     alunos: carregarRedeAlunos,
     administradores: carregarAdministradores,
+    rede: carregarRedeToda,
 });

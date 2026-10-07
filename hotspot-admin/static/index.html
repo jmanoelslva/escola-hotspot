@@ -134,6 +134,30 @@
             </div>
         </section>
 
+        <!-- Todos os aparelhos na rede -->
+        <section id="aba-rede" class="painel-aba" hidden>
+            <div class="barra-acoes">
+                <input id="busca-rede-toda" type="search" placeholder="Buscar aparelho, usuário, IP ou MAC" class="busca">
+                <select id="filtro-rede" class="filtro"><option value="">Todas as redes</option></select>
+                <select id="filtro-situacao" class="filtro">
+                    <option value="">Todas as situações</option>
+                    <option value="logado">Logados</option>
+                    <option value="sem_login">Sem login</option>
+                    <option value="liberado">Liberados (bypass)</option>
+                    <option value="bloqueado">Bloqueados</option>
+                    <option value="sem_hotspot">Rede sem login</option>
+                </select>
+                <button id="atualizar-rede" class="botao cor-azul" type="button">Atualizar</button>
+            </div>
+            <div class="cartoes-resumo" id="resumo-rede"></div>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr><th>Aparelho</th><th>IP</th><th>MAC</th><th>Rede</th><th>Situação</th><th></th></tr></thead>
+                    <tbody id="lista-rede-toda"></tbody>
+                </table>
+            </div>
+        </section>
+
         <!-- Aparelhos (bypass e bloqueio) -->
         <section id="aba-aparelhos" class="painel-aba" hidden>
             <div class="barra-acoes">

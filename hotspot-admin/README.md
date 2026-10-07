@@ -2,11 +2,12 @@
 
 Aplicação web para administrar o hotspot do MikroTik (RouterOS 7) da escola, sem precisar abrir o Winbox:
 
-O painel tem 6 abas: **Início**, **Usuários** (Cadastrados, Visitantes, Perfis e horário, Importar planilha), **Conectados** (Conectados agora, Consumo), **Aparelhos**, **Regras de acesso** (Rede Alunos, Sites bloqueados) e **Sistema** (Aviso, Configurações, Administradores, Backup, Histórico). Clicar numa aba sempre abre a primeira subaba.
+O painel tem 6 abas: **Início**, **Usuários** (Cadastrados, Visitantes, Perfis e horário, Importar planilha), **Conectados** (Conectados agora, Todos os aparelhos, Consumo), **Aparelhos**, **Regras de acesso** (Rede Alunos, Sites bloqueados) e **Sistema** (Aviso, Configurações, Administradores, Backup, Histórico). Clicar numa aba sempre abre a primeira subaba.
 
 - **Painel geral:** saúde do roteador (CPU, memória, temperatura, tempo ligado), gráfico ao vivo do tráfego das interfaces e aviso quando há RouterOS ou firmware novo.
 - **Usuários:** listar, buscar, filtrar por turma e perfil, cadastrar, alterar, gerar senha nova com um clique, prender a um aparelho (MAC). Em lote: ativar, desativar, mudar de perfil, imprimir e excluir. Exportar para Excel (com ou sem senhas).
 - **Conectados:** quem está usando a rede agora (IP, MAC, tempo, consumo), com botões para desconectar e para liberar ou bloquear o aparelho. Atualiza a cada 30 segundos.
+- **Todos os aparelhos:** tudo o que está na rede agora, logado no hotspot ou não, inclusive a rede Alunos (pelo DHCP), com filtro por rede e situação.
 - **Aparelhos:** liberar (bypass) TVs, impressoras e computadores da escola, ou bloquear um aparelho, pelo MAC. Dá para escolher o aparelho na lista do que está conectado, com o nome que ele informou à rede (ex.: `SamsungTV-Sala5`).
 - **Visitantes:** senhas temporárias que expiram sozinhas (o MikroTik apaga na hora marcada), com cartões para imprimir com QR code para entrar no Wi-Fi e fazer o login.
 - **Rede Alunos:** abre e fecha a rede dos alunos (VLAN 300) nos horários das aulas, com "Liberar agora" e "Fechar agora". Precisa do `mikrotik-redes.rsc` importado no MikroTik.
