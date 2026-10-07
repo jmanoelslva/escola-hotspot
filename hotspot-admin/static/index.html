@@ -495,6 +495,26 @@
                     <button class="botao cor-azul" type="submit">Salvar</button>
                 </div>
             </form>
+            <div class="cartao">
+                <h2>Pontos de acesso (APs)</h2>
+                <p class="dica">O MikroTik testa cada AP a cada 30 segundos, mesmo com o painel fechado. O Início mostra quantos estão no ar.</p>
+                <form id="form-ap" class="linha-form">
+                    <label class="campo-largo">Nome
+                        <input name="nome" maxlength="60" required placeholder="ex.: AP3 – pátio">
+                    </label>
+                    <label class="rotulo-inline">IP
+                        <input name="ip" maxlength="15" required placeholder="172.16.1.13" spellcheck="false">
+                    </label>
+                    <button class="botao cor-verde" type="submit" id="salvar-ap">Adicionar</button>
+                    <button class="botao" type="button" id="cancelar-ap" hidden>Cancelar</button>
+                </form>
+                <div class="tabela-rolagem">
+                    <table class="tabela">
+                        <thead><tr><th>Nome</th><th>IP</th><th>Situação</th><th></th></tr></thead>
+                        <tbody id="lista-aps"></tbody>
+                    </table>
+                </div>
+            </div>
             <form id="form-mikrotik" class="cartao">
                 <h2>Conexão com o MikroTik</h2>
                 <p class="dica">Endereço e porta da REST API do roteador. Sem porta, o painel tenta HTTPS (443) e depois HTTP (80). Se mudar só a porta, deixe o IP em branco: fica o padrão <strong>192.168.88.1</strong>. Antes de salvar, o painel testa o endereço novo com o seu usuário; se não responder, nada muda.</p>

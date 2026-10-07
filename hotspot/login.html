@@ -24,7 +24,29 @@
     $(endif)
 
     <script src="aviso-escola.js"></script>
+    <script src="escola-info.js"></script>
         <script>
+        // Nome da escola e link para trocar a senha: o Painel do Hotspot grava
+        // escola-info.js (var ESCOLA_INFO = {nome, cidade, senha}) na pasta do hotspot.
+        function aplicarEscola() {
+            var info = typeof ESCOLA_INFO === 'object' && ESCOLA_INFO ? ESCOLA_INFO : null;
+            if (!info) return;
+            var rodape = document.getElementById('rodape-escola');
+            if (rodape && info.nome) {
+                rodape.textContent = info.nome;
+                if (info.cidade) {
+                    rodape.appendChild(document.createElement('br'));
+                    rodape.appendChild(document.createTextNode(info.cidade));
+                }
+            }
+            var termos = document.getElementById('termos-escola');
+            if (termos && info.nome) termos.textContent = info.nome;
+            var link = document.getElementById('link-senha');
+            if (link && info.senha) {
+                link.href = info.senha;
+                link.parentNode.hidden = false;
+            }
+        }
         // Aviso da escola: o Painel do Hotspot grava aviso-escola.js
         // (var AVISO_ESCOLA = "...") na pasta do hotspot.
         function carregarAviso() {
@@ -87,6 +109,7 @@
                 atualizarBotao();
             }
             carregarAviso();
+            aplicarEscola();
         }
 
         function aceitou() {
@@ -168,13 +191,13 @@
         </form>
     </div>
 
-    <p class="rodape">Escola Estadual Professora Maria Aldineide Pessoa Gomes<br />Coité do Noia - AL</p>
+    <p class="rodape" id="rodape-escola">Escola Estadual Professora Maria Aldineide Pessoa Gomes<br />Coité do Noia - AL</p>
 
     <div id="termos" class="janela" role="dialog" aria-modal="true" aria-labelledby="termos-titulo">
         <div class="janela-caixa">
             <h2 id="termos-titulo">Termos de Uso da Rede Wi-Fi</h2>
             <div class="janela-texto">
-                <p>Ao usar a rede Wi-Fi da Escola Estadual Professora Maria Aldineide Pessoa Gomes, você concorda com as regras abaixo.</p>
+                <p>Ao usar a rede Wi-Fi da <span id="termos-escola">Escola Estadual Professora Maria Aldineide Pessoa Gomes</span>, você concorda com as regras abaixo.</p>
 
                 <h3>1. Finalidade</h3>
                 <p>A rede é oferecida para atividades pedagógicas e administrativas da escola.</p>

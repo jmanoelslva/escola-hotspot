@@ -173,5 +173,8 @@ def test_visitantes_e_usuarios_em_ordem_natural(logado, mk):
     logado.post("/api/visitantes", json={"quantidade": 12, "minutos": 60})
     nomes = [v["usuario"] for v in logado.get("/api/visitantes").json()]
     assert nomes[:3] == ["visita1", "visita2", "visita3"] and nomes[-3:] == ["visita10", "visita11", "visita12"]
+    mk.adicionar(USUARIOS, {"name": "aluno10", "comment": "Aluno - 9A"})
+    mk.adicionar(USUARIOS, {"name": "aluno2", "comment": "Aluno - 9A"})
     usuarios = [u["nome"] for u in logado.get("/api/usuarios").json()]
-    assert usuarios.index("visita2") < usuarios.index("visita10")
+    assert usuarios == ["aluno2", "aluno10"]  # visitantes ficam fora (têm a própria tela)
+    assert logado.get("/api/sistema").json()["usuarios"] == 2

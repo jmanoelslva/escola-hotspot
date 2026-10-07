@@ -19,7 +19,7 @@ O painel tem 6 abas: **Início**, **Usuários** (Cadastrados, Visitantes, Perfis
 - **Imprimir credenciais:** cartões com usuário e senha (3 por linha numa folha A4).
 - **Administradores:** usuários do próprio MikroTik que entram no painel, nos grupos **painel** (só o painel, sem Winbox) ou **full** (tudo).
 - **Histórico:** quem fez o quê e quando, com busca e filtro por operador e período.
-- **Configurações:** nome, cidade e logotipo da escola; IP e porta do MikroTik; endereço (domínio) da tela de login do hotspot, ex.: `wifi.pmapg.internal`; e a rede Wi-Fi usada no QR code dos cartões.
+- **Configurações:** nome, cidade e logotipo da escola (o nome e a cidade vão também para as páginas do hotspot, em `escola-info.js`); pontos de acesso (APs) vigiados pelo Netwatch do MikroTik; IP e porta do MikroTik; endereço (domínio) da tela de login do hotspot, ex.: `wifi.pmapg.internal`; e a rede Wi-Fi usada no QR code dos cartões.
 - **Backup:** uma cópia automática por dia (últimas 30) e restauração do que faltar no MikroTik.
 
 Cada pessoa entra com um **usuário admin do próprio MikroTik**. O painel não guarda senhas em disco: a senha fica na memória só enquanto a sessão está aberta (60 minutos sem uso, por padrão). As alterações ficam registradas em `dados\acoes.log` e no log do MikroTik.

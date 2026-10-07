@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import administradores, ajustes, backup, controle, historico, importacao, qrcodes, rede, rede_alunos, sistema, util, visitantes
+from . import administradores, ajustes, aps, backup, controle, historico, importacao, qrcodes, rede, rede_alunos, sistema, util, visitantes
 from .config import APP_VERSION, PASTA_PROJETO, config
 from .mikrotik import EnderecoMikrotik, ErroAutenticacao, ErroConexao, ErroMikrotik, Mikrotik
 from .sessoes import LimiteLogin, Sessao, Sessoes
@@ -305,6 +305,11 @@ class AlterarAdministrador(BaseModel):
     desativado: bool | None = None
 
 
+class DadosAP(BaseModel):
+    nome: str = Field(max_length=60)
+    ip: str = Field(max_length=15)
+
+
 class DadosEscola(BaseModel):
     nome: str = Field(max_length=200)
     cidade: str = Field(default="", max_length=200)
@@ -407,8 +412,14 @@ def servidores(mk: Mikrotik = Depends(mikrotik)):
 
 @app.get("/api/usuarios")
 def listar_usuarios(mk: Mikrotik = Depends(mikrotik)):
-    itens = [u for u in mk.listar(USUARIOS) if not util.sim(u.get("default")) and u.get("name") != "default-trial"]
-    return sorted((_usuario(u) for u in itens), key=lambda u: util.chave_natural(u["nome"]))
+    return sorted((_usuario(u) for u in _usuarios_comuns(mk)), key=lambda u: util.chave_natural(u["nome"]))
+
+
+def _usuarios_comuns(mk: Mikrotik) -> list[dict]:
+    """Usuários do hotspot sem os visitantes (que têm a própria tela) e sem os do sistema."""
+    return [u for u in mk.listar(USUARIOS)
+            if not util.sim(u.get("default")) and u.get("name") != "default-trial"
+            and visitantes.ler_comentario(u.get("comment", ""))[0] is None]
 
 
 @app.post("/api/usuarios")
@@ -888,12 +899,27 @@ def ver_escola(_: Sessao = Depends(sessao_atual)):
     return ajustes.escola(config.pasta_dados, config)
 
 
+def publicar_escola(mk: Mikrotik) -> str:
+    """Grava escola-info.js na pasta do hotspot (nome, cidade e link de troca de senha).
+    Devolve "" se deu certo ou a mensagem do erro (o painel não deixa de salvar por isso)."""
+    escola = ajustes.escola(config.pasta_dados, config)
+    info = {"nome": escola["nome"], "cidade": escola["cidade"], "senha": ajustes.ler(config.pasta_dados).get("senha_url", "")}
+    try:
+        _gravar_arquivo(mk, f"{_pasta_hotspot(mk)}/escola-info.js", f"var ESCOLA_INFO = {json.dumps(info)};\n")
+        return ""
+    except ErroAutenticacao:
+        raise
+    except ErroMikrotik as erro:
+        return erro.mensagem
+
+
 @app.put("/api/configuracoes/escola")
-def gravar_escola(dados: DadosEscola, s: Sessao = Depends(sessao_atual)):
+def gravar_escola(dados: DadosEscola, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
     ajustes.gravar_escola(config.pasta_dados, dados.nome, dados.cidade)
     escola = ajustes.escola(config.pasta_dados, config)
+    erro = publicar_escola(mk)
     registrar(s, f"alterou o nome da escola para \"{escola['nome']}\" ({escola['cidade'] or 'sem cidade'})")
-    return escola
+    return {**escola, "aviso_hotspot": f"Não foi possível gravar o nome nas páginas do hotspot: {erro}" if erro else ""}
 
 
 @app.post("/api/configuracoes/logo")
@@ -943,6 +969,36 @@ def gravar_conexao(dados: ConexaoMikrotik, s: Sessao = Depends(sessao_atual)):
     app.state.endereco = novo
     registrar(s, f"mudou a conexão com o MikroTik para {endereco} ({identidade})")
     return {**_estado_conexao(), "identidade": identidade}
+
+
+# ---------------------------------------------------------------- pontos de acesso (APs)
+
+@app.get("/api/aps")
+def ver_aps(mk: Mikrotik = Depends(mikrotik)):
+    return aps.listar(mk)
+
+
+@app.post("/api/aps")
+def criar_ap(dados: DadosAP, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    item = aps.criar(mk, dados.nome, dados.ip)
+    registrar(s, f"cadastrou o AP {item['nome']} ({item['ip']})")
+    return item
+
+
+@app.patch("/api/aps/{item_id}")
+def alterar_ap(item_id: str, dados: DadosAP, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    _id_valido(item_id)
+    item = aps.alterar(mk, item_id, dados.nome, dados.ip)
+    registrar(s, f"alterou o AP {item['nome']} ({item['ip']})")
+    return item
+
+
+@app.delete("/api/aps/{item_id}")
+def remover_ap(item_id: str, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    _id_valido(item_id)
+    nome = aps.remover(mk, item_id)
+    registrar(s, f"removeu o AP {nome}")
+    return {"ok": True}
 
 
 # ---------------------------------------------------------------- administradores do MikroTik
@@ -1129,8 +1185,8 @@ def ver_sistema(mk: Mikrotik = Depends(mikrotik)):
     dados = sistema.resumo(mk)
     dados["conectados"] = len(mk.listar(ATIVOS))
     dados.update(sistema.licenca(mk))
-    dados["usuarios"] = sum(1 for u in mk.listar(USUARIOS)
-                            if not util.sim(u.get("default")) and u.get("name") != "default-trial")
+    dados["usuarios"] = len(_usuarios_comuns(mk))
+    dados["aps"] = aps.resumo(mk)
     return dados
 
 

@@ -49,6 +49,13 @@ function cartaoSessoes(s) {
         `licença nível ${s.nivel || '?'} · ${s.usuarios} usuário(s) cadastrado(s)`, classe);
 }
 
+// APs vigiados pelo MikroTik: vermelho se algum estiver fora do ar.
+function cartaoAps(a) {
+    if (!a || !a.total) return cartao('APs', '—', 'cadastre em Sistema → Configurações');
+    if (!a.fora.length) return cartao('APs', `${a.no_ar} de ${a.total} no ar`, a.no_ar === a.total ? 'todos funcionando' : 'aguardando o primeiro teste');
+    return cartao('APs', `${a.no_ar} de ${a.total} no ar`, 'fora: ' + a.fora.map((f) => f.nome).join(', '), 'alerta-numero');
+}
+
 function renderSistema() {
     const s = estado.sistema;
     const memoria = s.memoria_total ? Math.round(s.memoria_usada / s.memoria_total * 100) : 0;
@@ -59,6 +66,7 @@ function renderSistema() {
         cartao('Temperatura', s.temperatura === null ? '—' : String(s.temperatura).replace('.', ',') + ' °C', null, quente ? 'alerta-numero' : ''),
         cartao('Ligado há', tempo(s.uptime) || '—'),
         cartaoSessoes(s),
+        cartaoAps(s.aps),
         cartao('Roteador', s.modelo || 'MikroTik', 'RouterOS ' + s.versao),
     );
 }

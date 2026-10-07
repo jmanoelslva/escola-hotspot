@@ -2,6 +2,15 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.18.0] - 2026-10-07
+
+### Adicionado
+- **Pontos de acesso (APs):** cadastro em Sistema → Configurações (nome e IP). O próprio MikroTik vigia cada AP a cada 30 segundos (`/tool netwatch`, comentário `painel-ap:`), mesmo com o painel fechado. No Início, o cartão **APs** mostra quantos estão no ar e fica vermelho com o nome de quem caiu.
+- **Nome da escola nas páginas do hotspot:** ao salvar Escola em Configurações, o painel grava `escola-info.js` na pasta do hotspot (nome, cidade e, no futuro, o link de troca de senha). As páginas `login.html` e `status.html` novas mostram esse nome no rodapé e nos termos de uso; é preciso enviá-las uma vez pelo Winbox.
+
+### Alterado
+- Usuários → Cadastrados não mostra mais os visitantes (eles têm a própria tela). O resumo diz quantos visitantes há; o Início conta só os usuários comuns.
+
 ## [1.17.2] - 2026-10-07
 
 ### Corrigido

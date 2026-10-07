@@ -757,7 +757,75 @@ function mostrarConexao(c) {
         : `Sem resposta do MikroTik em ${c.ip}${c.porta ? ':' + c.porta : ''}.`;
 }
 
+// ---- pontos de acesso (Netwatch do MikroTik)
+
+estado.editandoAp = null;
+const SITUACAO_AP = { no_ar: ['ok', 'No ar'], fora: ['bloqueado', 'Fora do ar'], testando: ['off', 'Testando…'], pausado: ['off', 'Pausado'] };
+
+async function carregarAps() {
+    const lista = await api('GET', '/api/aps');
+    const corpo = $('#lista-aps');
+    corpo.replaceChildren();
+    if (!lista.length) linhaVazia(corpo, 4, 'Nenhum AP cadastrado.');
+    for (const a of lista) {
+        const [classe, rotulo] = SITUACAO_AP[a.situacao] || SITUACAO_AP.testando;
+        corpo.append(el('tr', {},
+            el('td', {}, el('strong', { texto: a.nome })),
+            el('td', { 'data-rotulo': 'IP', class: 'mono', texto: a.ip }),
+            el('td', {}, el('span', { class: 'etiqueta ' + classe, texto: rotulo }),
+                a.situacao === 'fora' && a.desde ? el('div', { class: 'ajuda', texto: 'desde ' + dataHora(a.desde) }) : null),
+            el('td', {}, el('div', { class: 'acoes' },
+                el('button', { class: 'botao pequeno cor-azul', type: 'button', texto: 'Editar', onclick: () => editarAp(a) }),
+                el('button', { class: 'botao pequeno cor-vermelho', type: 'button', texto: 'Remover', onclick: () => removerAp(a) }))),
+        ));
+    }
+}
+
+function editarAp(a) {
+    const form = $('#form-ap');
+    estado.editandoAp = a;
+    form.nome.value = a.nome;
+    form.ip.value = a.ip;
+    $('#salvar-ap').textContent = 'Salvar';
+    $('#cancelar-ap').hidden = false;
+    form.nome.focus();
+}
+
+function limparFormAp() {
+    estado.editandoAp = null;
+    $('#form-ap').reset();
+    $('#salvar-ap').textContent = 'Adicionar';
+    $('#cancelar-ap').hidden = true;
+}
+
+$('#cancelar-ap').addEventListener('click', limparFormAp);
+
+$('#form-ap').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    const form = evento.target;
+    const dados = { nome: form.nome.value.trim(), ip: form.ip.value.trim() };
+    await comBotao($('#salvar-ap'), async () => {
+        try {
+            if (estado.editandoAp) await api('PATCH', '/api/aps/' + encodeURIComponent(estado.editandoAp.id), dados);
+            else await api('POST', '/api/aps', dados);
+            aviso('AP ' + dados.nome + ' salvo.');
+            limparFormAp();
+            await carregarAps();
+        } catch (e) { aviso(e.message, true); }
+    });
+});
+
+async function removerAp(a) {
+    if (!await confirmar('Remover AP', `Parar de vigiar "${a.nome}" (${a.ip})? O AP continua funcionando; só sai desta lista.`, 'Remover')) return;
+    try {
+        await api('DELETE', '/api/aps/' + encodeURIComponent(a.id));
+        aviso('AP removido da lista.');
+        await carregarAps();
+    } catch (e) { aviso(e.message, true); }
+}
+
 async function carregarEscolaEConexao() {
+    carregarAps().catch((e) => aviso(e.message, true));
     const [escola, conexao] = await Promise.all([api('GET', '/api/configuracoes/escola'), api('GET', '/api/configuracoes/mikrotik')]);
     mostrarEscola(escola);
     mostrarConexao(conexao);
@@ -768,8 +836,9 @@ $('#form-escola').addEventListener('submit', async (evento) => {
     const form = evento.target;
     await comBotao(form.querySelector('[type=submit]'), async () => {
         try {
-            mostrarEscola(await api('PUT', '/api/configuracoes/escola', { nome: form.nome.value, cidade: form.cidade.value }));
-            aviso('Dados da escola salvos.');
+            const r = await api('PUT', '/api/configuracoes/escola', { nome: form.nome.value, cidade: form.cidade.value });
+            mostrarEscola(r);
+            aviso(r.aviso_hotspot || 'Dados da escola salvos (também nas páginas do hotspot).', !!r.aviso_hotspot);
         } catch (e) { aviso(e.message, true); }
     });
 });

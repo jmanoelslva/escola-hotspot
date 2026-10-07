@@ -12,7 +12,29 @@ $(endif)
 <title>Wi-Fi da Escola - Conectado</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="aviso-escola.js"></script>
+<script src="escola-info.js"></script>
 <script>
+        // Nome da escola e link para trocar a senha: o Painel do Hotspot grava
+        // escola-info.js (var ESCOLA_INFO = {nome, cidade, senha}) na pasta do hotspot.
+        function aplicarEscola() {
+            var info = typeof ESCOLA_INFO === 'object' && ESCOLA_INFO ? ESCOLA_INFO : null;
+            if (!info) return;
+            var rodape = document.getElementById('rodape-escola');
+            if (rodape && info.nome) {
+                rodape.textContent = info.nome;
+                if (info.cidade) {
+                    rodape.appendChild(document.createElement('br'));
+                    rodape.appendChild(document.createTextNode(info.cidade));
+                }
+            }
+            var termos = document.getElementById('termos-escola');
+            if (termos && info.nome) termos.textContent = info.nome;
+            var link = document.getElementById('link-senha');
+            if (link && info.senha) {
+                link.href = info.senha;
+                link.parentNode.hidden = false;
+            }
+        }
         // Aviso da escola: o Painel do Hotspot grava aviso-escola.js
         // (var AVISO_ESCOLA = "...") na pasta do hotspot.
         function carregarAviso() {
@@ -96,6 +118,7 @@ $(endif)
         atualizar();
         setInterval(atualizar, 1000);
         carregarAviso();
+        aplicarEscola();
 $(if advert-pending == 'yes')
         openAdvert();
 $(endif)
@@ -164,6 +187,8 @@ $(endif)
         $(endif)
     </div>
 
-    <p class="rodape">Escola Estadual Professora Maria Aldineide Pessoa Gomes<br />Coité do Noia - AL</p>
+    <p class="trocar-senha" hidden><a id="link-senha" href="#">Trocar minha senha</a></p>
+
+    <p class="rodape" id="rodape-escola">Escola Estadual Professora Maria Aldineide Pessoa Gomes<br />Coité do Noia - AL</p>
 </body>
 </html>
