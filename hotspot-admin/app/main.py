@@ -408,7 +408,7 @@ def servidores(mk: Mikrotik = Depends(mikrotik)):
 @app.get("/api/usuarios")
 def listar_usuarios(mk: Mikrotik = Depends(mikrotik)):
     itens = [u for u in mk.listar(USUARIOS) if not util.sim(u.get("default")) and u.get("name") != "default-trial"]
-    return sorted((_usuario(u) for u in itens), key=lambda u: u["nome"].lower())
+    return sorted((_usuario(u) for u in itens), key=lambda u: util.chave_natural(u["nome"]))
 
 
 @app.post("/api/usuarios")
@@ -1168,6 +1168,15 @@ def _limite_visitantes(mk: Mikrotik) -> dict:
     limite = sistema.licenca(mk)["limite_hotspot"] or visitantes.MAX_QUANTIDADE
     validos = sum(1 for v in visitantes.listar(mk) if not v["expirado"])
     return {"limite": limite, "validos": validos, "disponiveis": max(0, min(visitantes.MAX_QUANTIDADE, limite - validos))}
+
+
+@app.get("/api/licenca")
+def ver_licenca(mk: Mikrotik = Depends(mikrotik)):
+    """Sessões do hotspot em uso agora contra o limite da licença."""
+    dados = sistema.licenca(mk)
+    sessoes = len(mk.listar(ATIVOS))
+    limite = dados["limite_hotspot"]
+    return {**dados, "sessoes": sessoes, "livres": None if limite is None else max(0, limite - sessoes)}
 
 
 @app.get("/api/visitantes/limite")

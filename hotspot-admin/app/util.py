@@ -82,3 +82,8 @@ def separar_turma(comentario: str) -> tuple[str, str]:
         nome, turma = texto.rsplit(" - ", 1)
         return nome.strip(), turma.strip()
     return texto, ""
+
+
+def chave_natural(texto: str) -> tuple:
+    """Ordem de gente: visita2 antes de visita10 (os números contam como números)."""
+    return tuple(int(parte) if parte.isdigit() else parte.lower() for parte in re.split(r"(\d+)", texto or ""))

@@ -152,7 +152,7 @@ def listar(mk: Mikrotik) -> list[dict]:
             "agendado": nome in agendados,
             "conectado": nome in conectados,
         })
-    return sorted(lista, key=lambda v: (v["ate"], v["usuario"]))
+    return sorted(lista, key=lambda v: util.chave_natural(v["usuario"]))
 
 
 def encerrar_varios(mk: Mikrotik, ids: list[str] | None) -> dict:

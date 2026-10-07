@@ -167,3 +167,11 @@ def test_limite_de_visitantes_pela_licenca(logado, mk):
     assert logado.post("/api/visitantes", json={"quantidade": 201, "minutos": 60}).status_code == 422
     mk.objetos["/system/license"]["nlevel"] = "5"
     assert logado.get("/api/visitantes/limite").json()["disponiveis"] == 200  # 500 - 200, até 200 por vez
+
+
+def test_visitantes_e_usuarios_em_ordem_natural(logado, mk):
+    logado.post("/api/visitantes", json={"quantidade": 12, "minutos": 60})
+    nomes = [v["usuario"] for v in logado.get("/api/visitantes").json()]
+    assert nomes[:3] == ["visita1", "visita2", "visita3"] and nomes[-3:] == ["visita10", "visita11", "visita12"]
+    usuarios = [u["nome"] for u in logado.get("/api/usuarios").json()]
+    assert usuarios.index("visita2") < usuarios.index("visita10")

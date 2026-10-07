@@ -291,6 +291,7 @@ async function carregarPerfis() {
 
 async function carregarUsuarios() {
     const [usuarios] = await Promise.all([api('GET', '/api/usuarios'), carregarPerfis()]);
+    api('GET', '/api/licenca').then((l) => { estado.licenca = l; renderUsuarios(); }).catch(() => {});
     estado.usuarios = usuarios;
     const ids = new Set(usuarios.map((u) => u.id));
     for (const id of [...estado.selecionados]) if (!ids.has(id)) estado.selecionados.delete(id);
@@ -360,8 +361,10 @@ function renderUsuarios() {
         ));
     }
     const ativos = estado.usuarios.filter((u) => !u.desativado).length;
+    const l = estado.licenca;
+    const sessoes = l && l.limite_hotspot ? ` · licença: até ${l.limite_hotspot} conectados ao mesmo tempo, ${l.sessoes} em uso, ${l.livres} disponíveis` : '';
     $('#resumo-usuarios').textContent = `${estado.usuarios.length} usuário(s), ${ativos} ativo(s)` +
-        (lista.length !== estado.usuarios.length ? ` · mostrando ${lista.length}` : '');
+        (lista.length !== estado.usuarios.length ? ` · mostrando ${lista.length}` : '') + sessoes;
     atualizarSelecao();
 }
 

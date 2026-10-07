@@ -2,6 +2,13 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.17.1] - 2026-10-07
+
+### Alterado
+- Visitantes: o aviso de limite aparece **antes** de criar (o painel nem tenta criar quando a quantidade passa do que cabe) e diz "Limite atingido" quando não cabe mais nenhum.
+- Usuários: o resumo mostra o limite da licença, quantos estão conectados e quantas sessões ainda estão disponíveis.
+- Listas de usuários e visitantes em ordem natural: `visita2` antes de `visita10`.
+
 ## [1.17.0] - 2026-10-07
 
 ### Adicionado

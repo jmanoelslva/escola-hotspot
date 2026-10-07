@@ -15,6 +15,13 @@ def test_resumo_do_sistema(logado, mk):
     assert nomes[-1] == "ether5"  # desligadas por último
 
 
+def test_licenca_e_sessoes(logado, mk):
+    mk.adicionar("/ip/hotspot/active", {"user": "ana"})
+    assert logado.get("/api/licenca").json() == {"nivel": 4, "limite_hotspot": 200, "sessoes": 1, "livres": 199}
+    mk.objetos["/system/license"]["nlevel"] = "6"
+    assert logado.get("/api/licenca").json()["livres"] is None
+
+
 def test_temperatura_no_formato_antigo_e_sem_sensor(logado, mk):
     mk.objetos["/system/health"] = {"temperature": "39"}
     assert logado.get("/api/sistema").json()["temperatura"] == 39.0

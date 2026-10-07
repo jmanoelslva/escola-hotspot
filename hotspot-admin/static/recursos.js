@@ -841,10 +841,12 @@ function atualizarAvisoQuantidade() {
     if (!l) { ajuda.textContent = ''; return; }
     const quantidade = parseInt($('#form-visitantes').quantidade.value, 10) || 0;
     const passou = quantidade > l.disponiveis;
-    ajuda.textContent = passou
-        ? `Passou do limite: já há ${l.validos} visitante(s) e o máximo é ${l.limite}. Dá para criar até ${l.disponiveis}.`
-        : `Já há ${l.validos} visitante(s). Dá para criar até ${l.disponiveis}.`;
-    ajuda.classList.toggle('texto-alerta', passou);
+    ajuda.textContent = l.disponiveis === 0
+        ? `Limite atingido: já há ${l.validos} visitante(s) de ${l.limite}. Encerre alguns para criar novos.`
+        : passou
+            ? `Passou do limite: já há ${l.validos} visitante(s) e o máximo é ${l.limite}. Dá para criar até ${l.disponiveis}.`
+            : `Já há ${l.validos} visitante(s). Dá para criar até ${l.disponiveis}.`;
+    ajuda.classList.toggle('texto-alerta', passou || l.disponiveis === 0);
 }
 
 $('#form-visitantes').quantidade.addEventListener('input', atualizarAvisoQuantidade);
@@ -921,6 +923,14 @@ $('#form-visitantes').addEventListener('submit', async (evento) => {
         nome: form.nome.value.trim(),
     };
     lembrar('perfil-visitante', dados.perfil);
+    const l = estado.limiteVisitantes;
+    if (l && dados.quantidade > l.disponiveis) {
+        aviso(l.disponiveis
+            ? `Não dá para criar ${dados.quantidade}: já há ${l.validos} visitante(s) e o máximo é ${l.limite}. Crie até ${l.disponiveis}.`
+            : `Limite atingido: já há ${l.validos} visitante(s) e o máximo é ${l.limite}. Encerre alguns antes de criar novos.`, true);
+        form.quantidade.focus();
+        return;
+    }
     await comBotao(form.querySelector('[type=submit]'), async () => {
         try {
             const r = await api('POST', '/api/visitantes', dados);
