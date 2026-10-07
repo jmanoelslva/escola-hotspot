@@ -569,7 +569,6 @@ async function carregarAdministradores() {
     const { usuarios, eu, eu_full: full } = estado.administradores;
     // Quem não é full só vê a lista: o MikroTik não deixa esse grupo cadastrar, alterar nem excluir administradores.
     $('#novo-administrador').hidden = !full;
-    $('#aviso-administradores').hidden = full;
     const corpo = $('#lista-administradores');
     corpo.replaceChildren();
     if (!usuarios.length) linhaVazia(corpo, 6, 'Nenhum usuário.');

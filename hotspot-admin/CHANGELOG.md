@@ -2,6 +2,11 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.12.2] - 2026-10-07
+
+### Removido
+- Textos explicativos da tela Administradores (a dica dos grupos e o aviso para quem não é full).
+
 ## [1.12.1] - 2026-10-07
 
 ### Alterado
