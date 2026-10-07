@@ -8,6 +8,7 @@ if errorlevel 1 (
 schtasks /end /tn "Painel do Hotspot" >nul 2>&1
 schtasks /delete /tn "Painel do Hotspot" /f
 netsh advfirewall firewall delete rule name="Painel do Hotspot"
+netsh advfirewall firewall delete rule name="Painel do Hotspot (Wi-Fi)" >nul 2>&1
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0criar-atalhos.ps1" -Remover
 echo Inicio automatico e atalhos removidos. Se o painel ainda estiver aberto, reinicie o computador.
 pause

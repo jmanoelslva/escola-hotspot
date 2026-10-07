@@ -10,6 +10,7 @@
     <script src="/static/app.js?v=__VERSAO__" defer></script>
     <script src="/static/recursos.js?v=__VERSAO__" defer></script>
     <script src="/static/geral.js?v=__VERSAO__" defer></script>
+    <script src="/static/uso.js?v=__VERSAO__" defer></script>
 </head>
 <body>
 
@@ -72,6 +73,18 @@
             </details>
             <p class="alerta-texto" id="erro-trafego" role="status"></p>
             <div id="graficos" class="graficos"></div>
+            <div class="cartao">
+                <div class="topo-uso">
+                    <h2>Uso da internet</h2>
+                    <span class="alternador" role="group" aria-label="Período">
+                        <button class="botao pequeno" type="button" data-periodo="dia">Hoje</button>
+                        <button class="botao pequeno" type="button" data-periodo="7d">7 dias</button>
+                        <button class="botao pequeno" type="button" data-periodo="30d">30 dias</button>
+                    </span>
+                </div>
+                <div id="grafico-uso"></div>
+                <p class="dica legenda-uso"><span class="cor-baixa"></span> Baixado <span class="cor-envia"></span> Enviado <span id="resumo-uso"></span></p>
+            </div>
             <div class="cartao">
                 <h2>Atualização do RouterOS</h2>
                 <p id="estado-atualizacao" class="dica">Verificando…</p>
@@ -469,6 +482,18 @@
             </div>
         </section>
 
+        <!-- Relatório mensal -->
+        <section id="aba-mensal" class="painel-aba" hidden>
+            <div class="barra-acoes">
+                <label class="rotulo-inline">Mês
+                    <input type="month" id="mes-relatorio">
+                </label>
+                <button id="gerar-relatorio" class="botao cor-azul" type="button">Gerar</button>
+                <button id="imprimir-relatorio" class="botao cor-roxo" type="button" disabled>Imprimir / salvar em PDF</button>
+            </div>
+            <div class="cartao" id="area-relatorio"></div>
+        </section>
+
         <!-- Configurações -->
         <section id="aba-config" class="painel-aba" hidden>
             <form id="form-escola" class="cartao">
@@ -513,6 +538,22 @@
                         <thead><tr><th>Nome</th><th>IP</th><th>Situação</th><th></th></tr></thead>
                         <tbody id="lista-aps"></tbody>
                     </table>
+                </div>
+            </div>
+            <div class="cartao">
+                <h2>Serviço do painel</h2>
+                <p class="dica">Usuário próprio do painel no MikroTik (<strong>painel-servico</strong>, grupo painel). Com ele o painel registra o uso da internet a cada 5 minutos e atende a troca de senha pelo Wi-Fi, mesmo sem ninguém logado. A senha dele fica só neste computador.</p>
+                <p id="estado-servico" class="dica"></p>
+                <div class="barra-acoes">
+                    <button id="ativar-servico" class="botao cor-verde" type="button">Ativar</button>
+                    <button id="desativar-servico" class="botao cor-vermelho" type="button" hidden>Desativar</button>
+                </div>
+                <h3>Troca de senha pelo Wi-Fi</h3>
+                <p class="dica">Mostra o link "Trocar minha senha" na tela de conectado do Wi-Fi. Quem vem do Wi-Fi só consegue abrir essa página; o resto do painel continua fechado. Visitantes não trocam.</p>
+                <p id="estado-troca-senha" class="dica"></p>
+                <div class="barra-acoes">
+                    <button id="ligar-troca-senha" class="botao cor-verde" type="button">Ligar</button>
+                    <button id="desligar-troca-senha" class="botao cor-vermelho" type="button" hidden>Desligar</button>
                 </div>
             </div>
             <form id="form-mikrotik" class="cartao">

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Trocar minha senha do Wi-Fi</title>
+    <link rel="stylesheet" href="/static/senha.css?v=__VERSAO__">
+</head>
+<body>
+    <main class="caixa">
+        <img src="/logo" alt="" class="logo">
+        <h1>Trocar minha senha do Wi-Fi</h1>
+        <form id="form-senha" autocomplete="off">
+            <label>Usuário
+                <input name="usuario" required maxlength="64" autocapitalize="off" spellcheck="false" autocomplete="username">
+            </label>
+            <label>Senha atual
+                <input name="atual" type="password" required maxlength="64" autocomplete="current-password">
+            </label>
+            <label>Senha nova
+                <input name="nova" type="password" required minlength="6" maxlength="64" autocomplete="new-password">
+                <small>Pelo menos 6 caracteres.</small>
+            </label>
+            <label>Repita a senha nova
+                <input name="repetir" type="password" required minlength="6" maxlength="64" autocomplete="new-password">
+            </label>
+            <label class="mostrar"><input type="checkbox" id="mostrar"> Mostrar as senhas</label>
+            <p id="mensagem" class="mensagem" role="status" hidden></p>
+            <button type="submit">Trocar senha</button>
+        </form>
+        <p class="rodape">Depois de trocar, use a senha nova no próximo login do Wi-Fi.</p>
+    </main>
+    <script src="/static/senha.js?v=__VERSAO__"></script>
+</body>
+</html>

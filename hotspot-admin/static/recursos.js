@@ -824,8 +824,59 @@ async function removerAp(a) {
     } catch (e) { aviso(e.message, true); }
 }
 
+// ---- serviço do painel e troca de senha pelo Wi-Fi
+
+function mostrarServico(s) {
+    $('#estado-servico').textContent = s.ativo
+        ? `Ativo: o usuário ${s.usuario} está no MikroTik e o histórico de uso está sendo registrado.`
+        : 'Desativado: o histórico de uso e a troca de senha pelo Wi-Fi não funcionam.';
+    $('#ativar-servico').textContent = s.ativo ? 'Gerar senha nova' : 'Ativar';
+    $('#desativar-servico').hidden = !s.ativo;
+}
+
+function mostrarTrocaSenha(t) {
+    $('#estado-troca-senha').textContent = t.ativa ? 'Ligada: ' + t.url : (t.servico ? 'Desligada.' : 'Desligada (ative antes o serviço do painel).');
+    $('#ligar-troca-senha').hidden = t.ativa;
+    $('#desligar-troca-senha').hidden = !t.ativa;
+}
+
+async function carregarServico() {
+    const [s, t] = await Promise.all([api('GET', '/api/servico'), api('GET', '/api/configuracoes/troca-senha')]);
+    mostrarServico(s);
+    mostrarTrocaSenha(t);
+}
+
+$('#ativar-servico').addEventListener('click', (e) => comBotao(e.target, async () => {
+    try {
+        mostrarServico(await api('POST', '/api/servico'));
+        aviso('Serviço do painel ativo.');
+    } catch (erro) { aviso(erro.message, true); }
+}));
+$('#desativar-servico').addEventListener('click', async (e) => {
+    if (!await confirmar('Serviço do painel', 'Desativar? O histórico de uso para de ser registrado e a troca de senha pelo Wi-Fi deixa de funcionar.', 'Desativar')) return;
+    await comBotao(e.target, async () => {
+        try {
+            mostrarServico(await api('DELETE', '/api/servico'));
+            aviso('Serviço do painel desativado.');
+        } catch (erro) { aviso(erro.message, true); }
+    });
+});
+
+async function mudarTrocaSenha(ativo, botao) {
+    await comBotao(botao, async () => {
+        try {
+            const r = await api('PUT', '/api/configuracoes/troca-senha', { ativo });
+            mostrarTrocaSenha(r);
+            aviso(r.aviso_hotspot || (ativo ? 'Troca de senha pelo Wi-Fi ligada.' : 'Troca de senha pelo Wi-Fi desligada.'), !!r.aviso_hotspot);
+        } catch (erro) { aviso(erro.message, true); }
+    });
+}
+$('#ligar-troca-senha').addEventListener('click', (e) => mudarTrocaSenha(true, e.target));
+$('#desligar-troca-senha').addEventListener('click', (e) => mudarTrocaSenha(false, e.target));
+
 async function carregarEscolaEConexao() {
     carregarAps().catch((e) => aviso(e.message, true));
+    carregarServico().catch((e) => aviso(e.message, true));
     const [escola, conexao] = await Promise.all([api('GET', '/api/configuracoes/escola'), api('GET', '/api/configuracoes/mikrotik')]);
     mostrarEscola(escola);
     mostrarConexao(conexao);

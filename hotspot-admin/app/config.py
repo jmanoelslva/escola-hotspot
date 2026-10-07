@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-APP_VERSION = "1.18.0"
+APP_VERSION = "1.19.0"
 
 PASTA_PROJETO = Path(__file__).resolve().parent.parent
 
@@ -37,6 +37,7 @@ class Config:
     nome_escola: str
     cidade_escola: str
     pasta_dados: Path
+    redes_wifi: str
 
 
 def carregar() -> Config:
@@ -54,6 +55,8 @@ def carregar() -> Config:
         nome_escola=os.environ.get("NOME_ESCOLA", "Escola"),
         cidade_escola=os.environ.get("CIDADE_ESCOLA", ""),
         pasta_dados=pasta_dados,
+        # Redes do Wi-Fi: quem vem delas só acessa a página de troca de senha.
+        redes_wifi=os.environ.get("REDES_WIFI", "10.0.0.0/22"),
     )
 
 

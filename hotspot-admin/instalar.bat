@@ -44,6 +44,8 @@ rem ---- 3. Configuracao (so na primeira vez; reinstalar mantem o .env)
 if not exist ".env" copy ".env.example" ".env" >nul
 set "PORTA=8080"
 for /f "usebackq tokens=1,* delims==" %%a in (".env") do if /i "%%a"=="PORTA" set "PORTA=%%b"
+set "REDES_WIFI=10.0.0.0/22"
+for /f "usebackq tokens=1,* delims==" %%a in (".env") do if /i "%%a"=="REDES_WIFI" set "REDES_WIFI=%%b"
 echo [3/6] Configuracao em .env (porta %PORTA%)
 
 rem ---- 4. Iniciar com o Windows e liberar no firewall
@@ -56,6 +58,9 @@ if errorlevel 1 goto erro
 netsh advfirewall firewall delete rule name="Painel do Hotspot" >nul 2>&1
 netsh advfirewall firewall add rule name="Painel do Hotspot" dir=in action=allow protocol=TCP localport=%PORTA% remoteip=localsubnet >nul
 if errorlevel 1 goto erro
+rem Redes do Wi-Fi: o painel so mostra a pagina de troca de senha para elas.
+netsh advfirewall firewall delete rule name="Painel do Hotspot (Wi-Fi)" >nul 2>&1
+netsh advfirewall firewall add rule name="Painel do Hotspot (Wi-Fi)" dir=in action=allow protocol=TCP localport=%PORTA% remoteip=%REDES_WIFI% >nul
 
 rem ---- 5. Atalhos de app na Area de Trabalho e no Menu Iniciar
 echo [5/6] Criando os atalhos "Painel do Hotspot"...

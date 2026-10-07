@@ -211,6 +211,7 @@ async function carregarGeral() {
     estado.relogioTrafego = setInterval(seAbaGeral(lerTrafego), INTERVALO_TRAFEGO);
     estado.relogioSistema = setInterval(seAbaGeral(lerSistema), INTERVALO_SISTEMA);
     mostrarAtualizacao(false);
+    if (typeof carregarUso === 'function') carregarUso();
 }
 
 // ------------------------------------------------------------------ atualização do RouterOS

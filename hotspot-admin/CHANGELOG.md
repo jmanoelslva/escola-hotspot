@@ -2,6 +2,14 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.19.0] - 2026-10-07
+
+### Adicionado
+- **Serviço do painel** (Sistema → Configurações): um administrador full ativa e o painel cria no MikroTik o usuário `painel-servico` (grupo painel) com senha aleatória guardada só neste PC (`dados/servico.json`). Com ele o painel trabalha sem ninguém logado.
+- **Histórico de uso** (Início → Uso da internet): a cada 5 minutos o painel registra o tráfego da interface da internet, os logados no hotspot e os aparelhos no DHCP (`dados/uso/AAAA-MM.csv`, 13 meses). Gráfico de Hoje (Mbps), 7 dias (por hora) e 30 dias (GB por dia).
+- **Relatório mensal** (Sistema → Relatório): internet baixada e enviada, picos de logados e de aparelhos, uso por dia, visitantes criados, o que foi feito no painel no mês, consumo por turma e quem mais usou. Botão para imprimir ou salvar em PDF.
+- **Troca da própria senha pelo Wi-Fi** (`/senha`): usuário, senha atual e senha nova; visitantes não trocam; 5 erros seguidos bloqueiam o IP por 15 minutos. Ligar em Configurações cria `senha.<domínio do hotspot>` no DNS do MikroTik apontando para este PC e põe o link "Trocar minha senha" na tela de conectado do Wi-Fi. Quem vem das redes do Wi-Fi (`REDES_WIFI`, padrão `10.0.0.0/22`) só acessa essa página; o `instalar.bat` libera essas redes no Firewall do Windows só para a porta do painel.
+
 ## [1.18.0] - 2026-10-07
 
 ### Adicionado

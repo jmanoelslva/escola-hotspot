@@ -1,0 +1,27 @@
+* { box-sizing: border-box; }
+body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; font-size: 16px; color: #1f2933;
+    background: #0d4a7d; padding: 16px;
+}
+.caixa { width: 100%; max-width: 380px; background: #fff; border-radius: 16px; padding: 24px 20px; box-shadow: 0 8px 30px rgba(0, 0, 0, .25); }
+.logo { display: block; width: 90px; height: auto; margin: 0 auto 10px; }
+h1 { font-size: 20px; color: #0d4a7d; text-align: center; margin: 0 0 18px; }
+label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 12px; }
+input[type=password], input:not([type]) {
+    display: block; width: 100%; height: 44px; margin-top: 4px; padding: 0 12px; font: inherit;
+    border: 1px solid #c7ced6; border-radius: 10px;
+}
+input:focus { outline: 0; border-color: #0d4a7d; box-shadow: 0 0 0 3px rgba(13, 74, 125, .15); }
+small { display: block; font-weight: 400; color: #52606d; font-size: 12px; margin-top: 3px; }
+.mostrar { display: flex; align-items: center; gap: 8px; font-weight: 400; }
+button {
+    width: 100%; height: 46px; border: 0; border-radius: 10px; font: inherit; font-weight: 700;
+    color: #fff; background: #0d4a7d; cursor: pointer;
+}
+button:disabled { opacity: .6; }
+.mensagem { border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 0 0 12px; }
+.mensagem.erro { background: #fdecec; color: #961519; }
+.mensagem.ok { background: #e6f4ea; color: #1e6b30; }
+.rodape { text-align: center; color: #52606d; font-size: 13px; margin: 16px 0 0; }
+[hidden] { display: none !important; }

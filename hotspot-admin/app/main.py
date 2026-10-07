@@ -3,7 +3,9 @@
 import io
 import json
 import logging
+import os
 import re
+from contextlib import asynccontextmanager
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from typing import Literal
@@ -13,7 +15,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import administradores, ajustes, aps, backup, controle, historico, importacao, qrcodes, rede, rede_alunos, sistema, util, visitantes
+from . import administradores, ajustes, aps, backup, coleta, controle, historico, importacao, qrcodes, rede, rede_alunos, senha, servico, sistema, util, visitantes
 from .config import APP_VERSION, PASTA_PROJETO, config
 from .mikrotik import EnderecoMikrotik, ErroAutenticacao, ErroConexao, ErroMikrotik, Mikrotik
 from .sessoes import LimiteLogin, Sessao, Sessoes
@@ -45,19 +47,42 @@ if not log_acoes.handlers:
     log_acoes.addHandler(_arquivo)
     log_acoes.setLevel(logging.INFO)
 
-app = FastAPI(title="Painel do Hotspot", version=APP_VERSION, docs_url=None, redoc_url=None, openapi_url=None)
+@asynccontextmanager
+async def ciclo(aplicacao: FastAPI):
+    # A coleta do histórico só roda no painel de verdade (python -m app liga
+    # PAINEL_COLETA); nos testes não.
+    coletor = None
+    if os.environ.get("PAINEL_COLETA") == "1":
+        coletor = coleta.Coletor(conectar_servico, config.pasta_dados)
+        coletor.start()
+    yield
+    if coletor:
+        coletor.parar()
+
+
+app = FastAPI(title="Painel do Hotspot", version=APP_VERSION, docs_url=None, redoc_url=None, openapi_url=None,
+              lifespan=ciclo)
 app.state.sessoes = Sessoes(config.sessao_minutos)
 app.state.limite_login = LimiteLogin()
 app.state.transport = None  # os testes trocam por um MikroTik falso
 app.state.endereco = EnderecoMikrotik(ajustes.endereco_mikrotik(config.pasta_dados, config), config.mikrotik_verificar_tls)
 app.state.atualizacao = sistema.VerificadorAtualizacao()
+app.state.redes_wifi = senha.redes(config.redes_wifi)
+app.state.limite_senha = LimiteLogin()
 
 
 # ---------------------------------------------------------------- infraestrutura
 
+# Quem vem das redes do Wi-Fi só acessa a troca de senha.
+_LIVRES_PARA_O_WIFI = ("/senha", "/api/senha", "/static/senha.css", "/static/senha.js", "/logo")
+
+
 @app.middleware("http")
 async def cabecalhos(request: Request, call_next):
     caminho = request.url.path
+    if senha.do_wifi(ip_cliente(request), app.state.redes_wifi) and caminho not in _LIVRES_PARA_O_WIFI:
+        return HTMLResponse("<h1>Acesso restrito</h1><p>Pelo Wi-Fi, só a página <a href='/senha'>/senha</a> está disponível.</p>",
+                            status_code=403)
     # Pedidos que alteram algo precisam do cabeçalho X-Painel: outro site não
     # consegue mandá-lo sem uma pré-verificação CORS, que este servidor não aceita.
     if caminho.startswith("/api/") and request.method not in ("GET", "HEAD", "OPTIONS"):
@@ -114,6 +139,14 @@ def tipo_conexao() -> str:
         return "HTTPS" if app.state.endereco.url().startswith("https://") else "HTTP"
     except ErroMikrotik:
         return ""
+
+
+def conectar_servico() -> Mikrotik | None:
+    """Conexão com o usuário de serviço do painel (None se ele não foi ativado)."""
+    dados = servico.ler(config.pasta_dados)
+    if not dados:
+        return None
+    return conectar(dados["usuario"], dados["senha"])
 
 
 def mikrotik(sessao: Sessao = Depends(sessao_atual)):
@@ -969,6 +1002,158 @@ def gravar_conexao(dados: ConexaoMikrotik, s: Sessao = Depends(sessao_atual)):
     app.state.endereco = novo
     registrar(s, f"mudou a conexão com o MikroTik para {endereco} ({identidade})")
     return {**_estado_conexao(), "identidade": identidade}
+
+
+# ---------------------------------------------------------------- usuário de serviço, histórico e relatório
+
+@app.get("/api/servico")
+def ver_servico(_: Sessao = Depends(sessao_atual)):
+    return servico.estado(config.pasta_dados)
+
+
+@app.post("/api/servico")
+def ativar_servico(mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    if not administradores.eh_full(mk, s.usuario):
+        raise util.ErroDados("Só um administrador do grupo full pode ativar o serviço do painel.")
+    servico.ativar(mk, config.pasta_dados)
+    registrar(s, "ativou o usuário de serviço do painel")
+    return servico.estado(config.pasta_dados)
+
+
+@app.delete("/api/servico")
+def desativar_servico(mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    if not administradores.eh_full(mk, s.usuario):
+        raise util.ErroDados("Só um administrador do grupo full pode desativar o serviço do painel.")
+    servico.desativar(mk, config.pasta_dados)
+    registrar(s, "desativou o usuário de serviço do painel")
+    return servico.estado(config.pasta_dados)
+
+
+@app.get("/api/uso")
+def ver_uso(periodo: Literal["dia", "7d", "30d"] = "dia", _: Sessao = Depends(sessao_atual)):
+    return {**coleta.serie(config.pasta_dados, periodo), "servico": servico.estado(config.pasta_dados)["ativo"]}
+
+
+_CONTAGENS_DO_MES = {
+    "usuarios_criados": ("criou usuário ",),
+    "importados": ("importou ",),
+    "senhas_novas": ("gerou senha nova",),
+    "trocas_pelo_wifi": ("trocou a própria senha",),
+    "sites_bloqueados": ("bloqueou o site",),
+    "liberacoes_alunos": ("liberou a rede Alunos",),
+}
+
+
+@app.get("/api/relatorio-mensal")
+def relatorio_mensal(mes: str = "", mk: Mikrotik = Depends(mikrotik)):
+    try:
+        referencia = datetime.strptime(mes, "%Y-%m") if mes else datetime.now().replace(day=1)
+    except ValueError as erro:
+        raise util.ErroDados("Mês inválido.") from erro
+    prefixo = f"{referencia:%Y-%m}"
+    acoes = [a for a in historico.ler(config.pasta_dados, dias=0) if a["quando"].startswith(prefixo)]
+    visitantes_criados = 0
+    for a in acoes:
+        m = re.match(r"criou (\d+) senha\(s\) de visitante", a["acao"])
+        if m:
+            visitantes_criados += int(m.group(1))
+    contagens = {chave: sum(1 for a in acoes if any(t in a["acao"] for t in trechos))
+                 for chave, trechos in _CONTAGENS_DO_MES.items()}
+
+    turmas: dict[str, dict] = {}
+    usuarios = listar_usuarios(mk)
+    for u in usuarios:
+        _, turma = util.separar_turma(u["comentario"])
+        t = turmas.setdefault(turma or "(sem turma)", {"turma": turma or "(sem turma)", "usuarios": 0, "bytes": 0})
+        t["usuarios"] += 1
+        t["bytes"] += u["bytes_in"] + u["bytes_out"]
+    escola = ajustes.escola(config.pasta_dados, config)
+    return {
+        "mes": prefixo,
+        "escola": escola["nome"], "cidade": escola["cidade"],
+        "uso": coleta.resumo_mes(config.pasta_dados, referencia.year, referencia.month),
+        "visitantes_criados": visitantes_criados,
+        "acoes": contagens,
+        "usuarios": len(usuarios),
+        "consumo_desde": _estado_relatorio().get("zerado_em", ""),
+        "turmas": sorted(turmas.values(), key=lambda t: -t["bytes"])[:15],
+        "maiores": sorted(({"nome": u["nome"], "comentario": u["comentario"], "bytes": u["bytes_in"] + u["bytes_out"]}
+                           for u in usuarios), key=lambda u: -u["bytes"])[:10],
+        "sites_bloqueados": sum(1 for b in mk.listar(controle.DNS_ESTATICO)
+                                if b.get("comment", "").startswith(controle.PREFIXO_BLOQUEIO)),
+        "servico": servico.estado(config.pasta_dados)["ativo"],
+    }
+
+
+# ---------------------------------------------------------------- troca de senha pelo Wi-Fi
+
+class TrocaSenha(BaseModel):
+    usuario: str = Field(max_length=64)
+    atual: str = Field(max_length=64)
+    nova: str = Field(max_length=64)
+
+
+@app.get("/senha")
+def pagina_senha():
+    html = (PASTA_STATIC / "senha.html").read_text(encoding="utf-8").replace("__VERSAO__", APP_VERSION)
+    return HTMLResponse(html, headers={"Cache-Control": "no-cache"})
+
+
+@app.post("/api/senha")
+def trocar_senha(dados: TrocaSenha, request: Request):
+    ip = ip_cliente(request)
+    if not ajustes.ler(config.pasta_dados).get("senha_url"):
+        raise util.ErroDados("A troca de senha pelo Wi-Fi está desligada. Procure a secretaria.")
+    if app.state.limite_senha.bloqueado(ip):
+        raise ErroMikrotik("Muitas tentativas erradas. Aguarde 15 minutos.", 429)
+    mk = conectar_servico()
+    if mk is None:
+        raise util.ErroDados("A troca de senha não está disponível agora. Procure a secretaria.")
+    with mk:
+        try:
+            nome = senha.trocar(mk, dados.usuario, dados.atual, dados.nova)
+        except util.ErroDados as erro:
+            if str(erro) == senha.ERRO_GENERICO:
+                app.state.limite_senha.errou(ip)
+            raise
+    app.state.limite_senha.acertou(ip)
+    log_acoes.info("%s trocou a própria senha pelo Wi-Fi (ip %s)", nome, ip)
+    return {"ok": True}
+
+
+def _dominio_hotspot(mk: Mikrotik) -> str:
+    for p in controle.perfis_servidor(mk):
+        if p["servidores"] and p["dominio"]:
+            return p["dominio"]
+    return ""
+
+
+@app.get("/api/configuracoes/troca-senha")
+def ver_troca_senha(_: Sessao = Depends(sessao_atual)):
+    url = ajustes.ler(config.pasta_dados).get("senha_url", "")
+    return {"ativa": bool(url), "url": url, "servico": servico.estado(config.pasta_dados)["ativo"]}
+
+
+@app.put("/api/configuracoes/troca-senha")
+def mudar_troca_senha(dados: Ligar, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    if dados.ativo:
+        if not servico.estado(config.pasta_dados)["ativo"]:
+            raise util.ErroDados("Ative antes o serviço do painel (nesta mesma tela).")
+        ip_mikrotik, _ = ajustes.separar_endereco(ajustes.endereco_mikrotik(config.pasta_dados, config))
+        try:
+            ip_pc = senha.ip_deste_pc(ip_mikrotik)
+        except OSError as erro:
+            raise util.ErroDados("Não foi possível descobrir o IP deste computador na rede do MikroTik.") from erro
+        host = senha.ativar_dns(mk, _dominio_hotspot(mk), ip_pc)
+        url = f"http://{host}:{config.porta}/senha"
+    else:
+        senha.desativar_dns(mk)
+        url = ""
+    ajustes.gravar_senha_url(config.pasta_dados, url)
+    erro = publicar_escola(mk)
+    registrar(s, ("ligou" if url else "desligou") + " a troca de senha pelo Wi-Fi" + (f" ({url})" if url else ""))
+    return {"ativa": bool(url), "url": url, "servico": True,
+            "aviso_hotspot": f"Não foi possível gravar o link nas páginas do hotspot: {erro}" if erro else ""}
 
 
 # ---------------------------------------------------------------- pontos de acesso (APs)

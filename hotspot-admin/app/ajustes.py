@@ -106,5 +106,9 @@ def endereco_mikrotik(pasta: Path, config: Config) -> str:
     return ler(pasta).get("mikrotik", config.mikrotik_url)
 
 
+def gravar_senha_url(pasta: Path, url: str) -> None:
+    _gravar(pasta, {"senha_url": url})
+
+
 def gravar_endereco(pasta: Path, endereco: str) -> None:
     _gravar(pasta, {"mikrotik": endereco})

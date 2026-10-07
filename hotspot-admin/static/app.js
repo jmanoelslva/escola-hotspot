@@ -186,7 +186,7 @@ const GRUPOS = {
     conectados: [['conectados', 'Conectados agora'], ['rede', 'Todos os aparelhos'], ['relatorio', 'Consumo']],
     aparelhos: [['aparelhos', 'Liberados e bloqueados']],
     regras: [['alunos', 'Rede Alunos'], ['sites', 'Sites bloqueados']],
-    sistema: [['aviso', 'Aviso'], ['config', 'Configurações'], ['administradores', 'Administradores'], ['backup', 'Backup'], ['historico', 'Histórico']],
+    sistema: [['aviso', 'Aviso'], ['config', 'Configurações'], ['administradores', 'Administradores'], ['mensal', 'Relatório'], ['backup', 'Backup'], ['historico', 'Histórico']],
 };
 
 function grupoDaTela(tela) {
@@ -807,6 +807,7 @@ function imagensProntas(area) {
 async function imprimir(lista) {
     if (!lista.length) { aviso('Nada para imprimir.', true); return; }
     const area = $('#impressao');
+    area.classList.remove('modo-relatorio');
     area.replaceChildren(...lista.map((c) => el('div', { class: 'credencial' },
         el('div', { class: 'credencial-topo' },
             el('img', { src: '/logo?v=' + (estado.versaoLogo || 0), alt: '' }),
