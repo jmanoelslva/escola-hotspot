@@ -60,6 +60,7 @@ class MikrotikFalso:
             "/system/package/update": {"channel": "stable", "installed-version": "7.15.3"},
             "/system/routerboard": {"current-firmware": "7.15.3", "upgrade-firmware": "7.15.3"},
             "/ip/dns": {"servers": "8.8.8.8", "allow-remote-requests": "true"},
+            "/system/license": {"software-id": "ABCD-1234", "nlevel": "4"},
             "/system/clock": {"date": "2026-10-06", "time": "22:10:30", "time-zone-name": "America/Maceio"},
         }
         self.versao_disponivel = "7.16.1"

@@ -833,7 +833,24 @@ function cartaoVisitante(v) {
         qr_wifi: estado.qrWifi, qr_login: v.qr_login };
 }
 
+estado.limiteVisitantes = null;
+
+function atualizarAvisoQuantidade() {
+    const l = estado.limiteVisitantes;
+    const ajuda = $('#limite-visitantes');
+    if (!l) { ajuda.textContent = ''; return; }
+    const quantidade = parseInt($('#form-visitantes').quantidade.value, 10) || 0;
+    const passou = quantidade > l.disponiveis;
+    ajuda.textContent = passou
+        ? `Passou do limite: já há ${l.validos} visitante(s) e o máximo é ${l.limite}. Dá para criar até ${l.disponiveis}.`
+        : `Já há ${l.validos} visitante(s). Dá para criar até ${l.disponiveis}.`;
+    ajuda.classList.toggle('texto-alerta', passou);
+}
+
+$('#form-visitantes').quantidade.addEventListener('input', atualizarAvisoQuantidade);
+
 async function carregarVisitantes() {
+    api('GET', '/api/visitantes/limite').then((l) => { estado.limiteVisitantes = l; atualizarAvisoQuantidade(); }).catch(() => {});
     const [lista, , wifi] = await Promise.all([api('GET', '/api/visitantes'), carregarPerfis(), api('GET', '/api/configuracoes/wifi')]);
     estado.visitantes = lista;
     estado.qrWifi = wifi.qr || '';

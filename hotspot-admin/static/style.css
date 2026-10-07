@@ -287,6 +287,9 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
 /* Painel geral */
 .cartao-numero small { display: block; font-size: 12px; color: var(--suave); }
 .cartao-numero.alerta-numero strong { color: var(--vermelho); }
+.cartao-numero.alerta-numero { background: #fdeaea; border-color: #f2bcbe; }
+.cartao-numero.atencao-numero { background: #fff4d6; border-color: #f3d27a; }
+.cartao-numero.atencao-numero strong { color: var(--amarelo); }
 .faixa-atualizacao {
     display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
     background: #fff4d6; color: #5c3d00; border: 1px solid #f3d27a; border-radius: 10px;

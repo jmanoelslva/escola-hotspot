@@ -9,6 +9,7 @@ def test_resumo_do_sistema(logado, mk):
     assert dados["memoria_total"] == 268435456 and dados["memoria_usada"] == 67108864
     assert dados["internet"] == "ether1"
     assert dados["conectados"] == 1 and dados["usuarios"] == 0
+    assert dados["nivel"] == 4 and dados["limite_hotspot"] == 200
     nomes = [i["nome"] for i in dados["interfaces"]]
     assert "lo" not in nomes  # loopback fica de fora
     assert nomes[-1] == "ether5"  # desligadas por último

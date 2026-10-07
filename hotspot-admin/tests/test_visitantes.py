@@ -78,7 +78,7 @@ def test_nao_encerra_usuario_comum(logado, mk):
 
 def test_visitantes_validacoes(logado):
     assert logado.post("/api/visitantes", json={"quantidade": 0, "minutos": 60}).status_code == 422
-    assert logado.post("/api/visitantes", json={"quantidade": 51, "minutos": 60}).status_code == 422
+    assert logado.post("/api/visitantes", json={"quantidade": 201, "minutos": 60}).status_code == 422
     assert logado.post("/api/visitantes", json={"quantidade": 1, "minutos": 60, "perfil": "nao-existe"}).status_code == 400
     assert logado.post("/api/visitantes", json={"quantidade": 1}).status_code == 400  # sem validade
 
@@ -155,3 +155,15 @@ def test_nome_do_visitante_reaproveita_o_menor_numero_livre(logado, mk):
     logado.delete(f"/api/visitantes/{next(v['id'] for v in lista if v['usuario'] == 'visita2')}")
     novo = logado.post("/api/visitantes", json={"quantidade": 2, "minutos": 60}).json()["criados"]
     assert [c["usuario"] for c in novo] == ["visita2", "visita4"]
+
+
+def test_limite_de_visitantes_pela_licenca(logado, mk):
+    assert logado.get("/api/visitantes/limite").json() == {"limite": 200, "validos": 0, "disponiveis": 200}
+    assert logado.post("/api/visitantes", json={"quantidade": 150, "minutos": 60}).status_code == 200
+    assert logado.get("/api/visitantes/limite").json() == {"limite": 200, "validos": 150, "disponiveis": 50}
+    r = logado.post("/api/visitantes", json={"quantidade": 51, "minutos": 60})
+    assert r.status_code == 400 and "no máximo 50" in r.json()["erro"]
+    assert logado.post("/api/visitantes", json={"quantidade": 50, "minutos": 60}).status_code == 200
+    assert logado.post("/api/visitantes", json={"quantidade": 201, "minutos": 60}).status_code == 422
+    mk.objetos["/system/license"]["nlevel"] = "5"
+    assert logado.get("/api/visitantes/limite").json()["disponiveis"] == 200  # 500 - 200, até 200 por vez

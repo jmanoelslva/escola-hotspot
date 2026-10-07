@@ -1128,6 +1128,7 @@ _NOME_INTERFACE = re.compile(r"^[\w.@:+/ -]{1,64}$")
 def ver_sistema(mk: Mikrotik = Depends(mikrotik)):
     dados = sistema.resumo(mk)
     dados["conectados"] = len(mk.listar(ATIVOS))
+    dados.update(sistema.licenca(mk))
     dados["usuarios"] = sum(1 for u in mk.listar(USUARIOS)
                             if not util.sim(u.get("default")) and u.get("name") != "default-trial")
     return dados
@@ -1162,6 +1163,18 @@ def _com_qr(itens: list[dict], base: str) -> list[dict]:
     return itens
 
 
+def _limite_visitantes(mk: Mikrotik) -> dict:
+    """Quantos visitantes ainda cabem: o limite da licença (ou 200) menos as senhas válidas."""
+    limite = sistema.licenca(mk)["limite_hotspot"] or visitantes.MAX_QUANTIDADE
+    validos = sum(1 for v in visitantes.listar(mk) if not v["expirado"])
+    return {"limite": limite, "validos": validos, "disponiveis": max(0, min(visitantes.MAX_QUANTIDADE, limite - validos))}
+
+
+@app.get("/api/visitantes/limite")
+def ver_limite_visitantes(mk: Mikrotik = Depends(mikrotik)):
+    return _limite_visitantes(mk)
+
+
 @app.get("/api/visitantes")
 def ver_visitantes(mk: Mikrotik = Depends(mikrotik)):
     return _com_qr(visitantes.listar(mk), _base_login(mk))
@@ -1171,6 +1184,12 @@ def ver_visitantes(mk: Mikrotik = Depends(mikrotik)):
 def criar_visitantes(dados: NovosVisitantes, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
     if dados.perfil and dados.perfil not in _perfis(mk):
         raise util.ErroDados("Escolha um perfil que exista no MikroTik.")
+    folga = _limite_visitantes(mk)
+    if dados.quantidade > folga["disponiveis"]:
+        raise util.ErroDados(
+            f"Já existem {folga['validos']} senha(s) de visitante válida(s) e o limite é {folga['limite']} "
+            f"(sessões do hotspot na licença do MikroTik). Dá para criar no máximo {folga['disponiveis']} agora; "
+            "encerre algumas para liberar mais.")
     ate = visitantes.validade(dados.minutos, dados.ate_fim_do_dia)
     criados = visitantes.criar(mk, dados.quantidade, ate, dados.perfil, dados.descricao, dados.nome)
     registrar(s, f"criou {len(criados)} senha(s) de visitante válida(s) até {ate:%d/%m/%Y %H:%M}"

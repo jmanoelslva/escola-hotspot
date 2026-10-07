@@ -182,3 +182,20 @@ def verificar(mk: Mikrotik) -> dict:
         "verificado_em": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "falhou": bool(erro) or status.upper().startswith("ERROR"),
     }
+
+
+# ------------------------------------------------------------------ licença do RouterOS
+
+# Usuários logados no hotspot ao mesmo tempo, por nível de licença (None = sem limite).
+LIMITE_HOTSPOT = {3: 1, 4: 200, 5: 500, 6: None}
+LIMITE_PADRAO = 200  # nível 4, o que vem no hEX
+
+
+def licenca(mk: Mikrotik) -> dict:
+    dados = _opcional(lambda: mk.ler("/system/license"), {}) or {}
+    if isinstance(dados, list):
+        dados = dados[0] if dados else {}
+    texto = str(dados.get("nlevel") or dados.get("level") or "")
+    nivel = int(texto) if texto.isdigit() else None
+    limite = LIMITE_HOTSPOT.get(nivel, LIMITE_PADRAO) if nivel is not None else LIMITE_PADRAO
+    return {"nivel": nivel, "limite_hotspot": limite}

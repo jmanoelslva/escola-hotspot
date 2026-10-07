@@ -40,6 +40,15 @@ function cartao(rotulo, valor, detalhe, classe) {
         el('span', { texto: rotulo }), el('strong', { texto: valor }), detalhe ? el('small', { texto: detalhe }) : null);
 }
 
+// Sessões do hotspot contra o limite da licença: amarelo a partir de 80%, vermelho a partir de 95%.
+function cartaoSessoes(s) {
+    if (!s.limite_hotspot) return cartao('Conectados agora', String(s.conectados), `${s.usuarios} usuário(s) cadastrado(s)`);
+    const uso = s.conectados / s.limite_hotspot;
+    const classe = uso >= 0.95 ? 'alerta-numero' : uso >= 0.8 ? 'atencao-numero' : '';
+    return cartao('Sessões do hotspot', `${s.conectados} de ${s.limite_hotspot}`,
+        `licença nível ${s.nivel || '?'} · ${s.usuarios} usuário(s) cadastrado(s)`, classe);
+}
+
 function renderSistema() {
     const s = estado.sistema;
     const memoria = s.memoria_total ? Math.round(s.memoria_usada / s.memoria_total * 100) : 0;
@@ -49,7 +58,7 @@ function renderSistema() {
         cartao('Memória', memoria + '%', `${bytes(s.memoria_usada)} de ${bytes(s.memoria_total)}`, memoria >= 90 ? 'alerta-numero' : ''),
         cartao('Temperatura', s.temperatura === null ? '—' : String(s.temperatura).replace('.', ',') + ' °C', null, quente ? 'alerta-numero' : ''),
         cartao('Ligado há', tempo(s.uptime) || '—'),
-        cartao('Conectados agora', String(s.conectados), `${s.usuarios} usuário(s) cadastrado(s)`),
+        cartaoSessoes(s),
         cartao('Roteador', s.modelo || 'MikroTik', 'RouterOS ' + s.versao),
     );
 }

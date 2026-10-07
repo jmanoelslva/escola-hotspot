@@ -529,6 +529,9 @@ $('#imprimir-selecionados').addEventListener('click', () => {
 // ------------------------------------------------------------------ conectados
 
 async function carregarConectados() {
+    if (!estado.limiteSessoes) {
+        api('GET', '/api/visitantes/limite').then((l) => { estado.limiteSessoes = l.limite; renderConectados(); }).catch(() => {});
+    }
     estado.conectados = await api('GET', '/api/conectados');
     renderConectados();
 }
@@ -558,7 +561,8 @@ function renderConectados() {
         ));
     }
     const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    $('#resumo-conectados').textContent = `${estado.conectados.length} conectado(s) · atualizado às ${hora} (a cada 30 s)`;
+    const limite = estado.limiteSessoes ? ` de ${estado.limiteSessoes} sessões da licença` : '';
+    $('#resumo-conectados').textContent = `${estado.conectados.length} conectado(s)${limite} · atualizado às ${hora} (a cada 30 s)`;
 }
 
 async function desconectar(c) {

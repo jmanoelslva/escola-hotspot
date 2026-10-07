@@ -2,6 +2,14 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.17.0] - 2026-10-07
+
+### Adicionado
+- Início: cartão **Sessões do hotspot** ("37 de 200"), com o limite lido da licença do MikroTik (nível 4 = 200, nível 5 = 500, nível 6 = sem limite). Fica amarelo a partir de 80% e vermelho a partir de 95%. O resumo de Conectados também mostra "de 200 sessões da licença".
+
+### Alterado
+- Visitantes: até **200** senhas de uma vez (antes 50), contando as que já existem. O campo Quantidade mostra quantas ainda cabem e avisa em vermelho quando o número passa disso; o painel recusa criar além do limite.
+
 ## [1.16.1] - 2026-10-07
 
 ### Alterado

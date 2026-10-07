@@ -21,7 +21,7 @@ AGENDAMENTOS = "/system/scheduler"
 
 PREFIXO = "painel-visitante"
 PREFIXO_AGENDAMENTO = "painel-visitante-"
-MAX_QUANTIDADE = 50
+MAX_QUANTIDADE = 200
 MAX_DIAS = 30
 
 _COMENTARIO = re.compile(r"^painel-visitante até (\d{4}-\d{2}-\d{2} \d{2}:\d{2})(?: \| (.*))?$")
