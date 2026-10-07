@@ -2,6 +2,11 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.8.0] - 2026-10-06
+
+### Adicionado
+- Visitantes: seleção (um a um ou todos), "Imprimir selecionados", "Encerrar selecionados", "Encerrar todos" e botão para fechar o cartão "Senhas criadas". Encerrar em lote faz o mesmo que "Encerrar agora" (desconecta, apaga cookie, usuário e agendamento) e nunca mexe em usuários comuns.
+
 ## [1.7.0] - 2026-10-06
 
 ### Adicionado

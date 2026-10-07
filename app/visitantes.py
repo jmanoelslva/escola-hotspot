@@ -134,6 +134,40 @@ def listar(mk: Mikrotik) -> list[dict]:
     return sorted(lista, key=lambda v: (v["ate"], v["usuario"]))
 
 
+def encerrar_varios(mk: Mikrotik, ids: list[str] | None) -> dict:
+    """Encerra os visitantes indicados (None = todos), lendo cada tabela uma vez só."""
+    usuarios = [u for u in mk.listar(USUARIOS) if ler_comentario(u.get("comment", ""))[0] is not None]
+    if ids is not None:
+        pedidos = set(ids)
+        usuarios = [u for u in usuarios if u.get(".id") in pedidos]
+    nomes = {u.get("name", "") for u in usuarios}
+    if not nomes:
+        return {"encerrados": [], "erros": []}
+    ativos = mk.listar(ATIVOS)
+    cookies = mk.listar(COOKIES)
+    agendamentos = mk.listar(AGENDAMENTOS)
+    encerrados, erros = [], []
+    for usuario in usuarios:
+        nome = usuario.get("name", "")
+        try:
+            for ativo in ativos:
+                if ativo.get("user") == nome:
+                    mk.remover(ATIVOS, ativo[".id"])
+            for cookie in cookies:
+                if cookie.get("user") == nome:
+                    mk.remover(COOKIES, cookie[".id"])
+            mk.remover(USUARIOS, usuario[".id"])
+            for agendamento in agendamentos:
+                if agendamento.get("name") == f"{PREFIXO_AGENDAMENTO}{nome}":
+                    mk.remover(AGENDAMENTOS, agendamento[".id"])
+            encerrados.append(nome)
+        except ErroAutenticacao:
+            raise
+        except ErroMikrotik as erro:
+            erros.append(f"{nome}: {erro.mensagem}")
+    return {"encerrados": encerrados, "erros": erros}
+
+
 def encerrar(mk: Mikrotik, item_id: str) -> str:
     usuario = mk.obter(USUARIOS, item_id)
     nome = usuario.get("name", "")

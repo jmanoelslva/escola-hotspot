@@ -558,6 +558,7 @@ $('#form-dominio-todos').addEventListener('submit', async (evento) => {
 
 estado.visitantes = [];
 estado.visitantesCriados = [];
+estado.visitantesSelecionados = new Set();
 
 function validoAte(iso) {
     const d = new Date(iso);
@@ -584,14 +585,23 @@ async function carregarVisitantes() {
     select.replaceChildren(...estado.perfis.map((p) => el('option', { value: p, texto: p })));
     if (estado.perfis.includes(atual)) select.value = atual;
 
+    const ids = new Set(lista.map((v) => v.id));
+    for (const id of [...estado.visitantesSelecionados]) if (!ids.has(id)) estado.visitantesSelecionados.delete(id);
+    $('#encerrar-todos-visitantes').disabled = lista.length === 0;
+    $('#imprimir-visitantes').disabled = !lista.some((v) => !v.expirado);
+
     const corpo = $('#lista-visitantes');
     corpo.replaceChildren();
-    if (!lista.length) linhaVazia(corpo, 6, 'Nenhum visitante com senha válida.');
+    if (!lista.length) linhaVazia(corpo, 7, 'Nenhum visitante com senha válida.');
     for (const v of lista) {
         const situacao = v.expirado
             ? el('span', { class: 'etiqueta bloqueado', texto: 'Expirado' })
             : v.conectado ? el('span', { class: 'etiqueta ok', texto: 'Conectado' }) : el('span', { class: 'etiqueta off', texto: 'Válido' });
         corpo.append(el('tr', { class: v.expirado ? 'inativo' : '' },
+            el('td', { class: 'col-check' }, el('input', {
+                type: 'checkbox', checked: estado.visitantesSelecionados.has(v.id), 'aria-label': 'Selecionar ' + v.usuario,
+                onchange: (e) => { e.target.checked ? estado.visitantesSelecionados.add(v.id) : estado.visitantesSelecionados.delete(v.id); atualizarSelecaoVisitantes(); },
+            })),
             el('td', {}, el('strong', { class: 'mono', texto: v.usuario })),
             el('td', { 'data-rotulo': 'Senha', class: 'mono', texto: v.senha }),
             el('td', { 'data-rotulo': 'Descrição', texto: v.descricao || '—' }),
@@ -602,6 +612,7 @@ async function carregarVisitantes() {
                 el('button', { class: 'botao pequeno cor-vermelho', type: 'button', texto: 'Encerrar agora', onclick: () => encerrarVisitante(v) }))),
         ));
     }
+    atualizarSelecaoVisitantes();
 }
 
 $('#form-visitantes').addEventListener('submit', async (evento) => {
@@ -630,6 +641,48 @@ $('#form-visitantes').addEventListener('submit', async (evento) => {
             await carregarVisitantes();
         } catch (e) { aviso(e.message, true); }
     });
+});
+
+function atualizarSelecaoVisitantes() {
+    const n = estado.visitantesSelecionados.size;
+    $('#barra-selecao-visitantes').hidden = n === 0;
+    $('#qtd-visitantes-selecionados').textContent = n === 1 ? '1 selecionado' : n + ' selecionados';
+    const todos = $('#marcar-todos-visitantes');
+    todos.checked = estado.visitantes.length > 0 && n === estado.visitantes.length;
+    todos.indeterminate = n > 0 && n < estado.visitantes.length;
+}
+
+async function encerrarVarios(corpo, texto) {
+    if (!await confirmar('Encerrar visitantes', texto, 'Encerrar')) return;
+    try {
+        const r = await api('POST', '/api/visitantes/encerrar', corpo);
+        estado.visitantesSelecionados.clear();
+        aviso(`${r.encerrados.length} visitante(s) encerrado(s).` + (r.erros.length ? ' Erros: ' + r.erros.join('; ') : ''), r.erros.length > 0);
+        await carregarVisitantes();
+    } catch (e) { aviso(e.message, true); }
+}
+
+$('#marcar-todos-visitantes').addEventListener('change', (e) => {
+    estado.visitantesSelecionados = new Set(e.target.checked ? estado.visitantes.map((v) => v.id) : []);
+    document.querySelectorAll('#lista-visitantes input[type=checkbox]').forEach((c) => { c.checked = e.target.checked; });
+    atualizarSelecaoVisitantes();
+});
+$('#limpar-selecao-visitantes').addEventListener('click', () => {
+    estado.visitantesSelecionados.clear();
+    document.querySelectorAll('#lista-visitantes input[type=checkbox]').forEach((c) => { c.checked = false; });
+    atualizarSelecaoVisitantes();
+});
+$('#imprimir-visitantes-selecionados').addEventListener('click', () =>
+    imprimir(estado.visitantes.filter((v) => estado.visitantesSelecionados.has(v.id)).map(cartaoVisitante)));
+$('#encerrar-visitantes-selecionados').addEventListener('click', () => {
+    const ids = [...estado.visitantesSelecionados];
+    encerrarVarios({ ids }, `Encerrar ${ids.length} visitante(s) selecionado(s)? Quem estiver conectado é desconectado.`);
+});
+$('#encerrar-todos-visitantes').addEventListener('click', () =>
+    encerrarVarios({ todos: true }, `Encerrar TODAS as ${estado.visitantes.length} senha(s) de visitante? Quem estiver conectado é desconectado.`));
+$('#fechar-visitantes-criados').addEventListener('click', () => {
+    $('#visitantes-criados').hidden = true;
+    estado.visitantesCriados = [];
 });
 
 $('#imprimir-visitantes-criados').addEventListener('click', () => imprimir(estado.visitantesCriados.map(cartaoVisitante)));

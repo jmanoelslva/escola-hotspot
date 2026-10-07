@@ -193,15 +193,25 @@
                 <h2>Senhas criadas</h2>
                 <p class="dica" id="resumo-visitantes-criados"></p>
                 <ul id="lista-visitantes-criados" class="lista-senhas"></ul>
-                <button id="imprimir-visitantes-criados" class="botao cor-roxo" type="button">Imprimir cartões</button>
+                <div class="barra-acoes">
+                    <button id="imprimir-visitantes-criados" class="botao cor-roxo" type="button">Imprimir cartões</button>
+                    <button id="fechar-visitantes-criados" class="botao" type="button">Fechar</button>
+                </div>
             </div>
             <div class="barra-acoes">
-                <h2 class="titulo-lista">Visitantes válidos</h2>
+                <h2 class="titulo-lista">Visitantes</h2>
                 <button id="imprimir-visitantes" class="botao cor-roxo" type="button">Imprimir todos</button>
+                <button id="encerrar-todos-visitantes" class="botao cor-vermelho" type="button">Encerrar todos</button>
+            </div>
+            <div class="barra-selecao" id="barra-selecao-visitantes" hidden>
+                <span id="qtd-visitantes-selecionados"></span>
+                <button id="imprimir-visitantes-selecionados" class="botao cor-roxo" type="button">Imprimir selecionados</button>
+                <button id="encerrar-visitantes-selecionados" class="botao cor-vermelho" type="button">Encerrar selecionados</button>
+                <button id="limpar-selecao-visitantes" class="botao discreto-escuro" type="button">Limpar seleção</button>
             </div>
             <div class="tabela-rolagem">
                 <table class="tabela">
-                    <thead><tr><th>Usuário</th><th>Senha</th><th>Descrição</th><th>Válido até</th><th>Situação</th><th></th></tr></thead>
+                    <thead><tr><th class="col-check"><input type="checkbox" id="marcar-todos-visitantes" aria-label="Marcar todos os visitantes"></th><th>Usuário</th><th>Senha</th><th>Descrição</th><th>Válido até</th><th>Situação</th><th></th></tr></thead>
                     <tbody id="lista-visitantes"></tbody>
                 </table>
             </div>

@@ -275,6 +275,11 @@ class NovosVisitantes(BaseModel):
     descricao: str = Field(default="", max_length=80)
 
 
+class EncerrarVisitantes(BaseModel):
+    todos: bool = False
+    ids: list[str] = Field(default_factory=list, max_length=500)
+
+
 class Wifi(BaseModel):
     ssid: str = Field(default="", max_length=32)
     seguranca: Literal["aberta", "wpa"] = "aberta"
@@ -1017,6 +1022,17 @@ def criar_visitantes(dados: NovosVisitantes, mk: Mikrotik = Depends(mikrotik), s
     registrar(s, f"criou {len(criados)} senha(s) de visitante válida(s) até {ate:%d/%m/%Y %H:%M}"
                  + (f" ({dados.descricao.strip()})" if dados.descricao.strip() else ""))
     return {"criados": _com_qr(criados, _base_login(mk))}
+
+
+@app.post("/api/visitantes/encerrar")
+def encerrar_visitantes(dados: EncerrarVisitantes, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    if not dados.todos and not dados.ids:
+        raise util.ErroDados("Selecione os visitantes para encerrar.")
+    for item_id in dados.ids:
+        _id_valido(item_id)
+    resultado = visitantes.encerrar_varios(mk, None if dados.todos else dados.ids)
+    registrar(s, f"encerrou {len(resultado['encerrados'])} visitante(s)" + (" (todos)" if dados.todos else ""))
+    return resultado
 
 
 @app.delete("/api/visitantes/{item_id}")

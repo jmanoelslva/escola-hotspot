@@ -115,3 +115,22 @@ def test_configurar_wifi_do_qr(logado):
     r = logado.put("/api/configuracoes/wifi", json={"ssid": "Wi-Fi Escola", "seguranca": "aberta", "senha": "ignorada"}).json()
     assert r["senha"] == "" and logado.get("/api/configuracoes/wifi").json()["seguranca"] == "aberta"
     logado.put("/api/configuracoes/wifi", json={"ssid": ""})
+
+
+def test_encerrar_selecionados_e_todos(logado, mk):
+    comum = mk.adicionar(USUARIOS, {"name": "maria", "comment": "Maria - 9A"})
+    logado.post("/api/visitantes", json={"quantidade": 4, "minutos": 60})
+    lista = logado.get("/api/visitantes").json()
+    mk.adicionar("/ip/hotspot/active", {"user": lista[0]["usuario"]})
+    r = logado.post("/api/visitantes/encerrar", json={"ids": [lista[0]["id"], lista[1]["id"], comum[".id"]]}).json()
+    assert sorted(r["encerrados"]) == sorted([lista[0]["usuario"], lista[1]["usuario"]]) and r["erros"] == []
+    assert comum in mk.tabelas[USUARIOS]  # usuário comum nunca é encerrado aqui
+    assert mk.tabelas["/ip/hotspot/active"] == []
+    assert len(logado.get("/api/visitantes").json()) == 2
+
+    r = logado.post("/api/visitantes/encerrar", json={"todos": True}).json()
+    assert len(r["encerrados"]) == 2
+    assert logado.get("/api/visitantes").json() == []
+    assert not [a for a in mk.tabelas[AGENDA] if a["name"].startswith("painel-visitante-")]
+    assert comum in mk.tabelas[USUARIOS]
+    assert logado.post("/api/visitantes/encerrar", json={}).status_code == 400
