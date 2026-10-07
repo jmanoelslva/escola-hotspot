@@ -2,6 +2,11 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.13.1] - 2026-10-07
+
+### Alterado
+- Todos os aparelhos: os totais (Logados, Sem login, Liberados, Rede sem login) têm as mesmas cores das etiquetas da lista.
+
 ## [1.13.0] - 2026-10-07
 
 ### Adicionado

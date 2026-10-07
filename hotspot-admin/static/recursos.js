@@ -587,10 +587,10 @@ function renderRedeToda() {
 
     $('#resumo-rede').replaceChildren(
         cartaoNumero('Aparelhos', aparelhos.length),
-        cartaoNumero('Logados', resumo.logado || 0),
-        cartaoNumero('Sem login', resumo.sem_login || 0),
-        cartaoNumero('Liberados', resumo.liberado || 0),
-        cartaoNumero('Rede sem login', resumo.sem_hotspot || 0));
+        cartaoNumero('Logados', resumo.logado || 0, 'ok'),
+        cartaoNumero('Sem login', resumo.sem_login || 0, 'alerta-amarelo'),
+        cartaoNumero('Liberados', resumo.liberado || 0, 'bypass'),
+        cartaoNumero('Rede sem login', resumo.sem_hotspot || 0, 'off'));
 
     const corpo = $('#lista-rede-toda');
     corpo.replaceChildren();
@@ -613,8 +613,9 @@ function renderRedeToda() {
     }
 }
 
-function cartaoNumero(rotulo, valor) {
-    return el('div', { class: 'cartao-numero' }, el('span', { texto: rotulo }), el('strong', { texto: String(valor) }));
+// cor = a mesma classe da etiqueta da situação na lista (ok, alerta-amarelo, bypass, off).
+function cartaoNumero(rotulo, valor, cor) {
+    return el('div', { class: 'cartao-numero' + (cor ? ' cor-' + cor : '') }, el('span', { texto: rotulo }), el('strong', { texto: String(valor) }));
 }
 
 $('#busca-rede-toda').addEventListener('input', renderRedeToda);

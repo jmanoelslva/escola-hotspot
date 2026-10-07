@@ -258,6 +258,15 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
 .cartao-numero { flex: 1 1 180px; background: var(--branco); border: 1px solid var(--borda); border-radius: 12px; padding: 10px 14px; }
 .cartao-numero span { display: block; font-size: 13px; color: var(--suave); }
 .cartao-numero strong { font-size: 18px; color: var(--azul); }
+/* Totais com as cores das etiquetas da lista */
+.cartao-numero.cor-ok { background: #e6f4ea; border-color: #b7dcc1; }
+.cartao-numero.cor-ok strong, .cartao-numero.cor-ok span { color: var(--verde); }
+.cartao-numero.cor-alerta-amarelo { background: #fff4d6; border-color: #f3d27a; }
+.cartao-numero.cor-alerta-amarelo strong, .cartao-numero.cor-alerta-amarelo span { color: var(--amarelo); }
+.cartao-numero.cor-bypass { background: var(--azul-claro); border-color: #b9cfe4; }
+.cartao-numero.cor-bypass strong, .cartao-numero.cor-bypass span { color: var(--azul); }
+.cartao-numero.cor-off { background: #eef0f2; border-color: var(--borda); }
+.cartao-numero.cor-off strong, .cartao-numero.cor-off span { color: var(--suave); }
 .pct { display: inline-flex; align-items: center; gap: 8px; min-width: 120px; }
 .barra-pct { flex: 1; height: 8px; background: #e4e7eb; border-radius: 999px; overflow: hidden; min-width: 60px; }
 .barra-pct span { display: block; height: 100%; background: var(--azul); }
