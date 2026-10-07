@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0d4a7d">
+    <title>Painel do Hotspot</title>
+    <link rel="icon" href="/static/icone.ico" sizes="any">
+    <link rel="stylesheet" href="/static/style.css?v=__VERSAO__">
+    <script src="/static/app.js?v=__VERSAO__" defer></script>
+    <script src="/static/recursos.js?v=__VERSAO__" defer></script>
+    <script src="/static/geral.js?v=__VERSAO__" defer></script>
+</head>
+<body>
+
+<!-- Login -->
+<main id="tela-login" class="tela-login" hidden>
+    <form id="form-login" class="cartao-login" autocomplete="on">
+        <img src="/static/logo.png" alt="" class="logo-login">
+        <h1>Painel do Hotspot</h1>
+        <p class="sub" data-escola></p>
+        <p id="erro-login" class="alerta" hidden></p>
+        <label>Usuário do MikroTik
+            <input name="usuario" autocomplete="username" autocapitalize="off" spellcheck="false" required>
+        </label>
+        <label>Senha
+            <input name="senha" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="botao primario cheio largo" type="submit">Entrar</button>
+    </form>
+</main>
+
+<!-- Painel -->
+<div id="tela-painel" hidden>
+    <header class="topo">
+        <img src="/static/logo.png" alt="" class="logo-topo">
+        <div class="topo-texto">
+            <strong>Painel do Hotspot</strong>
+            <span data-escola></span>
+        </div>
+        <div class="topo-usuario">
+            <span id="usuario-logado"></span>
+            <span id="tipo-conexao" class="conexao" hidden></span>
+            <button id="sair" class="botao discreto" type="button">Sair</button>
+        </div>
+    </header>
+
+    <nav class="abas" role="tablist">
+        <button class="aba" data-grupo="inicio" role="tab">Início</button>
+        <button class="aba" data-grupo="usuarios" role="tab">Usuários</button>
+        <button class="aba" data-grupo="conectados" role="tab">Conectados</button>
+        <button class="aba" data-grupo="aparelhos" role="tab">Aparelhos</button>
+        <button class="aba" data-grupo="regras" role="tab">Regras de acesso</button>
+        <button class="aba" data-grupo="sistema" role="tab">Sistema</button>
+    </nav>
+
+    <main class="conteudo">
+        <div id="faixa-atualizacao" class="faixa-atualizacao" role="status" hidden>
+            <span id="texto-faixa-atualizacao"></span>
+            <button id="ver-atualizacao" class="botao pequeno cor-azul" type="button">Ver detalhes</button>
+            <button id="fechar-faixa-atualizacao" class="botao pequeno discreto-escuro" type="button" aria-label="Fechar aviso">✕</button>
+        </div>
+
+        <nav id="subabas" class="subabas" role="tablist" hidden></nav>
+
+        <!-- Painel geral -->
+        <section id="aba-geral" class="painel-aba" hidden>
+            <div class="cartoes-resumo" id="cartoes-sistema"></div>
+            <details class="cartao escolha-interfaces">
+                <summary>Escolher as interfaces do gráfico</summary>
+                <div id="lista-interfaces" class="lista-interfaces"></div>
+            </details>
+            <p class="alerta-texto" id="erro-trafego" role="status"></p>
+            <div id="graficos" class="graficos"></div>
+            <div class="cartao">
+                <h2>Atualização do RouterOS</h2>
+                <p id="estado-atualizacao" class="dica">Verificando…</p>
+                <div id="como-atualizar" class="dica" hidden>
+                    <strong>Como atualizar:</strong> faça um backup, escolha um horário sem aula e, no Winbox, abra
+                    <strong>System → Packages → Check For Updates → Download&amp;Install</strong>. O roteador reinicia sozinho (a rede para por alguns minutos).
+                    Depois, para o firmware: <strong>System → RouterBOARD → Upgrade</strong> e reinicie de novo (<strong>System → Reboot</strong>).
+                </div>
+                <button id="verificar-atualizacao" class="botao cor-azul" type="button">Verificar agora</button>
+            </div>
+        </section>
+
+        <!-- Usuários -->
+        <section id="aba-usuarios" class="painel-aba" hidden>
+            <div class="barra-acoes">
+                <input id="busca-usuarios" type="search" placeholder="Buscar usuário, nome ou turma" class="busca">
+                <select id="filtro-turma" class="filtro"><option value="">Todas as turmas</option></select>
+                <select id="filtro-perfil" class="filtro"><option value="">Todos os perfis</option></select>
+                <button id="exportar-usuarios" class="botao cor-verde" type="button">Exportar planilha</button>
+                <button id="novo-usuario" class="botao primario" type="button">+ Novo usuário</button>
+            </div>
+            <div class="barra-selecao" id="barra-selecao" hidden>
+                <span id="qtd-selecionados"></span>
+                <button id="lote-ativar" class="botao cor-verde" type="button">Ativar</button>
+                <button id="lote-desativar" class="botao cor-laranja" type="button">Desativar</button>
+                <span class="grupo-lote">
+                    <select id="lote-perfil" aria-label="Novo perfil"></select>
+                    <button id="lote-aplicar-perfil" class="botao cor-azul" type="button">Mudar perfil</button>
+                </span>
+                <button id="imprimir-selecionados" class="botao cor-roxo" type="button">Imprimir credenciais</button>
+                <button id="excluir-selecionados" class="botao perigo" type="button">Excluir</button>
+                <button id="limpar-selecao" class="botao discreto-escuro" type="button">Limpar seleção</button>
+            </div>
+            <p class="resumo" id="resumo-usuarios"></p>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr>
+                        <th class="col-check"><input type="checkbox" id="marcar-todos" aria-label="Marcar todos"></th>
+                        <th>Usuário</th><th>Senha</th><th>Nome / turma</th><th>Perfil</th><th>Limite</th><th>Situação</th><th></th>
+                    </tr></thead>
+                    <tbody id="lista-usuarios"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Conectados -->
+        <section id="aba-conectados" class="painel-aba" hidden>
+            <div class="barra-acoes">
+                <input id="busca-conectados" type="search" placeholder="Buscar usuário, IP ou MAC" class="busca">
+                <button id="atualizar-conectados" class="botao cor-azul" type="button">Atualizar</button>
+            </div>
+            <p class="resumo" id="resumo-conectados"></p>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr>
+                        <th>Usuário</th><th>IP</th><th>MAC</th><th>Conectado há</th><th>Enviados / recebidos</th><th></th>
+                    </tr></thead>
+                    <tbody id="lista-conectados"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Aparelhos (bypass e bloqueio) -->
+        <section id="aba-aparelhos" class="painel-aba" hidden>
+            <div class="barra-acoes">
+                <input id="busca-aparelhos" type="search" placeholder="Buscar descrição, MAC ou IP" class="busca">
+                <button id="novo-bypass" class="botao primario" type="button">+ Liberar aparelho</button>
+                <button id="novo-bloqueio" class="botao perigo" type="button">+ Bloquear aparelho</button>
+            </div>
+            <p class="dica">Aparelhos <strong>liberados</strong> (bypass) navegam sem passar pelo login: TVs, impressoras, computadores da escola. Aparelhos <strong>bloqueados</strong> não conseguem usar a rede.</p>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr>
+                        <th>Tipo</th><th>Descrição</th><th>MAC</th><th>IP</th><th>Situação</th><th></th>
+                    </tr></thead>
+                    <tbody id="lista-aparelhos"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Visitantes -->
+        <section id="aba-visitantes" class="painel-aba" hidden>
+            <form id="form-visitantes" class="cartao">
+                <h2>Senhas temporárias para visitantes</h2>
+                <p class="dica">Para palestrantes, pais em reunião, técnicos. Cada senha some sozinha na hora marcada: o próprio MikroTik desconecta e apaga o usuário, mesmo com o painel fechado (o relógio do roteador precisa estar certo).</p>
+                <div class="grade-form">
+                    <label>Quantidade
+                        <input name="quantidade" type="number" min="1" max="50" value="1" required>
+                    </label>
+                    <label>Válida por
+                        <select name="validade">
+                            <option value="60">1 hora</option>
+                            <option value="120" selected>2 horas</option>
+                            <option value="240">4 horas</option>
+                            <option value="480">8 horas</option>
+                            <option value="fim">Até o fim do dia (23:59)</option>
+                            <option value="1440">1 dia</option>
+                            <option value="4320">3 dias</option>
+                            <option value="10080">7 dias</option>
+                        </select>
+                    </label>
+                    <label>Perfil
+                        <select name="perfil" id="perfil-visitantes"></select>
+                    </label>
+                    <label>Descrição (opcional)
+                        <input name="descricao" maxlength="80" placeholder="ex.: Reunião de pais">
+                    </label>
+                </div>
+                <div class="janela-botoes">
+                    <button class="botao primario" type="submit">Criar senhas</button>
+                </div>
+            </form>
+            <div id="visitantes-criados" class="cartao destaque-verde" hidden>
+                <h2>Senhas criadas</h2>
+                <p class="dica" id="resumo-visitantes-criados"></p>
+                <ul id="lista-visitantes-criados" class="lista-senhas"></ul>
+                <div class="barra-acoes">
+                    <button id="imprimir-visitantes-criados" class="botao cor-roxo" type="button">Imprimir cartões</button>
+                    <button id="fechar-visitantes-criados" class="botao" type="button">Fechar</button>
+                </div>
+            </div>
+            <div class="barra-acoes">
+                <h2 class="titulo-lista">Visitantes</h2>
+                <button id="imprimir-visitantes" class="botao cor-roxo" type="button">Imprimir todos</button>
+                <button id="encerrar-todos-visitantes" class="botao cor-vermelho" type="button">Encerrar todos</button>
+            </div>
+            <div class="barra-selecao" id="barra-selecao-visitantes" hidden>
+                <span id="qtd-visitantes-selecionados"></span>
+                <button id="imprimir-visitantes-selecionados" class="botao cor-roxo" type="button">Imprimir selecionados</button>
+                <button id="encerrar-visitantes-selecionados" class="botao cor-vermelho" type="button">Encerrar selecionados</button>
+                <button id="limpar-selecao-visitantes" class="botao discreto-escuro" type="button">Limpar seleção</button>
+            </div>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr><th class="col-check"><input type="checkbox" id="marcar-todos-visitantes" aria-label="Marcar todos os visitantes"></th><th>Usuário</th><th>Senha</th><th>Descrição</th><th>Válido até</th><th>Situação</th><th></th></tr></thead>
+                    <tbody id="lista-visitantes"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Perfis e horário -->
+        <section id="aba-perfis" class="painel-aba" hidden>
+            <div class="barra-acoes">
+                <button id="novo-perfil" class="botao primario" type="button">+ Novo perfil</button>
+            </div>
+            <p class="dica">O <strong>perfil</strong> define a velocidade, quantos aparelhos cada usuário pode conectar ao mesmo tempo e o tempo máximo de cada conexão. O <strong>horário</strong> corta a internet de quem usa o perfil fora do período escolhido (vale a partir do próximo login de cada usuário; o relógio do MikroTik precisa estar certo).</p>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr><th>Perfil</th><th>Download</th><th>Envio</th><th>Aparelhos</th><th>Sessão</th><th>Horário</th><th>Usuários</th><th></th></tr></thead>
+                    <tbody id="lista-perfis"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Rede Alunos -->
+        <section id="aba-alunos" class="painel-aba" hidden>
+            <div class="cartao" id="cartao-rede-alunos">
+                <div class="rede-alunos-topo">
+                    <h2>Rede Alunos</h2>
+                    <span id="etiqueta-rede-alunos" class="etiqueta off">…</span>
+                </div>
+                <p class="rede-alunos-estado" id="estado-rede-alunos">Carregando…</p>
+                <div class="barra-acoes" id="acoes-rede-alunos" hidden>
+                    <span class="grupo-lote">
+                        <select id="minutos-rede-alunos" aria-label="Por quanto tempo">
+                            <option value="10">10 minutos</option>
+                            <option value="20">20 minutos</option>
+                            <option value="30" selected>30 minutos</option>
+                            <option value="45">45 minutos</option>
+                            <option value="60">1 hora</option>
+                            <option value="90">1 hora e meia</option>
+                            <option value="120">2 horas</option>
+                            <option value="240">4 horas</option>
+                        </select>
+                        <button id="liberar-rede-alunos" class="botao cor-verde" type="button">Liberar agora</button>
+                    </span>
+                    <button id="fechar-rede-alunos" class="botao cor-vermelho" type="button">Fechar agora</button>
+                    <button id="horario-rede-alunos" class="botao" type="button" hidden>Voltar ao horário normal</button>
+                </div>
+            </div>
+            <div class="cartao" id="cartao-horarios-alunos" hidden>
+                <h2>Horários</h2>
+                <p class="dica" id="horarios-rede-alunos"></p>
+                <p class="dica">Quem abre e fecha a rede é o próprio MikroTik (script <span class="mono">painel-alunos</span>, a cada minuto), mesmo com o painel fechado. Fechada, a VLAN dos alunos fica desligada: o Wi-Fi "Alunos" continua aparecendo, mas sem internet. "Liberar agora" fecha sozinho na hora marcada; "Fechar agora" dentro de um horário vale até o fim dele.</p>
+            </div>
+        </section>
+
+        <!-- Sites bloqueados -->
+        <section id="aba-sites" class="painel-aba" hidden>
+            <div class="cartao forcar-dns">
+                <div class="forcar-dns-topo">
+                    <div>
+                        <h2>Forçar o DNS do roteador</h2>
+                        <p class="dica">Faz o bloqueio valer também para quem configurou outro DNS no aparelho (ex.: 8.8.8.8): toda consulta DNS vinda do hotspot é atendida pelo MikroTik. Não afeta a rede da secretaria. Pode desligar e religar a qualquer momento.</p>
+                    </div>
+                    <label class="chave" title="Ligar ou desligar">
+                        <input type="checkbox" id="chave-forcar-dns" role="switch" aria-label="Forçar o DNS do roteador">
+                        <span class="chave-trilho"><span class="chave-bola"></span></span>
+                    </label>
+                </div>
+                <p class="dica" id="estado-forcar-dns">Carregando…</p>
+            </div>
+            <form id="form-bloqueio" class="cartao linha-form">
+                <label class="campo-largo">Site
+                    <input name="dominio" required maxlength="300" placeholder="ex.: bet365.com" spellcheck="false" autocapitalize="off">
+                </label>
+                <label class="rotulo-inline">Motivo (opcional)
+                    <input name="motivo" maxlength="100" placeholder="ex.: apostas">
+                </label>
+                <button class="botao perigo" type="submit">Bloquear</button>
+            </form>
+            <p class="dica">O bloqueio vale para o site e todos os subdomínios (bloquear <strong>tiktok.com</strong> bloqueia também <strong>www.tiktok.com</strong>, <strong>m.tiktok.com</strong> etc.) e funciona pelo DNS do MikroTik: aparelhos configurados com outro DNS (8.8.8.8, DNS privado) não são afetados. Pode levar alguns minutos para valer em quem já tinha aberto o site.</p>
+            <div class="barra-acoes">
+                <input id="busca-sites" type="search" placeholder="Buscar site ou motivo" class="busca">
+            </div>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr><th>Site</th><th>Motivo</th><th>Situação</th><th></th></tr></thead>
+                    <tbody id="lista-sites"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Consumo -->
+        <section id="aba-relatorio" class="painel-aba" hidden>
+            <div class="barra-acoes">
+                <span class="alternador" role="group" aria-label="Agrupar por">
+                    <button class="botao pequeno ativo" type="button" data-agrupar="usuario">Por usuário</button>
+                    <button class="botao pequeno" type="button" data-agrupar="turma">Por turma</button>
+                </span>
+                <input id="busca-relatorio" type="search" placeholder="Buscar" class="busca">
+                <button id="atualizar-relatorio" class="botao cor-azul" type="button">Atualizar</button>
+                <button id="zerar-relatorio" class="botao perigo" type="button">Zerar contadores</button>
+            </div>
+            <div class="cartoes-resumo" id="resumo-relatorio"></div>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead id="cabecalho-relatorio"></thead>
+                    <tbody id="lista-relatorio"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Aviso -->
+        <section id="aba-aviso" class="painel-aba" hidden>
+            <form id="form-aviso" class="cartao">
+                <h2>Aviso nas telas do Wi-Fi</h2>
+                <p class="dica">O texto aparece para os alunos na tela de login e na tela de conectado. Deixe em branco para não mostrar nada.</p>
+                <textarea name="texto" maxlength="500" rows="4" placeholder="ex.: Feira de ciências nesta sexta-feira. Tragam o crachá!"></textarea>
+                <div class="linha-aviso">
+                    <small class="ajuda" id="contador-aviso">0 / 500</small>
+                    <small class="ajuda" id="arquivo-aviso"></small>
+                </div>
+                <div class="janela-botoes">
+                    <button class="botao" type="button" id="apagar-aviso">Apagar aviso</button>
+                    <button class="botao primario" type="submit">Salvar aviso</button>
+                </div>
+            </form>
+            <div class="cartao">
+                <h2>Como fica</h2>
+                <div class="aviso-escola" id="previa-aviso">(sem aviso)</div>
+            </div>
+        </section>
+
+        <!-- Importar -->
+        <section id="aba-importar" class="painel-aba" hidden>
+            <div class="cartao">
+                <h2>Cadastrar uma turma pela planilha</h2>
+                <ol class="passos">
+                    <li>Baixe o <a href="/modelo.csv">modelo da planilha</a> e preencha no Excel (uma linha por aluno).</li>
+                    <li>Colunas: <strong>usuario</strong> (obrigatória), <strong>senha</strong> (em branco = o painel cria), <strong>nome</strong>, <strong>turma</strong> e <strong>perfil</strong> (em branco = o perfil escolhido abaixo).</li>
+                    <li>Salve como <strong>.xlsx</strong> ou <strong>.csv</strong> e envie aqui.</li>
+                </ol>
+                <form id="form-importar" class="linha-form">
+                    <input type="file" name="arquivo" accept=".csv,.xlsx" required>
+                    <label class="rotulo-inline">Perfil
+                        <select name="perfil" id="perfil-importar"></select>
+                    </label>
+                    <button class="botao primario" type="submit">Ler planilha</button>
+                </form>
+            </div>
+            <div id="previa-importar" hidden>
+                <p class="resumo" id="resumo-importar"></p>
+                <div class="barra-acoes">
+                    <button id="confirmar-importar" class="botao primario" type="button">Cadastrar</button>
+                    <button id="imprimir-importados" class="botao cor-roxo" type="button" hidden>Imprimir credenciais</button>
+                </div>
+                <div class="tabela-rolagem">
+                    <table class="tabela">
+                        <thead><tr><th>Linha</th><th>Usuário</th><th>Senha</th><th>Nome / turma</th><th>Perfil</th><th>Situação</th></tr></thead>
+                        <tbody id="lista-importar"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Histórico -->
+        <section id="aba-historico" class="painel-aba" hidden>
+            <div class="barra-acoes">
+                <input id="busca-historico" type="search" placeholder="Buscar (ex.: maria, bloqueou, perfil)" class="busca">
+                <select id="usuario-historico" class="filtro"><option value="">Todos os operadores</option></select>
+                <select id="dias-historico" class="filtro">
+                    <option value="1">Hoje</option>
+                    <option value="7">Últimos 7 dias</option>
+                    <option value="30" selected>Últimos 30 dias</option>
+                    <option value="365">Último ano</option>
+                    <option value="0">Tudo</option>
+                </select>
+            </div>
+            <p class="resumo" id="resumo-historico"></p>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr><th>Quando</th><th>Operador</th><th>Ação</th></tr></thead>
+                    <tbody id="lista-historico"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Backup -->
+        <section id="aba-backup" class="painel-aba" hidden>
+            <div class="cartao">
+                <h2>Cópias de segurança</h2>
+                <p class="dica">O painel guarda sozinho uma cópia por dia (no primeiro login do dia) com os usuários e senhas, aparelhos, perfis e sites bloqueados, e mantém as últimas 30 na pasta <strong>dados\backups</strong> deste computador. <strong>Restaurar</strong> recria no MikroTik só o que estiver faltando; não altera nem apaga o que já existe.</p>
+                <div class="barra-acoes">
+                    <button id="fazer-backup" class="botao primario" type="button">Fazer backup agora</button>
+                    <label class="botao cor-laranja" for="arquivo-backup">Restaurar de um arquivo…</label>
+                    <input type="file" id="arquivo-backup" accept=".json" class="escondido">
+                </div>
+            </div>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr><th>Data</th><th>Usuários</th><th>Aparelhos</th><th>Perfis</th><th>Sites</th><th></th></tr></thead>
+                    <tbody id="lista-backups"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Configurações -->
+        <section id="aba-config" class="painel-aba" hidden>
+            <div class="cartao">
+                <h2>Endereço do hotspot</h2>
+                <p class="dica">É o nome que aparece na barra do navegador na tela de login do Wi-Fi (ex.: <strong>wifi.pmapg.internal</strong>). Use um nome terminado em <strong>.internal</strong>, que é reservado para redes internas. Deixe em branco para o hotspot usar o próprio IP. Depois de trocar, quem tinha login automático (cookie) precisa entrar de novo uma vez.</p>
+                <form id="form-dominio-todos" class="linha-form">
+                    <label class="campo-largo">Novo endereço para todos os perfis em uso
+                        <input name="dominio" maxlength="200" placeholder="wifi.pmapg.internal" spellcheck="false" autocapitalize="off">
+                    </label>
+                    <button class="botao cor-azul" type="submit">Aplicar em todos</button>
+                </form>
+            </div>
+            <form id="form-wifi" class="cartao">
+                <h2>Rede Wi-Fi dos QR codes</h2>
+                <p class="dica">Usada no QR code "Conecte ao Wi-Fi" dos cartões de visitante: a câmera do celular oferece entrar na rede sem digitar o nome. Deixe o nome em branco para imprimir só o QR code do login.</p>
+                <div class="wifi-qr">
+                    <div class="grade-form">
+                        <label>Nome da rede (SSID)
+                            <input name="ssid" maxlength="32" placeholder="ex.: Wi-Fi Escola PMAPG" spellcheck="false">
+                        </label>
+                        <label>Segurança
+                            <select name="seguranca">
+                                <option value="aberta">Aberta (sem senha)</option>
+                                <option value="wpa">Com senha (WPA/WPA2)</option>
+                            </select>
+                        </label>
+                        <label id="campo-senha-wifi">Senha do Wi-Fi
+                            <input name="senha" maxlength="63" spellcheck="false" autocomplete="off">
+                        </label>
+                    </div>
+                    <img id="previa-qr-wifi" class="previa-qr" alt="QR code da rede Wi-Fi" hidden>
+                </div>
+                <div class="janela-botoes">
+                    <button class="botao cor-azul" type="submit">Salvar</button>
+                </div>
+            </form>
+            <h2 class="titulo-lista">Perfis do servidor</h2>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr><th>Perfil do servidor</th><th>Usado por</th><th>Endereço IP</th><th>Endereço (domínio)</th><th></th></tr></thead>
+                    <tbody id="lista-perfis-servidor"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- Janela: usuário -->
+<dialog id="janela-usuario" class="janela">
+    <form id="form-usuario" method="dialog">
+        <h2 id="titulo-usuario">Novo usuário</h2>
+        <label>Usuário
+            <input name="nome" required maxlength="64" autocapitalize="off" spellcheck="false" placeholder="ex.: maria.silva">
+        </label>
+        <label>Senha
+            <span class="campo-com-botao">
+                <input name="senha" maxlength="64" autocomplete="off" spellcheck="false">
+                <button type="button" class="botao" id="gerar-senha">Gerar</button>
+            </span>
+            <small id="ajuda-senha" class="ajuda">Deixe em branco para manter a senha atual.</small>
+        </label>
+        <label>Nome / turma
+            <input name="comentario" maxlength="200" placeholder="ex.: Maria da Silva - 9º A">
+        </label>
+        <div class="duas-colunas">
+            <label>Perfil
+                <select name="perfil"></select>
+            </label>
+            <label>Limite de tempo
+                <input name="limite_tempo" maxlength="20" placeholder="sem limite" spellcheck="false">
+                <small class="ajuda">ex.: 2h, 1d</small>
+            </label>
+        </div>
+        <label>Prender a um aparelho (MAC)
+            <input name="mac" maxlength="20" placeholder="opcional" spellcheck="false">
+        </label>
+        <p class="alerta" data-erro hidden></p>
+        <div class="janela-botoes">
+            <button type="button" class="botao" data-fechar>Cancelar</button>
+            <button type="submit" class="botao primario">Salvar</button>
+        </div>
+    </form>
+</dialog>
+
+<!-- Janela: aparelho -->
+<dialog id="janela-aparelho" class="janela">
+    <form id="form-aparelho" method="dialog">
+        <h2 id="titulo-aparelho">Liberar aparelho</h2>
+        <label>Tipo
+            <select name="tipo">
+                <option value="bypassed">Liberado (bypass, sem login)</option>
+                <option value="blocked">Bloqueado</option>
+            </select>
+        </label>
+        <label>Descrição
+            <input name="comentario" maxlength="200" required placeholder="ex.: TV sala 3">
+        </label>
+        <div class="duas-colunas">
+            <label>MAC
+                <input name="mac" maxlength="20" required placeholder="AA:BB:CC:DD:EE:FF" spellcheck="false">
+            </label>
+            <label>IP (opcional)
+                <input name="ip" maxlength="15" placeholder="qualquer" spellcheck="false">
+            </label>
+        </div>
+        <details id="escolher-aparelho">
+            <summary>Escolher entre os aparelhos conectados na rede</summary>
+            <input type="search" id="busca-rede" placeholder="Filtrar por nome, IP ou MAC" class="busca">
+            <ul id="lista-rede" class="lista-rede"></ul>
+        </details>
+        <p class="alerta" data-erro hidden></p>
+        <div class="janela-botoes">
+            <button type="button" class="botao" data-fechar>Cancelar</button>
+            <button type="submit" class="botao primario">Salvar</button>
+        </div>
+    </form>
+</dialog>
+
+<!-- Janela: perfil -->
+<dialog id="janela-perfil" class="janela">
+    <form id="form-perfil" method="dialog">
+        <h2 id="titulo-perfil">Novo perfil</h2>
+        <label>Nome
+            <input name="nome" required maxlength="32" spellcheck="false" autocapitalize="off" placeholder="ex.: professores">
+        </label>
+        <div class="duas-colunas">
+            <label>Download (Mbps)
+                <input name="download_mbps" type="number" min="0" max="10000" step="0.1" placeholder="sem limite">
+            </label>
+            <label>Envio (Mbps)
+                <input name="envio_mbps" type="number" min="0" max="10000" step="0.1" placeholder="sem limite">
+            </label>
+        </div>
+        <div class="duas-colunas">
+            <label>Aparelhos por usuário
+                <input name="aparelhos" type="number" min="0" max="100" step="1" placeholder="1">
+                <small class="ajuda">0 = sem limite</small>
+            </label>
+            <label>Tempo máximo por conexão
+                <input name="tempo_sessao" maxlength="20" spellcheck="false" placeholder="sem limite">
+                <small class="ajuda">ex.: 1h, 4h30m</small>
+            </label>
+        </div>
+        <p class="alerta" data-erro hidden></p>
+        <div class="janela-botoes">
+            <button type="button" class="botao" data-fechar>Cancelar</button>
+            <button type="submit" class="botao primario">Salvar</button>
+        </div>
+    </form>
+</dialog>
+
+<!-- Janela: horário -->
+<dialog id="janela-horario" class="janela">
+    <form id="form-horario" method="dialog">
+        <h2 id="titulo-horario">Horário de acesso</h2>
+        <label class="linha-check"><input type="checkbox" name="ativo"> Limitar o horário de acesso deste perfil</label>
+        <fieldset id="campos-horario" class="sem-borda">
+            <div class="duas-colunas">
+                <label>Das
+                    <input name="inicio" type="time" value="07:00" required>
+                </label>
+                <label>Até
+                    <input name="fim" type="time" value="17:00" required>
+                </label>
+            </div>
+            <div class="dias" role="group" aria-label="Dias da semana">
+                <label><input type="checkbox" name="dia" value="mon" checked> seg</label>
+                <label><input type="checkbox" name="dia" value="tue" checked> ter</label>
+                <label><input type="checkbox" name="dia" value="wed" checked> qua</label>
+                <label><input type="checkbox" name="dia" value="thu" checked> qui</label>
+                <label><input type="checkbox" name="dia" value="fri" checked> sex</label>
+                <label><input type="checkbox" name="dia" value="sat"> sáb</label>
+                <label><input type="checkbox" name="dia" value="sun"> dom</label>
+            </div>
+            <small class="ajuda">Fora desse período, quem usa o perfil continua no Wi-Fi, mas sem internet.</small>
+        </fieldset>
+        <p class="alerta" data-erro hidden></p>
+        <div class="janela-botoes">
+            <button type="button" class="botao" data-fechar>Cancelar</button>
+            <button type="submit" class="botao primario">Salvar</button>
+        </div>
+    </form>
+</dialog>
+
+<!-- Janela: exportar -->
+<dialog id="janela-exportar" class="janela pequena">
+    <form id="form-exportar" method="dialog">
+        <h2>Exportar usuários</h2>
+        <p>Baixa uma planilha do Excel com todos os usuários cadastrados.</p>
+        <label class="linha-check"><input type="checkbox" name="senhas"> Incluir as senhas</label>
+        <small class="ajuda">Guarde a planilha com senhas em local seguro.</small>
+        <div class="janela-botoes">
+            <button type="button" class="botao" data-fechar>Cancelar</button>
+            <button type="submit" class="botao primario">Baixar planilha</button>
+        </div>
+    </form>
+</dialog>
+
+<!-- Janela: confirmação -->
+<dialog id="janela-confirmar" class="janela pequena">
+    <form method="dialog">
+        <h2 id="confirmar-titulo">Confirmar</h2>
+        <p id="confirmar-texto"></p>
+        <div class="janela-botoes">
+            <button value="nao" class="botao">Cancelar</button>
+            <button value="sim" class="botao perigo cheio" id="confirmar-sim">Confirmar</button>
+        </div>
+    </form>
+</dialog>
+
+<div id="aviso" class="aviso" role="status" hidden></div>
+
+<!-- Credenciais para imprimir -->
+<div id="impressao" class="impressao"></div>
+
+</body>
+</html>
