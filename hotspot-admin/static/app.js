@@ -788,7 +788,21 @@ $('#imprimir-importados').addEventListener('click', () => imprimir(estado.import
 
 // ------------------------------------------------------------------ impressão
 
-function imprimir(lista) {
+// Espera cada imagem (logotipo e QR codes) carregar antes de imprimir: sem isso,
+// a primeira impressão saía sem os QR codes, que ainda estavam sendo carregados.
+function imagensProntas(area) {
+    const todas = Promise.all([...area.querySelectorAll('img')].map((img) => {
+        if (img.complete && img.naturalWidth) return null;
+        return new Promise((pronto) => {
+            img.addEventListener('load', pronto, { once: true });
+            img.addEventListener('error', pronto, { once: true });
+        });
+    }));
+    // Nunca espera mais que 5 segundos: imprime mesmo se alguma imagem falhar.
+    return Promise.race([todas, new Promise((pronto) => setTimeout(pronto, 5000))]);
+}
+
+async function imprimir(lista) {
     if (!lista.length) { aviso('Nada para imprimir.', true); return; }
     const area = $('#impressao');
     area.replaceChildren(...lista.map((c) => el('div', { class: 'credencial' },
@@ -803,6 +817,8 @@ function imprimir(lista) {
             c.qr_wifi ? el('figure', {}, el('img', { src: c.qr_wifi, alt: '' }), el('figcaption', { texto: '1. Conecte ao Wi-Fi' })) : null,
             c.qr_login ? el('figure', {}, el('img', { src: c.qr_login, alt: '' }), el('figcaption', { texto: (c.qr_wifi ? '2. ' : '') + 'Faça o login' })) : null) : null,
     )));
+    await imagensProntas(area);
+    await new Promise((pronto) => setTimeout(pronto, 100));  // deixa o navegador desenhar as imagens
     window.print();
 }
 

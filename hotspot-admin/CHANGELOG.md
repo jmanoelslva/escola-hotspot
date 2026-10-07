@@ -2,6 +2,11 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.17.2] - 2026-10-07
+
+### Corrigido
+- Impressão dos cartões: a primeira impressão saía sem os QR codes (e às vezes sem o logotipo), porque abria antes de as imagens carregarem. Agora espera as imagens (até 5 segundos) antes de abrir a janela de impressão.
+
 ## [1.17.1] - 2026-10-07
 
 ### Alterado
