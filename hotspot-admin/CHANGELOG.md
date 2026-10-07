@@ -2,6 +2,12 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.11.0] - 2026-10-07
+
+### Adicionado
+- Sistema → Configurações → **Escola**: nome, cidade e logotipo (PNG ou JPG, até 2 MB) do painel, da tela de entrada e dos cartões impressos, com "Voltar ao padrão". Guardados em `dados/ajustes.json` e `dados/logo.png`/`logo.jpg`, por cima do `.env`.
+- Sistema → Configurações → **Conexão com o MikroTik**: IP e porta da REST API. Sem IP, fica o padrão 192.168.88.1 (ex.: só a porta mudou); sem porta, o painel tenta HTTPS e HTTP. O endereço novo é testado com o usuário logado antes de salvar; se não responder ou recusar o usuário, nada muda e a sessão continua.
+
 ## [1.10.0] - 2026-10-06
 
 ### Adicionado

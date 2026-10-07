@@ -16,7 +16,7 @@
 <!-- Login -->
 <main id="tela-login" class="tela-login" hidden>
     <form id="form-login" class="cartao-login" autocomplete="on">
-        <img src="/static/logo.png" alt="" class="logo-login">
+        <img src="/logo" alt="" class="logo-login" data-logo>
         <h1>Painel do Hotspot</h1>
         <p class="sub" data-escola></p>
         <p id="erro-login" class="alerta" hidden></p>
@@ -33,7 +33,7 @@
 <!-- Painel -->
 <div id="tela-painel" hidden>
     <header class="topo">
-        <img src="/static/logo.png" alt="" class="logo-topo">
+        <img src="/logo" alt="" class="logo-topo" data-logo>
         <div class="topo-texto">
             <strong>Painel do Hotspot</strong>
             <span data-escola></span>
@@ -411,6 +411,46 @@
 
         <!-- Configurações -->
         <section id="aba-config" class="painel-aba" hidden>
+            <form id="form-escola" class="cartao">
+                <h2>Escola</h2>
+                <p class="dica">Aparece no topo do painel, na tela de entrada e nos cartões impressos. As páginas do hotspot (tela de login do Wi-Fi) não mudam por aqui: o nome e o logotipo delas ficam nos arquivos da pasta <strong>hotspot</strong>, enviados pelo Winbox.</p>
+                <div class="escola-config">
+                    <div class="logo-config">
+                        <img id="previa-logo" src="/logo" alt="Logotipo da escola" data-logo>
+                        <label class="botao pequeno cor-azul" for="arquivo-logo">Trocar logotipo…</label>
+                        <input type="file" id="arquivo-logo" accept="image/png,image/jpeg" class="escondido">
+                        <button id="logo-padrao" class="botao pequeno" type="button" hidden>Voltar ao padrão</button>
+                        <small class="ajuda">PNG ou JPG, até 2 MB</small>
+                    </div>
+                    <div class="grade-form">
+                        <label>Nome da escola
+                            <input name="nome" maxlength="120" required>
+                        </label>
+                        <label>Cidade
+                            <input name="cidade" maxlength="80" placeholder="ex.: Coité do Noia - AL">
+                        </label>
+                    </div>
+                </div>
+                <div class="janela-botoes">
+                    <button class="botao cor-azul" type="submit">Salvar</button>
+                </div>
+            </form>
+            <form id="form-mikrotik" class="cartao">
+                <h2>Conexão com o MikroTik</h2>
+                <p class="dica">Endereço e porta da REST API do roteador. Sem porta, o painel tenta HTTPS (443) e depois HTTP (80). Se mudar só a porta, deixe o IP em branco: fica o padrão <strong>192.168.88.1</strong>. Antes de salvar, o painel testa o endereço novo com o seu usuário; se não responder, nada muda.</p>
+                <div class="grade-form">
+                    <label>IP do MikroTik
+                        <input name="ip" maxlength="253" placeholder="192.168.88.1" spellcheck="false" autocapitalize="off">
+                    </label>
+                    <label>Porta
+                        <input name="porta" type="number" min="1" max="65535" placeholder="automática (443 ou 80)">
+                    </label>
+                </div>
+                <p class="dica" id="estado-mikrotik"></p>
+                <div class="janela-botoes">
+                    <button class="botao cor-azul" type="submit">Testar e salvar</button>
+                </div>
+            </form>
             <div class="cartao">
                 <h2>Endereço do hotspot</h2>
                 <p class="dica">É o nome que aparece na barra do navegador na tela de login do Wi-Fi (ex.: <strong>wifi.pmapg.internal</strong>). Use um nome terminado em <strong>.internal</strong>, que é reservado para redes internas. Deixe em branco para o hotspot usar o próprio IP. Depois de trocar, quem tinha login automático (cookie) precisa entrar de novo uma vez.</p>

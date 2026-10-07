@@ -787,7 +787,7 @@ function imprimir(lista) {
     const area = $('#impressao');
     area.replaceChildren(...lista.map((c) => el('div', { class: 'credencial' },
         el('div', { class: 'credencial-topo' },
-            el('img', { src: '/static/logo.png', alt: '' }),
+            el('img', { src: '/logo?v=' + (estado.versaoLogo || 0), alt: '' }),
             el('strong', { texto: 'Wi-Fi da Escola' })),
         el('div', { class: 'credencial-escola', texto: estado.info.escola }),
         el('div', { class: 'credencial-nome', texto: c.comentario || '' }),

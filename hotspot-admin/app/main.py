@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import backup, controle, historico, importacao, qrcodes, rede_alunos, sistema, util, visitantes
+from . import ajustes, backup, controle, historico, importacao, qrcodes, rede_alunos, sistema, util, visitantes
 from .config import APP_VERSION, PASTA_PROJETO, config
 from .mikrotik import EnderecoMikrotik, ErroAutenticacao, ErroConexao, ErroMikrotik, Mikrotik
 from .sessoes import LimiteLogin, Sessao, Sessoes
@@ -49,7 +49,7 @@ app = FastAPI(title="Painel do Hotspot", version=APP_VERSION, docs_url=None, red
 app.state.sessoes = Sessoes(config.sessao_minutos)
 app.state.limite_login = LimiteLogin()
 app.state.transport = None  # os testes trocam por um MikroTik falso
-app.state.endereco = EnderecoMikrotik(config.mikrotik_url, config.mikrotik_verificar_tls)
+app.state.endereco = EnderecoMikrotik(ajustes.endereco_mikrotik(config.pasta_dados, config), config.mikrotik_verificar_tls)
 app.state.atualizacao = sistema.VerificadorAtualizacao()
 
 
@@ -290,6 +290,16 @@ class Ligar(BaseModel):
     ativo: bool
 
 
+class DadosEscola(BaseModel):
+    nome: str = Field(max_length=200)
+    cidade: str = Field(default="", max_length=200)
+
+
+class ConexaoMikrotik(BaseModel):
+    ip: str = Field(default="", max_length=253)
+    porta: int | None = None
+
+
 class LiberarAlunos(BaseModel):
     minutos: int
 
@@ -349,7 +359,8 @@ def sessao(s: Sessao = Depends(sessao_atual)):
 
 @app.get("/api/info")
 def info():
-    return {"escola": config.nome_escola, "cidade": config.cidade_escola, "versao": APP_VERSION}
+    escola = ajustes.escola(config.pasta_dados, config)
+    return {"escola": escola["nome"], "cidade": escola["cidade"], "versao": APP_VERSION}
 
 
 # ---------------------------------------------------------------- usuários
@@ -834,6 +845,70 @@ def gravar_wifi(dados: Wifi, s: Sessao = Depends(sessao_atual)):
     return {**gravado, "qr": qrcodes.qr_wifi(config.pasta_dados)}
 
 
+# ---------------------------------------------------------------- configurações: escola e MikroTik
+
+@app.get("/api/configuracoes/escola")
+def ver_escola(_: Sessao = Depends(sessao_atual)):
+    return ajustes.escola(config.pasta_dados, config)
+
+
+@app.put("/api/configuracoes/escola")
+def gravar_escola(dados: DadosEscola, s: Sessao = Depends(sessao_atual)):
+    ajustes.gravar_escola(config.pasta_dados, dados.nome, dados.cidade)
+    escola = ajustes.escola(config.pasta_dados, config)
+    registrar(s, f"alterou o nome da escola para \"{escola['nome']}\" ({escola['cidade'] or 'sem cidade'})")
+    return escola
+
+
+@app.post("/api/configuracoes/logo")
+def gravar_logo(arquivo: UploadFile = File(...), s: Sessao = Depends(sessao_atual)):
+    ajustes.gravar_logo(config.pasta_dados, arquivo.file.read(ajustes.LOGO_MAX_BYTES + 1))
+    registrar(s, "trocou o logotipo da escola")
+    return ajustes.escola(config.pasta_dados, config)
+
+
+@app.delete("/api/configuracoes/logo")
+def remover_logo(s: Sessao = Depends(sessao_atual)):
+    ajustes.remover_logo(config.pasta_dados)
+    registrar(s, "voltou ao logotipo padrão")
+    return ajustes.escola(config.pasta_dados, config)
+
+
+def _estado_conexao() -> dict:
+    endereco = ajustes.endereco_mikrotik(config.pasta_dados, config)
+    ip, porta = ajustes.separar_endereco(endereco)
+    try:
+        em_uso = app.state.endereco.url()
+    except ErroMikrotik:
+        em_uso = ""
+    return {"ip": ip, "porta": porta, "padrao": ajustes.IP_PADRAO, "em_uso": em_uso, "conexao": tipo_conexao() if em_uso else ""}
+
+
+@app.get("/api/configuracoes/mikrotik")
+def ver_conexao(_: Sessao = Depends(sessao_atual)):
+    return _estado_conexao()
+
+
+@app.put("/api/configuracoes/mikrotik")
+def gravar_conexao(dados: ConexaoMikrotik, s: Sessao = Depends(sessao_atual)):
+    endereco = ajustes.montar_endereco(dados.ip, dados.porta)
+    novo = EnderecoMikrotik(endereco, config.mikrotik_verificar_tls, transport=app.state.transport)
+    try:
+        url = novo.url()
+        with Mikrotik(url, s.usuario, s.senha, config.mikrotik_verificar_tls, config.mikrotik_timeout,
+                      transport=app.state.transport) as mk:
+            identidade = mk.identidade()
+    except ErroAutenticacao as erro:
+        # Não encerra a sessão: só recusa o endereço novo.
+        raise util.ErroDados(f"O MikroTik em {endereco} não aceitou o seu usuário e senha. Nada foi alterado.") from erro
+    except ErroMikrotik as erro:
+        raise util.ErroDados(f"{erro.mensagem} Nada foi alterado.") from erro
+    ajustes.gravar_endereco(config.pasta_dados, endereco)
+    app.state.endereco = novo
+    registrar(s, f"mudou a conexão com o MikroTik para {endereco} ({identidade})")
+    return {**_estado_conexao(), "identidade": identidade}
+
+
 # ---------------------------------------------------------------- relatório de consumo
 
 def _estado_relatorio() -> dict:
@@ -1090,6 +1165,12 @@ def modelo_csv():
 
 
 app.mount("/static", StaticFiles(directory=PASTA_STATIC), name="static")
+
+
+@app.get("/logo")
+def logo():
+    arquivo = ajustes.caminho_logo(config.pasta_dados) or PASTA_STATIC / "logo.png"
+    return FileResponse(arquivo, headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/")

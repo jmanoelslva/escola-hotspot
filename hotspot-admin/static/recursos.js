@@ -554,6 +554,88 @@ $('#form-dominio-todos').addEventListener('submit', async (evento) => {
     });
 });
 
+// ------------------------------------------------------------------ configurações: escola e MikroTik
+
+function recarregarLogos() {
+    estado.versaoLogo = Date.now();
+    document.querySelectorAll('[data-logo]').forEach((img) => { img.src = '/logo?v=' + estado.versaoLogo; });
+}
+
+function mostrarEscola(e) {
+    const form = $('#form-escola');
+    form.nome.value = e.nome;
+    form.cidade.value = e.cidade;
+    $('#logo-padrao').hidden = !e.logo_proprio;
+    estado.info.escola = e.nome;
+    estado.info.cidade = e.cidade;
+    const texto = e.nome + (e.cidade ? ' · ' + e.cidade : '');
+    document.querySelectorAll('[data-escola]').forEach((x) => { x.textContent = texto; });
+}
+
+function mostrarConexao(c) {
+    const form = $('#form-mikrotik');
+    form.ip.value = c.ip === c.padrao && !c.porta ? '' : c.ip;
+    form.porta.value = c.porta || '';
+    $('#estado-mikrotik').textContent = c.em_uso
+        ? `Conectado por ${c.conexao} em ${c.em_uso}.`
+        : `Sem resposta do MikroTik em ${c.ip}${c.porta ? ':' + c.porta : ''}.`;
+}
+
+async function carregarEscolaEConexao() {
+    const [escola, conexao] = await Promise.all([api('GET', '/api/configuracoes/escola'), api('GET', '/api/configuracoes/mikrotik')]);
+    mostrarEscola(escola);
+    mostrarConexao(conexao);
+}
+
+$('#form-escola').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    const form = evento.target;
+    await comBotao(form.querySelector('[type=submit]'), async () => {
+        try {
+            mostrarEscola(await api('PUT', '/api/configuracoes/escola', { nome: form.nome.value, cidade: form.cidade.value }));
+            aviso('Dados da escola salvos.');
+        } catch (e) { aviso(e.message, true); }
+    });
+});
+
+$('#arquivo-logo').addEventListener('change', async (evento) => {
+    const arquivo = evento.target.files[0];
+    evento.target.value = '';
+    if (!arquivo) return;
+    const dados = new FormData();
+    dados.append('arquivo', arquivo);
+    try {
+        mostrarEscola(await api('POST', '/api/configuracoes/logo', dados));
+        recarregarLogos();
+        aviso('Logotipo trocado.');
+    } catch (e) { aviso(e.message, true); }
+});
+
+$('#logo-padrao').addEventListener('click', async () => {
+    if (!await confirmar('Logotipo', 'Voltar ao logotipo padrão do painel?', 'Voltar ao padrão')) return;
+    try {
+        mostrarEscola(await api('DELETE', '/api/configuracoes/logo'));
+        recarregarLogos();
+        aviso('Logotipo padrão de volta.');
+    } catch (e) { aviso(e.message, true); }
+});
+
+$('#form-mikrotik').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    const form = evento.target;
+    const ip = form.ip.value.trim();
+    const porta = form.porta.value ? parseInt(form.porta.value, 10) : null;
+    const destino = (ip || '192.168.88.1') + (porta ? ':' + porta : '');
+    if (!await confirmar('Conexão com o MikroTik', `Testar e passar a usar o MikroTik em ${destino}?`, 'Testar e salvar')) return;
+    await comBotao(form.querySelector('[type=submit]'), async () => {
+        try {
+            const r = await api('PUT', '/api/configuracoes/mikrotik', { ip, porta });
+            mostrarConexao(r);
+            aviso(`Conectado ao MikroTik ${r.identidade} em ${r.em_uso}.`);
+        } catch (e) { aviso(e.message, true); }
+    });
+});
+
 // ------------------------------------------------------------------ visitantes
 
 estado.visitantes = [];
@@ -806,7 +888,11 @@ Object.assign(CARREGAR, {
     aviso: carregarAviso,
     historico: carregarHistorico,
     backup: carregarBackups,
-    config: async () => { await carregarConfig(); mostrarWifi(await api('GET', '/api/configuracoes/wifi')); },
+    config: async () => {
+        await carregarEscolaEConexao();
+        await carregarConfig();
+        mostrarWifi(await api('GET', '/api/configuracoes/wifi'));
+    },
     visitantes: carregarVisitantes,
     alunos: carregarRedeAlunos,
 });

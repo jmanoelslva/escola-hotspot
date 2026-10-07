@@ -47,6 +47,7 @@ class MikrotikFalso:
         self.adicionar("/ip/hotspot/user", {"name": "default-trial", "default": "true"})
         self.pedidos: list[tuple[str, str, dict | None]] = []
         self.https = True  # False imita o www-ssl desligado
+        self.fora_do_ar: set[str] = set()  # endereços (host ou host:porta) que não respondem
         self.aceita_nxdomain = True  # False imita RouterOS sem DNS type=NXDOMAIN
         self.objetos = {
             "/system/resource": {"board-name": "hEX", "version": "7.15.3 (stable)", "cpu-load": "7",
@@ -77,6 +78,8 @@ class MikrotikFalso:
         return httpx.Response(status, json={"error": status, "message": "Bad Request", "detail": detalhe})
 
     def _responder(self, pedido: httpx.Request) -> httpx.Response:
+        if pedido.url.host in self.fora_do_ar or f"{pedido.url.host}:{pedido.url.port}" in self.fora_do_ar:
+            raise httpx.ConnectError("sem resposta", request=pedido)
         if pedido.url.scheme == "https" and not self.https:
             raise httpx.ConnectError("conexão recusada", request=pedido)
         if pedido.headers.get("authorization") != AUTORIZACAO:

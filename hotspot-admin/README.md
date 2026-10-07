@@ -17,7 +17,7 @@ O painel tem 6 abas: **Início**, **Usuários** (Cadastrados, Visitantes, Import
 - **Importar:** cadastrar uma turma inteira por planilha (.xlsx ou .csv). Senhas em branco são criadas pelo painel.
 - **Imprimir credenciais:** cartões com usuário e senha (3 por linha numa folha A4).
 - **Histórico:** quem fez o quê e quando, com busca e filtro por operador e período.
-- **Configurações:** endereço (domínio) da tela de login do hotspot, ex.: `wifi.pmapg.internal`, e a rede Wi-Fi usada no QR code dos cartões.
+- **Configurações:** nome, cidade e logotipo da escola; IP e porta do MikroTik; endereço (domínio) da tela de login do hotspot, ex.: `wifi.pmapg.internal`; e a rede Wi-Fi usada no QR code dos cartões.
 - **Backup:** uma cópia automática por dia (últimas 30) e restauração do que faltar no MikroTik.
 
 Cada pessoa entra com um **usuário admin do próprio MikroTik**. O painel não guarda senhas em disco: a senha fica na memória só enquanto a sessão está aberta (60 minutos sem uso, por padrão). As alterações ficam registradas em `dados\acoes.log` e no log do MikroTik.
@@ -63,6 +63,7 @@ O usuário precisa das permissões `read`, `write`, `rest-api` e `sensitive` (o 
 - **Redes (`mikrotik-redes.rsc`):** importe pelo Winbox (Files, depois `/import mikrotik-redes.rsc`). Administrativo na VLAN 200 (10.0.1.1/22, hotspot `hotspot-adm`, perfil `hsprof-adm` copiado do `hsprof1`); Alunos na VLAN 300 (10.1.0.1/21, sem login). IPv6: um /64 do prefixo da operadora para cada rede; no Administrativo só passa para quem fez login (chain `painel-hs-v6` do firewall IPv6, regras por MAC criadas pelo on-login dos perfis e conferidas pelo agendador `painel-hs-v6`). Rede Alunos: o script `painel-alunos` roda a cada minuto e liga a `VLAN300-ALUNOS` de segunda a sexta nos horários do próprio script; o painel cria `painel-alunos-liberado` (aberta até a hora marcada) ou `painel-alunos-fechado` (fechada até o fim do horário atual). Regras criadas têm comentário `painel-redes`; o fim do arquivo traz os comandos para desfazer.
 - **Visitantes:** usuários `vis-xxxxx` com comentário `painel-visitante até AAAA-MM-DD HH:MM | descrição` e um agendamento `painel-visitante-<usuário>` em `/system scheduler` que remove o usuário na hora marcada. Precisa do relógio do MikroTik certo.
 - **QR codes dos visitantes:** o do Wi-Fi usa o formato padrão `WIFI:T:...;S:...;P:...;;` com o nome e a senha guardados em `dados\wifi.json` (só neste PC). O do login abre `http://<endereço do hotspot>/login?visitante=...&senha=...`; o `login.html` da escola (versão de 06/10/2026 ou mais nova) preenche os campos.
+- **Configurações feitas pelo painel:** nome e cidade da escola e o endereço do MikroTik ficam em `dados\ajustes.json` e valem por cima do `.env`; o logotipo fica em `dados\logo.png` (ou `.jpg`) e é servido em `/logo`. Para voltar ao `.env`, apague o `ajustes.json`. Se o painel não conseguir mais falar com o MikroTik por um endereço errado, corrija o campo `mikrotik` desse arquivo (ex.: `"192.168.88.1"`) e reinicie o painel.
 - **Backup:** feito no primeiro login de cada dia em `dados\backups` (contém as senhas dos alunos; a pasta fica só neste computador).
 
 ## 4. Planilha de importação
