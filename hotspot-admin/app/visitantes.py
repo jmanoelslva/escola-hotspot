@@ -67,7 +67,7 @@ def _script_expirar(nome: str) -> str:
 
 def agendar_uma_vez(mk: Mikrotik, corpo: dict, quando: datetime) -> None:
     """Agendador que roda uma vez em `quando` (o próprio on-event deve se apagar)."""
-    corpo = {**corpo, "start-time": f"{quando:%H:%M:%S}", "interval": "0s"}
+    corpo = {"policy": "read,write,test", **corpo, "start-time": f"{quando:%H:%M:%S}", "interval": "0s"}
     # RouterOS 7.10+ aceita a data AAAA-MM-DD; versões antigas usam mmm/dd/aaaa.
     try:
         mk.criar(AGENDAMENTOS, {**corpo, "start-date": f"{quando:%Y-%m-%d}"})

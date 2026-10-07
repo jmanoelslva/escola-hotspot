@@ -409,6 +409,20 @@
             </div>
         </section>
 
+        <!-- Administradores do MikroTik -->
+        <section id="aba-administradores" class="painel-aba" hidden>
+            <div class="barra-acoes">
+                <button id="novo-administrador" class="botao primario" type="button">+ Novo administrador</button>
+            </div>
+            <p class="dica">Usuários do próprio MikroTik: são eles que entram neste painel. Grupo <strong>painel</strong>: usa o painel, sem Winbox, sem reiniciar o roteador e sem cadastrar administradores. Grupo <strong>full</strong>: tudo no MikroTik. Para cadastrar aqui é preciso estar com um usuário <strong>full</strong>.</p>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr><th>Usuário</th><th>Grupo</th><th>Comentário</th><th>Último acesso</th><th>Situação</th><th></th></tr></thead>
+                    <tbody id="lista-administradores"></tbody>
+                </table>
+            </div>
+        </section>
+
         <!-- Configurações -->
         <section id="aba-config" class="painel-aba" hidden>
             <form id="form-escola" class="cartao">
@@ -625,6 +639,35 @@
             </div>
             <small class="ajuda">Fora desse período, quem usa o perfil continua no Wi-Fi, mas sem internet.</small>
         </fieldset>
+        <p class="alerta" data-erro hidden></p>
+        <div class="janela-botoes">
+            <button type="button" class="botao" data-fechar>Cancelar</button>
+            <button type="submit" class="botao primario">Salvar</button>
+        </div>
+    </form>
+</dialog>
+
+<!-- Janela: administrador -->
+<dialog id="janela-administrador" class="janela">
+    <form id="form-administrador" method="dialog">
+        <h2 id="titulo-administrador">Novo administrador</h2>
+        <label>Usuário
+            <input name="nome" required maxlength="64" autocapitalize="off" spellcheck="false" placeholder="ex.: coordenacao">
+        </label>
+        <label>Senha
+            <span class="campo-com-botao">
+                <input name="senha" maxlength="64" autocomplete="new-password" spellcheck="false">
+                <button type="button" class="botao" id="gerar-senha-administrador">Gerar</button>
+            </span>
+            <small class="ajuda" id="ajuda-senha-administrador">Pelo menos 8 caracteres.</small>
+        </label>
+        <label>Grupo
+            <select name="grupo"></select>
+            <small class="ajuda" id="ajuda-grupo-administrador"></small>
+        </label>
+        <label>Comentário
+            <input name="comentario" maxlength="100" placeholder="ex.: Coordenação pedagógica">
+        </label>
         <p class="alerta" data-erro hidden></p>
         <div class="janela-botoes">
             <button type="button" class="botao" data-fechar>Cancelar</button>

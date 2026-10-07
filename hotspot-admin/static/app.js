@@ -186,7 +186,7 @@ const GRUPOS = {
     conectados: [['conectados', 'Conectados agora'], ['relatorio', 'Consumo']],
     aparelhos: [['aparelhos', 'Liberados e bloqueados']],
     regras: [['alunos', 'Rede Alunos'], ['sites', 'Sites bloqueados']],
-    sistema: [['aviso', 'Aviso'], ['config', 'Configurações'], ['backup', 'Backup'], ['historico', 'Histórico']],
+    sistema: [['aviso', 'Aviso'], ['config', 'Configurações'], ['administradores', 'Administradores'], ['backup', 'Backup'], ['historico', 'Histórico']],
 };
 
 function grupoDaTela(tela) {

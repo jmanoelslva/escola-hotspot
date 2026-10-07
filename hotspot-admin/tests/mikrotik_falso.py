@@ -33,6 +33,9 @@ class MikrotikFalso:
             "/ip/firewall/nat": [],
             "/system/scheduler": [],
             "/system/script": [],
+            "/user": [{".id": "*1", "name": "admin", "group": "full", "disabled": "false",
+                       "last-logged-in": "2026-10-07 08:00:00", "comment": "system default user"}],
+            "/user/group": [{".id": "*1", "name": "read"}, {".id": "*2", "name": "write"}, {".id": "*3", "name": "full"}],
             "/interface": [
                 {".id": "*1", "name": "ether1", "type": "ether", "running": "true", "disabled": "false", "comment": "internet"},
                 {".id": "*2", "name": "bridge-hotspot", "type": "bridge", "running": "true", "disabled": "false"},

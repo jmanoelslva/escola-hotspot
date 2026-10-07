@@ -554,6 +554,111 @@ $('#form-dominio-todos').addEventListener('submit', async (evento) => {
     });
 });
 
+// ------------------------------------------------------------------ administradores do MikroTik
+
+estado.administradores = { usuarios: [], grupos: [], eu: '' };
+estado.editandoAdministrador = null;
+
+const AJUDA_GRUPO = {
+    painel: 'Usa o painel. Sem Winbox, sem reiniciar o roteador e sem cadastrar administradores.',
+    full: 'Tudo no MikroTik, inclusive Winbox e cadastrar outros administradores.',
+};
+
+async function carregarAdministradores() {
+    estado.administradores = await api('GET', '/api/administradores');
+    const { usuarios, eu } = estado.administradores;
+    const corpo = $('#lista-administradores');
+    corpo.replaceChildren();
+    if (!usuarios.length) linhaVazia(corpo, 6, 'Nenhum usuário.');
+    for (const u of usuarios) {
+        const proprio = u.nome === eu;
+        corpo.append(el('tr', { class: u.desativado ? 'inativo' : '' },
+            el('td', {}, el('strong', { texto: u.nome }), proprio ? el('span', { class: 'etiqueta bypass', texto: ' você' }) : null),
+            el('td', { 'data-rotulo': 'Grupo' }, el('span', { class: 'etiqueta ' + (u.grupo === 'full' ? 'bloqueado' : 'off'), texto: u.grupo })),
+            el('td', { 'data-rotulo': 'Comentário', texto: u.comentario || '—' }),
+            el('td', { 'data-rotulo': 'Último acesso', texto: u.ultimo_acesso ? dataHora(u.ultimo_acesso) : 'nunca' }),
+            el('td', {}, u.desativado ? el('span', { class: 'etiqueta off', texto: 'Desativado' }) : el('span', { class: 'etiqueta ok', texto: 'Ativo' })),
+            el('td', {}, el('div', { class: 'acoes' },
+                el('button', { class: 'botao pequeno cor-azul', type: 'button', texto: 'Editar', onclick: () => abrirAdministrador(u) }),
+                proprio ? null : el('button', { class: 'botao pequeno ' + (u.desativado ? 'cor-verde' : 'cor-laranja'), type: 'button',
+                    texto: u.desativado ? 'Ativar' : 'Desativar', onclick: () => alternarAdministrador(u) }),
+                proprio ? null : el('button', { class: 'botao pequeno cor-vermelho', type: 'button', texto: 'Excluir', onclick: () => excluirAdministrador(u) }),
+            )),
+        ));
+    }
+}
+
+function atualizarAjudaGrupo() {
+    $('#ajuda-grupo-administrador').textContent = AJUDA_GRUPO[$('#form-administrador').grupo.value] || '';
+}
+
+function abrirAdministrador(u) {
+    const form = $('#form-administrador');
+    estado.editandoAdministrador = u || null;
+    form.reset();
+    mostrarErroForm(form, '');
+    form.grupo.replaceChildren(...estado.administradores.grupos.map((g) => el('option', { value: g, texto: g })));
+    $('#titulo-administrador').textContent = u ? 'Editar ' + u.nome : 'Novo administrador';
+    form.nome.readOnly = !!u;
+    form.senha.required = !u;
+    $('#ajuda-senha-administrador').textContent = u ? 'Deixe em branco para manter a senha atual (mínimo de 8 caracteres).' : 'Pelo menos 8 caracteres.';
+    if (u) {
+        form.nome.value = u.nome;
+        form.grupo.value = u.grupo;
+        form.comentario.value = u.comentario;
+    } else {
+        form.grupo.value = 'painel';
+        form.senha.value = gerarSenha(10);
+    }
+    atualizarAjudaGrupo();
+    $('#janela-administrador').showModal();
+    (u ? form.senha : form.nome).focus();
+}
+
+$('#novo-administrador').addEventListener('click', () => abrirAdministrador(null));
+$('#gerar-senha-administrador').addEventListener('click', () => { $('#form-administrador').senha.value = gerarSenha(10); });
+$('#form-administrador').grupo.addEventListener('change', atualizarAjudaGrupo);
+
+$('#form-administrador').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    const form = evento.target;
+    const u = estado.editandoAdministrador;
+    await comBotao(form.querySelector('[type=submit]'), async () => {
+        try {
+            if (u) {
+                const dados = { grupo: form.grupo.value, comentario: form.comentario.value.trim() };
+                if (form.senha.value) dados.senha = form.senha.value;
+                await api('PATCH', '/api/administradores/' + encodeURIComponent(u.id), dados);
+                aviso('Administrador ' + u.nome + ' alterado.');
+            } else {
+                const dados = { nome: form.nome.value.trim(), senha: form.senha.value, grupo: form.grupo.value, comentario: form.comentario.value.trim() };
+                await api('POST', '/api/administradores', dados);
+                aviso(`Administrador ${dados.nome} cadastrado. Senha: ${dados.senha}`);
+            }
+            $('#janela-administrador').close();
+            await carregarAdministradores();
+        } catch (e) { mostrarErroForm(form, e.message); }
+    });
+});
+
+async function alternarAdministrador(u) {
+    if (!u.desativado && !await confirmar('Desativar administrador', `Desativar "${u.nome}"? Ele não conseguirá mais entrar no painel nem no MikroTik.`, 'Desativar')) return;
+    try {
+        await api('PATCH', '/api/administradores/' + encodeURIComponent(u.id), { desativado: !u.desativado });
+        aviso(u.nome + (u.desativado ? ' ativado.' : ' desativado.'));
+        await carregarAdministradores();
+    } catch (e) { aviso(e.message, true); }
+}
+
+async function excluirAdministrador(u) {
+    if (!await confirmar('Excluir administrador', `Excluir o usuário "${u.nome}" do MikroTik? Isso não pode ser desfeito.`, 'Excluir')) return;
+    try {
+        await api('DELETE', '/api/administradores/' + encodeURIComponent(u.id));
+        aviso('Administrador ' + u.nome + ' excluído.');
+        await carregarAdministradores();
+    } catch (e) { aviso(e.message, true); }
+}
+
 // ------------------------------------------------------------------ configurações: escola e MikroTik
 
 function recarregarLogos() {
@@ -895,4 +1000,5 @@ Object.assign(CARREGAR, {
     },
     visitantes: carregarVisitantes,
     alunos: carregarRedeAlunos,
+    administradores: carregarAdministradores,
 });

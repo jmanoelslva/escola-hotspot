@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import ajustes, backup, controle, historico, importacao, qrcodes, rede_alunos, sistema, util, visitantes
+from . import administradores, ajustes, backup, controle, historico, importacao, qrcodes, rede_alunos, sistema, util, visitantes
 from .config import APP_VERSION, PASTA_PROJETO, config
 from .mikrotik import EnderecoMikrotik, ErroAutenticacao, ErroConexao, ErroMikrotik, Mikrotik
 from .sessoes import LimiteLogin, Sessao, Sessoes
@@ -288,6 +288,20 @@ class Wifi(BaseModel):
 
 class Ligar(BaseModel):
     ativo: bool
+
+
+class NovoAdministrador(BaseModel):
+    nome: str = Field(max_length=64)
+    senha: str = Field(max_length=64)
+    grupo: str = Field(default=administradores.GRUPO_PAINEL, max_length=64)
+    comentario: str = Field(default="", max_length=100)
+
+
+class AlterarAdministrador(BaseModel):
+    senha: str | None = Field(default=None, max_length=64)
+    grupo: str | None = Field(default=None, max_length=64)
+    comentario: str | None = Field(default=None, max_length=100)
+    desativado: bool | None = None
 
 
 class DadosEscola(BaseModel):
@@ -907,6 +921,39 @@ def gravar_conexao(dados: ConexaoMikrotik, s: Sessao = Depends(sessao_atual)):
     app.state.endereco = novo
     registrar(s, f"mudou a conexão com o MikroTik para {endereco} ({identidade})")
     return {**_estado_conexao(), "identidade": identidade}
+
+
+# ---------------------------------------------------------------- administradores do MikroTik
+
+@app.get("/api/administradores")
+def ver_administradores(mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    return {"usuarios": administradores.listar(mk), "grupos": administradores.grupos(mk), "eu": s.usuario}
+
+
+@app.post("/api/administradores")
+def criar_administrador(dados: NovoAdministrador, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    item = administradores.criar(mk, dados.nome, dados.senha, dados.grupo, dados.comentario)
+    registrar(s, f"cadastrou o administrador {item['nome']} (grupo {item['grupo']})")
+    return item
+
+
+@app.patch("/api/administradores/{item_id}")
+def alterar_administrador(item_id: str, dados: AlterarAdministrador, mk: Mikrotik = Depends(mikrotik),
+                          s: Sessao = Depends(sessao_atual)):
+    _id_valido(item_id)
+    item, campos = administradores.alterar(mk, item_id, s.usuario, dados.senha, dados.grupo, dados.comentario, dados.desativado)
+    if dados.senha and item["nome"] == s.usuario:
+        s.senha = dados.senha  # trocou a própria senha: a sessão segue com a nova
+    registrar(s, f"alterou o administrador {item['nome']} ({', '.join(campos)})")
+    return item
+
+
+@app.delete("/api/administradores/{item_id}")
+def excluir_administrador(item_id: str, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    _id_valido(item_id)
+    nome = administradores.excluir(mk, item_id, s.usuario)
+    registrar(s, f"excluiu o administrador {nome}")
+    return {"ok": True}
 
 
 # ---------------------------------------------------------------- relatório de consumo

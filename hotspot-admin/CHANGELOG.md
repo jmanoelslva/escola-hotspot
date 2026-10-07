@@ -2,6 +2,14 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.12.0] - 2026-10-07
+
+### Adicionado
+- Sistema → **Administradores**: usuários do próprio MikroTik (os que entram no painel). Cadastrar (senha de pelo menos 8 caracteres, com "Gerar"), trocar senha, grupo e comentário, desativar e excluir, com o último acesso de cada um. Grupo **painel** (padrão, criado sozinho: ler, alterar, REST API, ver senhas e rodar scripts; sem Winbox, SSH, reboot nem cadastrar administradores) ou **full**. Ninguém exclui, desativa ou tira do full o próprio usuário, e o último full ativo não pode sair. Trocar a própria senha mantém a sessão aberta.
+
+### Alterado
+- Agendadores criados pelo painel (visitantes e rede Alunos) têm só a política `read,write,test`, para funcionarem também com usuários do grupo painel.
+
 ## [1.11.1] - 2026-10-07
 
 ### Alterado

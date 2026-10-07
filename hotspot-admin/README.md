@@ -2,7 +2,7 @@
 
 Aplicação web para administrar o hotspot do MikroTik (RouterOS 7) da escola, sem precisar abrir o Winbox:
 
-O painel tem 6 abas: **Início**, **Usuários** (Cadastrados, Visitantes, Perfis e horário, Importar planilha), **Conectados** (Conectados agora, Consumo), **Aparelhos**, **Regras de acesso** (Rede Alunos, Sites bloqueados) e **Sistema** (Aviso, Configurações, Backup, Histórico). Clicar numa aba sempre abre a primeira subaba.
+O painel tem 6 abas: **Início**, **Usuários** (Cadastrados, Visitantes, Perfis e horário, Importar planilha), **Conectados** (Conectados agora, Consumo), **Aparelhos**, **Regras de acesso** (Rede Alunos, Sites bloqueados) e **Sistema** (Aviso, Configurações, Administradores, Backup, Histórico). Clicar numa aba sempre abre a primeira subaba.
 
 - **Painel geral:** saúde do roteador (CPU, memória, temperatura, tempo ligado), gráfico ao vivo do tráfego das interfaces e aviso quando há RouterOS ou firmware novo.
 - **Usuários:** listar, buscar, filtrar por turma e perfil, cadastrar, alterar, gerar senha nova com um clique, prender a um aparelho (MAC). Em lote: ativar, desativar, mudar de perfil, imprimir e excluir. Exportar para Excel (com ou sem senhas).
@@ -16,6 +16,7 @@ O painel tem 6 abas: **Início**, **Usuários** (Cadastrados, Visitantes, Perfis
 - **Aviso:** texto que aparece para os alunos na tela de login e na tela de conectado do Wi-Fi.
 - **Importar:** cadastrar uma turma inteira por planilha (.xlsx ou .csv). Senhas em branco são criadas pelo painel.
 - **Imprimir credenciais:** cartões com usuário e senha (3 por linha numa folha A4).
+- **Administradores:** usuários do próprio MikroTik que entram no painel, nos grupos **painel** (só o painel, sem Winbox) ou **full** (tudo).
 - **Histórico:** quem fez o quê e quando, com busca e filtro por operador e período.
 - **Configurações:** nome, cidade e logotipo da escola; IP e porta do MikroTik; endereço (domínio) da tela de login do hotspot, ex.: `wifi.pmapg.internal`; e a rede Wi-Fi usada no QR code dos cartões.
 - **Backup:** uma cópia automática por dia (últimas 30) e restauração do que faltar no MikroTik.
@@ -51,7 +52,9 @@ Não precisa configurar nada: o painel usa a **REST API** do RouterOS 7 e escolh
 
 O topo do painel mostra qual está em uso. Com **HTTP**, a senha do admin passa pela rede sem criptografia. Para usar HTTPS, aplique uma vez o script opcional **`mikrotik-https.rsc`** (Winbox → Files: arraste o arquivo; no New Terminal: `/import mikrotik-https.rsc`). Ele cria um certificado próprio e ativa o `www-ssl`; o painel percebe sozinho em até 5 minutos.
 
-O usuário precisa das permissões `read`, `write`, `rest-api` e `sensitive` (o grupo `full` dos admins já tem). `sensitive` é o que permite ver e imprimir as senhas dos alunos.
+O usuário precisa das permissões `read`, `write`, `test`, `rest-api` e `sensitive` (o grupo `full` dos admins já tem). `sensitive` é o que permite ver e imprimir as senhas dos alunos.
+
+**Administradores pelo painel** (Sistema → Administradores, só para quem entra com um usuário `full`): o grupo **painel** é criado no MikroTik na primeira vez com a política `read,write,test,sensitive,api,rest-api` (em RouterOS sem `rest-api`, usa `api,web` no lugar). Quem é desse grupo usa o painel, mas não entra no Winbox, não reinicia o roteador e não cadastra administradores. Ninguém consegue excluir, desativar ou tirar do `full` o próprio usuário, e o último `full` ativo não pode sair.
 
 ## 3. Como funcionam os recursos de controle
 
