@@ -175,17 +175,17 @@ function mostrarPainel(sessao) {
     conexao.title = sessao.conexao === 'HTTP'
         ? 'Conexão com o MikroTik sem criptografia (serviço www). Ative o www-ssl para usar HTTPS: veja mikrotik-https.rsc.'
         : 'Conexão com o MikroTik criptografada (www-ssl).';
-    abrirAba(telaDoEndereco() || lembrado('aba') || 'geral');
+    abrirAba(telaDoEndereco() || 'geral');
     AO_ENTRAR.forEach((funcao) => { try { funcao(); } catch (e) { /* não impede o painel */ } });
 }
 
 // Abas do topo (grupos) e as telas de cada uma; a tela é a <section id="aba-...">.
 const GRUPOS = {
     inicio: [['geral', 'Painel geral']],
-    usuarios: [['usuarios', 'Cadastrados'], ['visitantes', 'Visitantes'], ['importar', 'Importar planilha']],
+    usuarios: [['usuarios', 'Cadastrados'], ['visitantes', 'Visitantes'], ['perfis', 'Perfis e horário'], ['importar', 'Importar planilha']],
     conectados: [['conectados', 'Conectados agora'], ['relatorio', 'Consumo']],
     aparelhos: [['aparelhos', 'Liberados e bloqueados']],
-    regras: [['alunos', 'Rede Alunos'], ['perfis', 'Perfis e horário'], ['sites', 'Sites bloqueados']],
+    regras: [['alunos', 'Rede Alunos'], ['sites', 'Sites bloqueados']],
     sistema: [['aviso', 'Aviso'], ['config', 'Configurações'], ['backup', 'Backup'], ['historico', 'Histórico']],
 };
 
@@ -194,16 +194,16 @@ function grupoDaTela(tela) {
 }
 
 // Endereço #grupo/tela (ex.: #usuarios/visitantes): F5 volta para a mesma tela.
+// Trocar de aba no topo sempre abre a primeira subaba (ex.: Usuários → Cadastrados).
 function telaDoEndereco() {
     const [grupo, tela] = decodeURIComponent(location.hash.slice(1)).split('/');
     if (tela && grupoDaTela(tela) === grupo) return tela;
-    if (GRUPOS[grupo]) return lembrado('tela.' + grupo) || GRUPOS[grupo][0][0];
+    if (GRUPOS[grupo]) return GRUPOS[grupo][0][0];
     return null;
 }
 
 function abrirGrupo(grupo) {
-    const lembrada = lembrado('tela.' + grupo);
-    abrirAba(grupoDaTela(lembrada) === grupo ? lembrada : GRUPOS[grupo][0][0]);
+    abrirAba(GRUPOS[grupo][0][0]);
 }
 
 function marcarAtiva(botoes, ativo, chave) {
@@ -218,8 +218,6 @@ function abrirAba(nome) {
     if (!grupoDaTela(nome) || !document.getElementById('aba-' + nome)) nome = 'geral';
     const grupo = grupoDaTela(nome);
     estado.abaAtual = nome;
-    lembrar('aba', nome);
-    lembrar('tela.' + grupo, nome);
     if (location.hash !== '#' + grupo + '/' + nome) history.replaceState(null, '', '#' + grupo + '/' + nome);
     marcarAtiva(document.querySelectorAll('.aba'), grupo, 'grupo');
 

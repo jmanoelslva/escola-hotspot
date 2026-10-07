@@ -2,6 +2,12 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.11.1] - 2026-10-07
+
+### Alterado
+- "Perfis e horário" passou de Regras de acesso para **Usuários** (Cadastrados, Visitantes, Perfis e horário, Importar planilha).
+- Clicar numa aba do topo sempre abre a primeira subaba (ex.: Usuários → Cadastrados); o painel não lembra mais a última subaba de cada aba. O F5 continua na mesma tela, e abrir o painel de novo começa no Início.
+
 ## [1.11.0] - 2026-10-07
 
 ### Adicionado

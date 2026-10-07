@@ -2,7 +2,7 @@
 
 Aplicação web para administrar o hotspot do MikroTik (RouterOS 7) da escola, sem precisar abrir o Winbox:
 
-O painel tem 6 abas: **Início**, **Usuários** (Cadastrados, Visitantes, Importar planilha), **Conectados** (Conectados agora, Consumo), **Aparelhos**, **Regras de acesso** (Perfis e horário, Sites bloqueados) e **Sistema** (Aviso, Configurações, Backup, Histórico).
+O painel tem 6 abas: **Início**, **Usuários** (Cadastrados, Visitantes, Perfis e horário, Importar planilha), **Conectados** (Conectados agora, Consumo), **Aparelhos**, **Regras de acesso** (Rede Alunos, Sites bloqueados) e **Sistema** (Aviso, Configurações, Backup, Histórico). Clicar numa aba sempre abre a primeira subaba.
 
 - **Painel geral:** saúde do roteador (CPU, memória, temperatura, tempo ligado), gráfico ao vivo do tráfego das interfaces e aviso quando há RouterOS ou firmware novo.
 - **Usuários:** listar, buscar, filtrar por turma e perfil, cadastrar, alterar, gerar senha nova com um clique, prender a um aparelho (MAC). Em lote: ativar, desativar, mudar de perfil, imprimir e excluir. Exportar para Excel (com ou sem senhas).
