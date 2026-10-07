@@ -2,6 +2,12 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.14.2] - 2026-10-07
+
+### Corrigido
+- `instalar.bat` encerrava **qualquer** programa que estivesse usando a porta do painel. Num PC em que a porta 8080 é redirecionada pelo Windows (`netsh portproxy`, ex.: controladora UniFi), isso mirava um `svchost` com serviços do sistema. Agora encerra só o painel antigo desta pasta (`verificar-porta.ps1`) e, se a porta estiver em uso por outro programa, para e explica como trocar a `PORTA` no `.env`.
+- Rede Alunos: não aceita mais como interface a da internet (rota padrão) nem a que tem o IP pelo qual o painel fala com o MikroTik. Na lista elas aparecem como "internet/painel: não pode". Escolher a da internet e deixar "Sempre fechada" derrubava a conexão.
+
 ## [1.14.1] - 2026-10-07
 
 ### Alterado

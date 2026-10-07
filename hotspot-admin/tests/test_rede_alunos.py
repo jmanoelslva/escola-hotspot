@@ -152,3 +152,12 @@ def test_liberar_validacoes_e_data_antiga(logado, mk):
     e = logado.post("/api/rede-alunos/liberar", json={"minutos": 120}).json()
     assert _agenda(mk)["painel-alunos-liberado"]["start-date"] == "oct/07/2026"
     assert e["fecha_em"] == "2026-10-07T00:10"
+
+
+def test_nao_aceita_a_interface_da_internet(logado, mk):
+    _preparar(mk)
+    lista = {i["nome"]: i for i in logado.get("/api/rede-alunos/interfaces").json()}
+    assert lista["ether1"]["protegida"] is True and lista["VLAN300-ALUNOS"]["protegida"] is False
+    r = logado.put("/api/rede-alunos/config", json={"interface": "ether1", "janelas": HORARIOS})
+    assert r.status_code == 400 and "derrubaria a rede" in r.json()["erro"]
+    assert mk.tabelas[SCRIPTS][0]["source"] == ANTIGO

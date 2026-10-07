@@ -40,6 +40,7 @@ Cada pessoa entra com um **usuário admin do próprio MikroTik**. O painel não 
 Outros computadores da rede acessam por `http://IP-DO-COMPUTADOR:8080` (o instalador mostra o endereço no final).
 
 - **Atualizar:** copie os arquivos novos por cima e rode o `instalar.bat` de novo (ele mantém o `.env`).
+- **Porta em uso:** se o instalador disser que a porta já está em uso por outro programa (ex.: uma controladora UniFi, que também usa a 8080), troque `PORTA=8080` no `.env` por uma porta livre, como `PORTA=8090`, e rode o `instalar.bat` de novo. Ele recria a tarefa, o firewall e os atalhos com a porta nova.
 - **Desinstalar o início automático:** `remover-inicio-automatico.bat` como administrador.
 - **Log do painel:** `dados\painel.log`; ações de cada usuário: `dados\acoes.log`.
 - `iniciar.bat` abre o painel numa janela, sem a tarefa agendada (para testes). Não use com a tarefa ativa: a porta já estará em uso.

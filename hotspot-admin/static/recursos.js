@@ -1068,8 +1068,8 @@ async function preencherConfigAlunos(e) {
         try { estado.interfacesAlunos = await api('GET', '/api/rede-alunos/interfaces'); } catch (erro) { estado.interfacesAlunos = []; }
     }
     const lista = estado.interfacesAlunos;
-    const opcoes = lista.map((i) => el('option', { value: i.nome,
-        texto: `${i.nome} (${i.tipo}${i.desativada ? ', desligada' : ''})` }));
+    const opcoes = lista.map((i) => el('option', { value: i.nome, disabled: i.protegida && i.nome !== e.interface,
+        texto: `${i.nome} (${i.tipo}${i.desativada ? ', desligada' : ''}${i.protegida ? ', internet/painel: não pode' : ''})` }));
     if (!lista.some((i) => i.nome === e.interface)) opcoes.unshift(el('option', { value: e.interface, texto: e.interface + ' (não existe)' }));
     select.replaceChildren(...opcoes);
     select.value = e.interface;

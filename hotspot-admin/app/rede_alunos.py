@@ -177,9 +177,10 @@ def _agendador(mk: Mikrotik) -> dict | None:
     return next(iter(mk.listar(AGENDAMENTOS, {"name": SCRIPT})), None)
 
 
-def interfaces(mk: Mikrotik) -> list[dict]:
+def interfaces(mk: Mikrotik, protegidas: set[str]) -> list[dict]:
+    """Interfaces que podem ser a rede Alunos; as protegidas (internet e a do painel) vêm marcadas."""
     lista = [{"nome": i.get("name", ""), "tipo": i.get("type", ""), "desativada": util.sim(i.get("disabled")),
-              "ativa": util.sim(i.get("running"))}
+              "ativa": util.sim(i.get("running")), "protegida": i.get("name", "") in protegidas}
              for i in mk.listar(INTERFACES) if i.get("type") != "loopback" and not util.sim(i.get("dynamic"))]
     return sorted(lista, key=lambda i: (i["tipo"] != "vlan", i["nome"].lower()))
 
@@ -261,11 +262,14 @@ def _definir_interface(mk: Mikrotik, nome: str, ligada: bool) -> None:
             mk.alterar(INTERFACES, i[".id"], {"disabled": "false" if ligada else "true"})
 
 
-def configurar(mk: Mikrotik, vlan: str, itens: list[dict]) -> None:
+def configurar(mk: Mikrotik, vlan: str, itens: list[dict], protegidas: set[str]) -> None:
     """Grava a interface e os horários no script (cria script e agendador se faltarem)."""
     vlan = (vlan or "").strip()
     if not _NOME_INTERFACE.match(vlan) or not mk.listar(INTERFACES, {"name": vlan}):
         raise util.ErroDados("Escolha uma interface que exista no MikroTik.")
+    if vlan in protegidas:
+        raise util.ErroDados(f"A interface {vlan} não pode ser a rede Alunos: é a da internet ou a que o painel usa "
+                             "para falar com o MikroTik. Desligá-la derrubaria a rede.")
     janelas = validar_janelas(itens)
     fonte = montar_script(vlan, janelas)
     script = _script(mk)

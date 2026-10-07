@@ -1203,14 +1203,29 @@ def ver_rede_alunos(mk: Mikrotik = Depends(mikrotik)):
     return rede_alunos.estado(mk)
 
 
+def _interfaces_protegidas(mk: Mikrotik) -> set[str]:
+    """A interface da internet e a que tem o IP pelo qual o painel fala com o MikroTik."""
+    protegidas = {sistema.interface_internet(mk)}
+    ip, _ = ajustes.separar_endereco(ajustes.endereco_mikrotik(config.pasta_dados, config))
+    try:
+        for endereco in mk.listar("/ip/address"):
+            if endereco.get("address", "").split("/")[0] == ip:
+                protegidas.add(endereco.get("interface", ""))
+    except ErroAutenticacao:
+        raise
+    except ErroMikrotik:
+        pass
+    return protegidas - {""}
+
+
 @app.get("/api/rede-alunos/interfaces")
 def interfaces_rede_alunos(mk: Mikrotik = Depends(mikrotik)):
-    return rede_alunos.interfaces(mk)
+    return rede_alunos.interfaces(mk, _interfaces_protegidas(mk))
 
 
 @app.put("/api/rede-alunos/config")
 def configurar_rede_alunos(dados: ConfigAlunos, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
-    rede_alunos.configurar(mk, dados.interface, [j.model_dump() for j in dados.janelas])
+    rede_alunos.configurar(mk, dados.interface, [j.model_dump() for j in dados.janelas], _interfaces_protegidas(mk))
     registrar(s, f"alterou a rede Alunos: interface {dados.interface.strip()}, {len(dados.janelas)} horário(s)")
     return rede_alunos.estado(mk)
 

@@ -49,7 +49,8 @@ echo [3/6] Configuracao em .env (porta %PORTA%)
 rem ---- 4. Iniciar com o Windows e liberar no firewall
 echo [4/6] Criando a tarefa "Painel do Hotspot" e liberando a porta %PORTA% no firewall...
 schtasks /end /tn "Painel do Hotspot" >nul 2>&1
-powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort %PORTA% -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }" >nul 2>&1
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0verificar-porta.ps1" -Porta %PORTA%
+if errorlevel 1 goto portaOcupada
 schtasks /create /tn "Painel do Hotspot" /tr "\"%~dp0servico.bat\"" /sc onstart /ru SYSTEM /rl HIGHEST /f >nul
 if errorlevel 1 goto erro
 netsh advfirewall firewall delete rule name="Painel do Hotspot" >nul 2>&1
@@ -87,6 +88,11 @@ if exist "%PUBLIC%\Desktop\Painel do Hotspot.lnk" (start "" "%PUBLIC%\Desktop\Pa
 echo.
 pause
 exit /b 0
+
+:portaOcupada
+echo.
+pause
+exit /b 1
 
 :naoSubiu
 echo.
