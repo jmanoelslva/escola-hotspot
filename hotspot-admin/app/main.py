@@ -318,6 +318,21 @@ class LiberarAlunos(BaseModel):
     minutos: int
 
 
+class JanelaAlunos(BaseModel):
+    inicio: str = Field(max_length=5)
+    fim: str = Field(max_length=5)
+    dias: list[int] = Field(default_factory=list, max_length=7)
+
+
+class ConfigAlunos(BaseModel):
+    interface: str = Field(max_length=64)
+    janelas: list[JanelaAlunos] = Field(default_factory=list, max_length=rede_alunos.MAX_JANELAS)
+
+
+class ModoAlunos(BaseModel):
+    modo: Literal["horario", "aberta", "fechada"]
+
+
 class Aviso(BaseModel):
     texto: str = Field(default="", max_length=500)
 
@@ -1185,6 +1200,26 @@ def encerrar_visitante(item_id: str, mk: Mikrotik = Depends(mikrotik), s: Sessao
 
 @app.get("/api/rede-alunos")
 def ver_rede_alunos(mk: Mikrotik = Depends(mikrotik)):
+    return rede_alunos.estado(mk)
+
+
+@app.get("/api/rede-alunos/interfaces")
+def interfaces_rede_alunos(mk: Mikrotik = Depends(mikrotik)):
+    return rede_alunos.interfaces(mk)
+
+
+@app.put("/api/rede-alunos/config")
+def configurar_rede_alunos(dados: ConfigAlunos, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    rede_alunos.configurar(mk, dados.interface, [j.model_dump() for j in dados.janelas])
+    registrar(s, f"alterou a rede Alunos: interface {dados.interface.strip()}, {len(dados.janelas)} horário(s)")
+    return rede_alunos.estado(mk)
+
+
+@app.put("/api/rede-alunos/modo")
+def modo_rede_alunos(dados: ModoAlunos, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    rede_alunos.definir_modo(mk, dados.modo)
+    nomes = {"horario": "por horário", "aberta": "sempre aberta", "fechada": "sempre fechada"}
+    registrar(s, f"colocou a rede Alunos em modo {nomes[dados.modo]}")
     return rede_alunos.estado(mk)
 
 

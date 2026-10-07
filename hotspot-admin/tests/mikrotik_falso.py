@@ -13,7 +13,7 @@ AUTORIZACAO = "Basic " + base64.b64encode(f"{USUARIO}:{SENHA}".encode()).decode(
 
 class MikrotikFalso:
     def __init__(self):
-        self.proximo = 1
+        self.proximo = 0x100  # longe dos .id fixos (*1, *2...) das tabelas acima
         self.tabelas: dict[str, list[dict]] = {
             "/ip/hotspot/user": [],
             "/ip/hotspot/user/profile": [{".id": "*0", "name": "default"}, {".id": "*1", "name": "alunos"}],
@@ -115,8 +115,10 @@ class MikrotikFalso:
             if script["name"] == "painel-alunos":  # imita o script do mikrotik-redes.rsc
                 nomes = {a["name"] for a in self.tabelas["/system/scheduler"]}
                 aberta = "painel-alunos-liberado" in nomes or (self.alunos_no_horario and "painel-alunos-fechado" not in nomes)
+                m = re.search(r':local vlan "([^"]+)"', script.get("source", ""))
+                vlan = m.group(1) if m else "VLAN300-ALUNOS"
                 for i in self.tabelas["/interface"]:
-                    if i["name"] == "VLAN300-ALUNOS":
+                    if i["name"] == vlan:
                         i["disabled"] = "false" if aberta else "true"
             return httpx.Response(200, json=[])
         if pedido.method == "POST" and caminho.endswith("/reset-counters"):

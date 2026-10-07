@@ -998,17 +998,24 @@ function quandoRelativo(iso, agoraIso) {
     return (dias < 7 ? semana : alvo.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })) + ' às ' + hora;
 }
 
+const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+estado.redeAlunos = null;
+estado.alunosEditando = false;  // a atualização automática não apaga o que está sendo editado
+
 function renderRedeAlunos(e) {
+    estado.redeAlunos = e;
     const etiqueta = $('#etiqueta-rede-alunos');
     const texto = $('#estado-rede-alunos');
-    $('#acoes-rede-alunos').hidden = !e.configurado;
-    $('#cartao-horarios-alunos').hidden = !e.configurado;
+    $('#modo-rede-alunos').hidden = !e.configurado;
+    $('#acoes-rede-alunos').hidden = !e.configurado || e.modo !== 'horario';
+    if (!estado.alunosEditando) preencherConfigAlunos(e);
     if (!e.configurado) {
         etiqueta.className = 'etiqueta alerta-amarelo';
         etiqueta.textContent = 'Não configurada';
-        texto.textContent = e.erro || 'O MikroTik ainda não tem o controle da rede Alunos. Importe o arquivo mikrotik-redes.rsc (está na pasta do painel) pelo Winbox.';
+        texto.textContent = e.erro || 'Escolha a interface e os horários abaixo e salve.';
         return;
     }
+    document.querySelectorAll('[data-modo]').forEach((b) => b.classList.toggle('ativo', b.dataset.modo === e.modo));
     etiqueta.className = 'etiqueta ' + (e.aberta ? 'ok' : 'off');
     etiqueta.textContent = e.aberta ? 'Aberta' : 'Fechada';
     const abre = quandoRelativo(e.abre_em, e.agora);
@@ -1018,13 +1025,106 @@ function renderRedeAlunos(e) {
         fechado: `Fechada pelo painel até o fim deste horário.` + (abre ? ` Abre de novo ${abre}.` : ''),
         horario: `Aberta pelo horário. Fecha ${fecha}.`,
         fora: 'Fechada (fora do horário).' + (abre ? ` Abre ${abre}.` : ''),
+        fixo: e.aberta ? 'Sempre aberta (horários desligados).' : 'Sempre fechada (horários desligados).',
     }[e.motivo] || '';
     $('#fechar-rede-alunos').hidden = !e.aberta;
     $('#horario-rede-alunos').hidden = !(e.motivo === 'liberado' || e.motivo === 'fechado');
-    $('#horarios-rede-alunos').textContent = e.janelas.length
-        ? 'Segunda a sexta: ' + e.janelas.map(([i, f]) => `${i.replace(':', 'h')} às ${f.replace(':', 'h')}`).join(', ') + '.'
-        : 'Nenhum horário fixo: a rede só abre quando liberada pelo painel.';
 }
+
+// ---- interface e horários (editáveis)
+
+function linhaHorario(j) {
+    const tr = el('tr', {},
+        el('td', { 'data-rotulo': 'Início' }, el('input', { type: 'time', value: j.inicio, required: true, class: 'hora-inicio', 'aria-label': 'Início' })),
+        el('td', { 'data-rotulo': 'Fim' }, el('input', { type: 'time', value: j.fim, required: true, class: 'hora-fim', 'aria-label': 'Fim' })),
+        el('td', { 'data-rotulo': 'Dias' }, el('div', { class: 'dias' },
+            ...DIAS_SEMANA.map((nome, n) => el('label', {},
+                el('input', { type: 'checkbox', value: String(n), checked: j.dias.includes(n) }), ' ' + nome)))),
+        el('td', {}, el('button', { class: 'botao pequeno cor-vermelho', type: 'button', texto: 'Excluir',
+            onclick: () => { tr.remove(); estado.alunosEditando = true; atualizarHorariosVazios(); } })));
+    return tr;
+}
+
+function atualizarHorariosVazios() {
+    const corpo = $('#lista-horarios-alunos');
+    const vazio = corpo.querySelector('.vazio-horarios');
+    const temLinhas = corpo.querySelector('tr:not(.vazio-horarios)');
+    if (!temLinhas && !vazio) {
+        corpo.append(el('tr', { class: 'vazio-horarios' }, el('td', { colspan: 4, class: 'vazio', texto: 'Nenhum horário: a rede só abre quando liberada pelo painel.' })));
+    } else if (temLinhas && vazio) {
+        vazio.remove();
+    }
+}
+
+async function preencherConfigAlunos(e) {
+    const corpo = $('#lista-horarios-alunos');
+    corpo.replaceChildren(...e.janelas.map(linhaHorario));
+    atualizarHorariosVazios();
+    const select = $('#interface-rede-alunos');
+    if (!estado.interfacesAlunos) {
+        try { estado.interfacesAlunos = await api('GET', '/api/rede-alunos/interfaces'); } catch (erro) { estado.interfacesAlunos = []; }
+    }
+    const lista = estado.interfacesAlunos;
+    const opcoes = lista.map((i) => el('option', { value: i.nome,
+        texto: `${i.nome} (${i.tipo}${i.desativada ? ', desligada' : ''})` }));
+    if (!lista.some((i) => i.nome === e.interface)) opcoes.unshift(el('option', { value: e.interface, texto: e.interface + ' (não existe)' }));
+    select.replaceChildren(...opcoes);
+    select.value = e.interface;
+}
+
+$('#form-config-alunos').addEventListener('input', () => { estado.alunosEditando = true; });
+$('#form-config-alunos').addEventListener('change', () => { estado.alunosEditando = true; });
+
+$('#adicionar-horario-alunos').addEventListener('click', () => {
+    estado.alunosEditando = true;
+    const nova = linhaHorario({ inicio: '07:00', fim: '08:00', dias: [1, 2, 3, 4, 5] });
+    $('#lista-horarios-alunos').append(nova);
+    atualizarHorariosVazios();
+    nova.querySelector('input').focus();
+});
+
+$('#desfazer-config-alunos').addEventListener('click', () => {
+    estado.alunosEditando = false;
+    if (estado.redeAlunos) preencherConfigAlunos(estado.redeAlunos);
+});
+
+$('#form-config-alunos').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    const form = evento.target;
+    const janelas = [...$('#lista-horarios-alunos').querySelectorAll('tr:not(.vazio-horarios)')].map((tr) => ({
+        inicio: tr.querySelector('.hora-inicio').value,
+        fim: tr.querySelector('.hora-fim').value,
+        dias: [...tr.querySelectorAll('.dias input:checked')].map((c) => Number(c.value)),
+    }));
+    await comBotao(form.querySelector('[type=submit]'), async () => {
+        try {
+            const e = await api('PUT', '/api/rede-alunos/config', { interface: form.interface.value, janelas });
+            estado.alunosEditando = false;
+            estado.interfacesAlunos = null;
+            renderRedeAlunos(e);
+            aviso('Interface e horários da rede Alunos salvos.');
+        } catch (erro) { aviso(erro.message, true); }
+    });
+});
+
+document.querySelectorAll('[data-modo]').forEach((b) => b.addEventListener('click', async () => {
+    const modo = b.dataset.modo;
+    if (estado.redeAlunos && estado.redeAlunos.modo === modo) return;
+    const textos = {
+        horario: 'Voltar a abrir e fechar a rede Alunos pelos horários?',
+        aberta: 'Deixar a rede Alunos sempre aberta (os horários param de valer)?',
+        fechada: 'Deixar a rede Alunos sempre fechada? Os alunos conectados ficam sem internet agora.',
+    };
+    if (!await confirmar('Modo da rede Alunos', textos[modo], b.textContent)) return;
+    await comBotao(b, async () => {
+        try {
+            const e = await api('PUT', '/api/rede-alunos/modo', { modo });
+            estado.interfacesAlunos = null;  // a interface pode ter ligado ou desligado
+            renderRedeAlunos(e);
+            aviso('Rede Alunos: ' + b.textContent.toLowerCase() + '.');
+        } catch (erro) { aviso(erro.message, true); }
+    });
+}));
 
 async function carregarRedeAlunos() {
     try {

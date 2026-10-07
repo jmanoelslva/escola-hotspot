@@ -325,6 +325,11 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
 .rede-alunos-topo { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 .rede-alunos-topo h2 { margin: 0; }
 .rede-alunos-topo .etiqueta { font-size: 13px; padding: 3px 10px; }
+.campo-interface { max-width: 420px; }
+.tabela-horarios input[type=time] { width: 120px; margin: 0; }
+.tabela-horarios .dias { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.tabela-horarios .dias label { display: inline-flex; align-items: center; gap: 4px; margin: 0; font-weight: 400; }
+.barra-acoes .espaco { flex: 1; }
 .rede-alunos-estado { font-size: 16px; margin: 0 0 14px; }
 .forcar-dns-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .forcar-dns h2 { margin-bottom: 4px; }

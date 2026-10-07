@@ -258,6 +258,13 @@
                     <span id="etiqueta-rede-alunos" class="etiqueta off">…</span>
                 </div>
                 <p class="rede-alunos-estado" id="estado-rede-alunos">Carregando…</p>
+                <div class="barra-acoes" id="modo-rede-alunos" hidden>
+                    <span class="alternador" role="group" aria-label="Modo">
+                        <button class="botao pequeno" type="button" data-modo="horario">Por horário</button>
+                        <button class="botao pequeno" type="button" data-modo="aberta">Sempre aberta</button>
+                        <button class="botao pequeno" type="button" data-modo="fechada">Sempre fechada</button>
+                    </span>
+                </div>
                 <div class="barra-acoes" id="acoes-rede-alunos" hidden>
                     <span class="grupo-lote">
                         <select id="minutos-rede-alunos" aria-label="Por quanto tempo">
@@ -276,11 +283,24 @@
                     <button id="horario-rede-alunos" class="botao" type="button" hidden>Voltar ao horário normal</button>
                 </div>
             </div>
-            <div class="cartao" id="cartao-horarios-alunos" hidden>
-                <h2>Horários</h2>
-                <p class="dica" id="horarios-rede-alunos"></p>
-                <p class="dica">Quem abre e fecha a rede é o próprio MikroTik (script <span class="mono">painel-alunos</span>, a cada minuto), mesmo com o painel fechado. Fechada, a VLAN dos alunos fica desligada: o Wi-Fi "Alunos" continua aparecendo, mas sem internet. "Liberar agora" fecha sozinho na hora marcada; "Fechar agora" dentro de um horário vale até o fim dele.</p>
-            </div>
+            <form id="form-config-alunos" class="cartao">
+                <h2>Interface e horários</h2>
+                <label class="campo-interface">Interface da rede Alunos
+                    <select name="interface" id="interface-rede-alunos"></select>
+                </label>
+                <div class="tabela-rolagem">
+                    <table class="tabela tabela-horarios">
+                        <thead><tr><th>Início</th><th>Fim</th><th>Dias</th><th></th></tr></thead>
+                        <tbody id="lista-horarios-alunos"></tbody>
+                    </table>
+                </div>
+                <div class="barra-acoes">
+                    <button id="adicionar-horario-alunos" class="botao cor-verde" type="button">+ Adicionar horário</button>
+                    <span class="espaco"></span>
+                    <button id="desfazer-config-alunos" class="botao" type="button">Desfazer</button>
+                    <button class="botao cor-azul" type="submit">Salvar</button>
+                </div>
+            </form>
         </section>
 
         <!-- Sites bloqueados -->

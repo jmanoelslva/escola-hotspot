@@ -2,6 +2,15 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.14.0] - 2026-10-07
+
+### Adicionado
+- Rede Alunos → **Interface e horários**: escolher a interface (lista do roteador, com VLANs primeiro e se está ligada) e editar os horários, cada um com início, fim e **dias da semana** próprios; "+ Adicionar horário", "Excluir", "Desfazer" e "Salvar". O painel escreve o script `painel-alunos` (formato `"08:50-09:10 12345"`, dias 0=dom … 6=sáb) e cria o script e o agendador se faltarem, então o `mikrotik-redes.rsc` deixa de ser obrigatório para esta parte. Trocar de interface religa a antiga.
+- Rede Alunos → **modo**: Por horário, Sempre aberta ou Sempre fechada (agendador parado e interface ligada ou desligada).
+
+### Alterado
+- O script antigo (horários sem dias) continua funcionando e aparece como segunda a sexta; o primeiro "Salvar" grava o formato novo.
+
 ## [1.13.1] - 2026-10-07
 
 ### Alterado
