@@ -137,6 +137,18 @@ def test_encerrar_selecionados_e_todos(logado, mk):
     assert logado.post("/api/visitantes/encerrar", json={}).status_code == 400
 
 
+def test_nome_do_usuario_escolhido(logado, mk):
+    from app import visitantes
+    assert visitantes.prefixo_nome("Reunião de Pais!") == "reuniaodep"
+    assert visitantes.prefixo_nome("  Técnico  ") == "tecnico"
+    assert visitantes.prefixo_nome("123 ---") == "visita" and visitantes.prefixo_nome("") == "visita"
+    mk.adicionar(USUARIOS, {"name": "pais1", "comment": "usuário comum que já existia"})
+    r = logado.post("/api/visitantes", json={"quantidade": 3, "minutos": 60, "nome": "Pais", "descricao": "Reunião"}).json()
+    assert [c["usuario"] for c in r["criados"]] == ["pais2", "pais3", "pais4"]
+    agenda = {a["name"] for a in mk.tabelas[AGENDA]}
+    assert {"painel-visitante-pais2", "painel-visitante-pais4"} <= agenda
+
+
 def test_nome_do_visitante_reaproveita_o_menor_numero_livre(logado, mk):
     logado.post("/api/visitantes", json={"quantidade": 3, "minutos": 60})
     lista = logado.get("/api/visitantes").json()

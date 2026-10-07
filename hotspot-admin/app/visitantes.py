@@ -8,6 +8,7 @@ cookie, remove o usuário e se apaga. Funciona mesmo com o painel fechado.
 
 import re
 import secrets
+import unicodedata
 from datetime import datetime, timedelta
 
 from . import util
@@ -49,12 +50,23 @@ def ler_comentario(texto: str) -> tuple[datetime | None, str]:
     return datetime.strptime(m.group(1), "%Y-%m-%d %H:%M"), m.group(2) or ""
 
 
-def _nome_novo(existentes: set[str]) -> str:
-    """visita1, visita2...: o menor número livre (fácil de ditar e digitar)."""
+PREFIXO_PADRAO = "visita"
+MAX_PREFIXO = 10
+
+
+def prefixo_nome(texto: str) -> str:
+    """"Reunião de Pais" -> "reuniaodep": só letras minúsculas sem acento, até 10; vazio = "visita"."""
+    sem_acento = unicodedata.normalize("NFKD", texto or "").encode("ascii", "ignore").decode()
+    letras = re.sub(r"[^a-z]", "", sem_acento.lower())[:MAX_PREFIXO]
+    return letras or PREFIXO_PADRAO
+
+
+def _nome_novo(existentes: set[str], prefixo: str) -> str:
+    """pais1, pais2...: o menor número livre com esse nome (fácil de ditar e digitar)."""
     numero = 1
-    while f"visita{numero}" in existentes:
+    while f"{prefixo}{numero}" in existentes:
         numero += 1
-    return f"visita{numero}"
+    return f"{prefixo}{numero}"
 
 
 def _senha_nova() -> str:
@@ -63,7 +75,7 @@ def _senha_nova() -> str:
 
 
 def _script_expirar(nome: str) -> str:
-    # Nomes visitaN só têm letras e números: seguros dentro das aspas.
+    # Nomes como pais3 só têm letras e números: seguros dentro das aspas.
     return (f':do {{ /ip hotspot active remove [find user="{nome}"] }} on-error={{}}; '
             f':do {{ /ip hotspot cookie remove [find user="{nome}"] }} on-error={{}}; '
             f':do {{ /ip hotspot user remove [find name="{nome}"] }} on-error={{}}; '
@@ -90,30 +102,31 @@ def _agendar(mk: Mikrotik, nome: str, ate: datetime) -> None:
     }, ate)
 
 
-def criar(mk: Mikrotik, quantidade: int, ate: datetime, perfil: str, descricao: str) -> list[dict]:
+def criar(mk: Mikrotik, quantidade: int, ate: datetime, perfil: str, descricao: str, nome: str = "") -> list[dict]:
     if quantidade < 1 or quantidade > MAX_QUANTIDADE:
         raise util.ErroDados(f"Quantidade entre 1 e {MAX_QUANTIDADE}.")
     if ate <= datetime.now():
         raise util.ErroDados("A validade precisa terminar no futuro.")
     existentes = {u.get("name", "") for u in mk.listar(USUARIOS)}
     texto = comentario(ate, descricao)
+    prefixo = prefixo_nome(nome)
     criados = []
     for _ in range(quantidade):
-        nome = _nome_novo(existentes)
-        existentes.add(nome)
+        usuario = _nome_novo(existentes, prefixo)
+        existentes.add(usuario)
         senha = _senha_nova()
-        corpo = {"name": nome, "password": senha, "comment": texto}
+        corpo = {"name": usuario, "password": senha, "comment": texto}
         if perfil:
             corpo["profile"] = perfil
         mk.criar(USUARIOS, corpo)
         try:
-            _agendar(mk, nome, ate)
+            _agendar(mk, usuario, ate)
         except ErroMikrotik:
             # Sem o agendamento o visitante não expiraria: desfaz este usuário.
-            for u in mk.listar(USUARIOS, {"name": nome}):
+            for u in mk.listar(USUARIOS, {"name": usuario}):
                 mk.remover(USUARIOS, u[".id"])
             raise
-        criados.append({"usuario": nome, "senha": senha, "ate": f"{ate:%Y-%m-%dT%H:%M}", "descricao": descricao.strip()})
+        criados.append({"usuario": usuario, "senha": senha, "ate": f"{ate:%Y-%m-%dT%H:%M}", "descricao": descricao.strip()})
     return criados
 
 

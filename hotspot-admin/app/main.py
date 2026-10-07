@@ -273,6 +273,7 @@ class NovosVisitantes(BaseModel):
     ate_fim_do_dia: bool = False
     perfil: str = Field(default="", max_length=64)
     descricao: str = Field(default="", max_length=80)
+    nome: str = Field(default="", max_length=40)
 
 
 class EncerrarVisitantes(BaseModel):
@@ -1171,7 +1172,7 @@ def criar_visitantes(dados: NovosVisitantes, mk: Mikrotik = Depends(mikrotik), s
     if dados.perfil and dados.perfil not in _perfis(mk):
         raise util.ErroDados("Escolha um perfil que exista no MikroTik.")
     ate = visitantes.validade(dados.minutos, dados.ate_fim_do_dia)
-    criados = visitantes.criar(mk, dados.quantidade, ate, dados.perfil, dados.descricao)
+    criados = visitantes.criar(mk, dados.quantidade, ate, dados.perfil, dados.descricao, dados.nome)
     registrar(s, f"criou {len(criados)} senha(s) de visitante válida(s) até {ate:%d/%m/%Y %H:%M}"
                  + (f" ({dados.descricao.strip()})" if dados.descricao.strip() else ""))
     return {"criados": _com_qr(criados, _base_login(mk))}

@@ -873,6 +873,17 @@ async function carregarVisitantes() {
     atualizarSelecaoVisitantes();
 }
 
+// Mesmo tratamento do painel: minúsculas sem acento, só letras, até 10.
+function prefixoVisitante(texto) {
+    const letras = (texto || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '').slice(0, 10);
+    return letras || 'visita';
+}
+
+$('#form-visitantes').nome.addEventListener('input', (e) => {
+    const p = prefixoVisitante(e.target.value);
+    $('#exemplo-nome-visitante').textContent = `Fica ${p}1, ${p}2…`;
+});
+
 $('#form-visitantes').addEventListener('submit', async (evento) => {
     evento.preventDefault();
     const form = evento.target;
@@ -883,6 +894,7 @@ $('#form-visitantes').addEventListener('submit', async (evento) => {
         ate_fim_do_dia: validade === 'fim',
         perfil: form.perfil.value,
         descricao: form.descricao.value.trim(),
+        nome: form.nome.value.trim(),
     };
     lembrar('perfil-visitante', dados.perfil);
     await comBotao(form.querySelector('[type=submit]'), async () => {

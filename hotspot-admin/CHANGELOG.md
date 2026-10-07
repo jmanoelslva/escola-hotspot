@@ -2,6 +2,11 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.16.0] - 2026-10-07
+
+### Adicionado
+- Visitantes: campo **Nome do usuário** (opcional). Digitando `pais`, as senhas saem como `pais1`, `pais2`, `pais3`… (o menor número livre, sem repetir usuários que já existem). O nome vira letras minúsculas sem acento, até 10 ("Reunião" fica `reuniao`); em branco, fica `visita1`, `visita2`… O formulário mostra o exemplo enquanto se digita.
+
 ## [1.15.0] - 2026-10-07
 
 ### Alterado
