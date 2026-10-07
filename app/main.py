@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import backup, controle, historico, importacao, qrcodes, sistema, util, visitantes
+from . import backup, controle, historico, importacao, qrcodes, rede_alunos, sistema, util, visitantes
 from .config import APP_VERSION, PASTA_PROJETO, config
 from .mikrotik import EnderecoMikrotik, ErroAutenticacao, ErroConexao, ErroMikrotik, Mikrotik
 from .sessoes import LimiteLogin, Sessao, Sessoes
@@ -288,6 +288,10 @@ class Wifi(BaseModel):
 
 class Ligar(BaseModel):
     ativo: bool
+
+
+class LiberarAlunos(BaseModel):
+    minutos: int
 
 
 class Aviso(BaseModel):
@@ -691,6 +695,11 @@ def criar_perfil(dados: DadosPerfil, mk: Mikrotik = Depends(mikrotik), s: Sessao
         raise util.ErroDados("Já existe um perfil com esse nome.")
     if not corpo.get("rate-limit"):
         corpo.pop("rate-limit", None)
+    # Perfil novo herda os scripts de login/saída do padrão (IPv6 do mikrotik-redes.rsc).
+    padrao = next((p for p in mk.listar(controle.PERFIS) if p.get("default") == "true" or p.get("name") == "default"), {})
+    for campo in ("on-login", "on-logout"):
+        if padrao.get(campo):
+            corpo[campo] = padrao[campo]
     mk.criar(controle.PERFIS, corpo)
     registrar(s, f"criou perfil {corpo['name']}")
     return {"ok": True}
@@ -1041,6 +1050,34 @@ def encerrar_visitante(item_id: str, mk: Mikrotik = Depends(mikrotik), s: Sessao
     nome = visitantes.encerrar(mk, item_id)
     registrar(s, f"encerrou o visitante {nome}")
     return {"ok": True}
+
+
+# ---------------------------------------------------------------- rede Alunos
+
+@app.get("/api/rede-alunos")
+def ver_rede_alunos(mk: Mikrotik = Depends(mikrotik)):
+    return rede_alunos.estado(mk)
+
+
+@app.post("/api/rede-alunos/liberar")
+def liberar_rede_alunos(dados: LiberarAlunos, mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    ate = rede_alunos.liberar(mk, dados.minutos)
+    registrar(s, f"liberou a rede Alunos até {ate:%d/%m/%Y %H:%M}")
+    return rede_alunos.estado(mk)
+
+
+@app.post("/api/rede-alunos/fechar")
+def fechar_rede_alunos(mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    ate = rede_alunos.fechar(mk)
+    registrar(s, "fechou a rede Alunos" + (f" até {ate:%H:%M}" if ate else ""))
+    return rede_alunos.estado(mk)
+
+
+@app.post("/api/rede-alunos/horario")
+def rede_alunos_no_horario(mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    rede_alunos.voltar_ao_horario(mk)
+    registrar(s, "voltou a rede Alunos ao horário normal")
+    return rede_alunos.estado(mk)
 
 
 # ---------------------------------------------------------------- páginas

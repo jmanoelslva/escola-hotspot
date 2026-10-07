@@ -2,6 +2,15 @@
 
 Mudanças do Painel do Hotspot. Formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), versões [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.10.0] - 2026-10-06
+
+### Adicionado
+- `mikrotik-redes.rsc`: redes da escola no MikroTik. Administrativo (VLAN 200, 10.0.1.1/22) com hotspot e IPv6 liberado só para quem fez login (regra por MAC criada no login e conferida a cada minuto); Alunos (VLAN 300, 10.1.0.1/21) aberta, com IPv6, isolada das outras redes e ligada só de segunda a sexta nos horários 08:50–09:10, 12:00–12:50 e 14:40–15:00 (script `painel-alunos` no próprio MikroTik, a cada minuto).
+- Regras de acesso → **Rede Alunos**: estado (aberta/fechada e até quando), "Liberar agora" por 10 min a 4 h, "Fechar agora" (dentro de um horário, até o fim dele) e "Voltar ao horário normal". Funciona pelos agendadores `painel-alunos-liberado` e `painel-alunos-fechado`, que valem mesmo com o painel fechado.
+
+### Alterado
+- Perfil de usuário criado pelo painel herda os scripts de login e saída do perfil padrão (IPv6 do Administrativo).
+
 ## [1.9.1] - 2026-10-06
 
 ### Alterado

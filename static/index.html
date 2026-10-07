@@ -226,6 +226,39 @@
             </div>
         </section>
 
+        <!-- Rede Alunos -->
+        <section id="aba-alunos" class="painel-aba" hidden>
+            <div class="cartao" id="cartao-rede-alunos">
+                <div class="rede-alunos-topo">
+                    <h2>Rede Alunos</h2>
+                    <span id="etiqueta-rede-alunos" class="etiqueta off">…</span>
+                </div>
+                <p class="rede-alunos-estado" id="estado-rede-alunos">Carregando…</p>
+                <div class="barra-acoes" id="acoes-rede-alunos" hidden>
+                    <span class="grupo-lote">
+                        <select id="minutos-rede-alunos" aria-label="Por quanto tempo">
+                            <option value="10">10 minutos</option>
+                            <option value="20">20 minutos</option>
+                            <option value="30" selected>30 minutos</option>
+                            <option value="45">45 minutos</option>
+                            <option value="60">1 hora</option>
+                            <option value="90">1 hora e meia</option>
+                            <option value="120">2 horas</option>
+                            <option value="240">4 horas</option>
+                        </select>
+                        <button id="liberar-rede-alunos" class="botao cor-verde" type="button">Liberar agora</button>
+                    </span>
+                    <button id="fechar-rede-alunos" class="botao cor-vermelho" type="button">Fechar agora</button>
+                    <button id="horario-rede-alunos" class="botao" type="button" hidden>Voltar ao horário normal</button>
+                </div>
+            </div>
+            <div class="cartao" id="cartao-horarios-alunos" hidden>
+                <h2>Horários</h2>
+                <p class="dica" id="horarios-rede-alunos"></p>
+                <p class="dica">Quem abre e fecha a rede é o próprio MikroTik (script <span class="mono">painel-alunos</span>, a cada minuto), mesmo com o painel fechado. Fechada, a VLAN dos alunos fica desligada: o Wi-Fi "Alunos" continua aparecendo, mas sem internet. "Liberar agora" fecha sozinho na hora marcada; "Fechar agora" dentro de um horário vale até o fim dele.</p>
+            </div>
+        </section>
+
         <!-- Sites bloqueados -->
         <section id="aba-sites" class="painel-aba" hidden>
             <div class="cartao forcar-dns">

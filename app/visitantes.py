@@ -65,21 +65,24 @@ def _script_expirar(nome: str) -> str:
             f'/system scheduler remove [find name="{PREFIXO_AGENDAMENTO}{nome}"]')
 
 
-def _agendar(mk: Mikrotik, nome: str, ate: datetime) -> None:
-    corpo = {
-        "name": f"{PREFIXO_AGENDAMENTO}{nome}",
-        "start-time": f"{ate:%H:%M:%S}",
-        "interval": "0s",
-        "on-event": _script_expirar(nome),
-        "comment": f"Painel do Hotspot: remove o visitante {nome}",
-    }
+def agendar_uma_vez(mk: Mikrotik, corpo: dict, quando: datetime) -> None:
+    """Agendador que roda uma vez em `quando` (o próprio on-event deve se apagar)."""
+    corpo = {**corpo, "start-time": f"{quando:%H:%M:%S}", "interval": "0s"}
     # RouterOS 7.10+ aceita a data AAAA-MM-DD; versões antigas usam mmm/dd/aaaa.
     try:
-        mk.criar(AGENDAMENTOS, {**corpo, "start-date": f"{ate:%Y-%m-%d}"})
+        mk.criar(AGENDAMENTOS, {**corpo, "start-date": f"{quando:%Y-%m-%d}"})
     except ErroAutenticacao:
         raise
     except ErroMikrotik:
-        mk.criar(AGENDAMENTOS, {**corpo, "start-date": f"{_MESES[ate.month - 1]}/{ate:%d/%Y}"})
+        mk.criar(AGENDAMENTOS, {**corpo, "start-date": f"{_MESES[quando.month - 1]}/{quando:%d/%Y}"})
+
+
+def _agendar(mk: Mikrotik, nome: str, ate: datetime) -> None:
+    agendar_uma_vez(mk, {
+        "name": f"{PREFIXO_AGENDAMENTO}{nome}",
+        "on-event": _script_expirar(nome),
+        "comment": f"Painel do Hotspot: remove o visitante {nome}",
+    }, ate)
 
 
 def criar(mk: Mikrotik, quantidade: int, ate: datetime, perfil: str, descricao: str) -> list[dict]:

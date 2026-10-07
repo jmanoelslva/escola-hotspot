@@ -185,7 +185,7 @@ const GRUPOS = {
     usuarios: [['usuarios', 'Cadastrados'], ['visitantes', 'Visitantes'], ['importar', 'Importar planilha']],
     conectados: [['conectados', 'Conectados agora'], ['relatorio', 'Consumo']],
     aparelhos: [['aparelhos', 'Liberados e bloqueados']],
-    regras: [['perfis', 'Perfis e horário'], ['sites', 'Sites bloqueados']],
+    regras: [['alunos', 'Rede Alunos'], ['perfis', 'Perfis e horário'], ['sites', 'Sites bloqueados']],
     sistema: [['aviso', 'Aviso'], ['config', 'Configurações'], ['backup', 'Backup'], ['historico', 'Histórico']],
 };
 
@@ -235,8 +235,8 @@ function abrirAba(nome) {
     clearInterval(estado.relogioConectados);
     const carregar = CARREGAR[nome];
     if (carregar) carregar().catch((e) => aviso(e.message, true));
-    if (nome === 'conectados') {
-        estado.relogioConectados = setInterval(() => carregarConectados().catch(() => {}), 30000);
+    if (nome === 'conectados' || nome === 'alunos') {
+        estado.relogioConectados = setInterval(() => CARREGAR[nome]().catch(() => {}), 30000);
     }
 }
 

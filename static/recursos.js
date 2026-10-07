@@ -724,6 +724,79 @@ $('#form-wifi').addEventListener('submit', async (evento) => {
     });
 });
 
+// ------------------------------------------------------------------ rede Alunos
+
+// Hora do MikroTik (AAAA-MM-DDTHH:MM) dita em relação a "agora" do próprio roteador.
+function quandoRelativo(iso, agoraIso) {
+    if (!iso) return '';
+    const dia = iso.slice(0, 10);
+    const hora = iso.slice(11, 16).replace(':', 'h');
+    const hoje = new Date(agoraIso.slice(0, 10) + 'T12:00');
+    const alvo = new Date(dia + 'T12:00');
+    const dias = Math.round((alvo - hoje) / 86400000);
+    if (dias === 0) return 'às ' + hora;
+    if (dias === 1) return 'amanhã às ' + hora;
+    const semana = alvo.toLocaleDateString('pt-BR', { weekday: 'long' });
+    return (dias < 7 ? semana : alvo.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })) + ' às ' + hora;
+}
+
+function renderRedeAlunos(e) {
+    const etiqueta = $('#etiqueta-rede-alunos');
+    const texto = $('#estado-rede-alunos');
+    $('#acoes-rede-alunos').hidden = !e.configurado;
+    $('#cartao-horarios-alunos').hidden = !e.configurado;
+    if (!e.configurado) {
+        etiqueta.className = 'etiqueta alerta-amarelo';
+        etiqueta.textContent = 'Não configurada';
+        texto.textContent = e.erro || 'O MikroTik ainda não tem o controle da rede Alunos. Importe o arquivo mikrotik-redes.rsc (está na pasta do painel) pelo Winbox.';
+        return;
+    }
+    etiqueta.className = 'etiqueta ' + (e.aberta ? 'ok' : 'off');
+    etiqueta.textContent = e.aberta ? 'Aberta' : 'Fechada';
+    const abre = quandoRelativo(e.abre_em, e.agora);
+    const fecha = quandoRelativo(e.fecha_em, e.agora);
+    texto.textContent = {
+        liberado: `Liberada pelo painel. Fecha ${fecha}.`,
+        fechado: `Fechada pelo painel até o fim deste horário.` + (abre ? ` Abre de novo ${abre}.` : ''),
+        horario: `Aberta pelo horário. Fecha ${fecha}.`,
+        fora: 'Fechada (fora do horário).' + (abre ? ` Abre ${abre}.` : ''),
+    }[e.motivo] || '';
+    $('#fechar-rede-alunos').hidden = !e.aberta;
+    $('#horario-rede-alunos').hidden = !(e.motivo === 'liberado' || e.motivo === 'fechado');
+    $('#horarios-rede-alunos').textContent = e.janelas.length
+        ? 'Segunda a sexta: ' + e.janelas.map(([i, f]) => `${i.replace(':', 'h')} às ${f.replace(':', 'h')}`).join(', ') + '.'
+        : 'Nenhum horário fixo: a rede só abre quando liberada pelo painel.';
+}
+
+async function carregarRedeAlunos() {
+    try {
+        renderRedeAlunos(await api('GET', '/api/rede-alunos'));
+    } catch (e) {
+        $('#estado-rede-alunos').textContent = 'Não foi possível ler: ' + e.message;
+    }
+}
+
+async function acaoRedeAlunos(botao, caminho, corpo, mensagem) {
+    await comBotao(botao, async () => {
+        try {
+            renderRedeAlunos(await api('POST', caminho, corpo));
+            aviso(mensagem);
+        } catch (e) { aviso(e.message, true); }
+    });
+}
+
+$('#liberar-rede-alunos').addEventListener('click', (evento) => {
+    const minutos = Number($('#minutos-rede-alunos').value);
+    acaoRedeAlunos(evento.currentTarget, '/api/rede-alunos/liberar', { minutos }, 'Rede Alunos liberada.');
+});
+$('#fechar-rede-alunos').addEventListener('click', async (evento) => {
+    const botao = evento.currentTarget;
+    if (!await confirmar('Fechar a rede Alunos', 'Os alunos conectados ficam sem internet agora. Fechar?', 'Fechar agora')) return;
+    acaoRedeAlunos(botao, '/api/rede-alunos/fechar', undefined, 'Rede Alunos fechada.');
+});
+$('#horario-rede-alunos').addEventListener('click', (evento) =>
+    acaoRedeAlunos(evento.currentTarget, '/api/rede-alunos/horario', undefined, 'Rede Alunos de volta ao horário normal.'));
+
 // ------------------------------------------------------------------ registro das abas
 
 Object.assign(CARREGAR, {
@@ -735,4 +808,5 @@ Object.assign(CARREGAR, {
     backup: carregarBackups,
     config: async () => { await carregarConfig(); mostrarWifi(await api('GET', '/api/configuracoes/wifi')); },
     visitantes: carregarVisitantes,
+    alunos: carregarRedeAlunos,
 });

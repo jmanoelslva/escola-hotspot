@@ -32,6 +32,7 @@ class MikrotikFalso:
             "/ip/hotspot/cookie": [],
             "/ip/firewall/nat": [],
             "/system/scheduler": [],
+            "/system/script": [],
             "/interface": [
                 {".id": "*1", "name": "ether1", "type": "ether", "running": "true", "disabled": "false", "comment": "internet"},
                 {".id": "*2", "name": "bridge-hotspot", "type": "bridge", "running": "true", "disabled": "false"},
@@ -55,11 +56,13 @@ class MikrotikFalso:
             "/system/package/update": {"channel": "stable", "installed-version": "7.15.3"},
             "/system/routerboard": {"current-firmware": "7.15.3", "upgrade-firmware": "7.15.3"},
             "/ip/dns": {"servers": "8.8.8.8", "allow-remote-requests": "true"},
+            "/system/clock": {"date": "2026-10-06", "time": "22:10:30", "time-zone-name": "America/Maceio"},
         }
         self.versao_disponivel = "7.16.1"
         self.verificacoes = 0
         self.trafego_aleatorio = False
         self.aceita_data_iso = True  # False imita RouterOS antigo (data mmm/dd/aaaa)
+        self.alunos_no_horario = False  # o que o script painel-alunos decidiria pelo horário
 
     def adicionar(self, tabela: str, dados: dict) -> dict:
         item = {".id": f"*{self.proximo:X}", **dados}
@@ -101,6 +104,15 @@ class MikrotikFalso:
                                                   "tx-bits-per-second": str(random.randint(1, 12) * 1_000_000)} for n in nomes])
             return httpx.Response(200, json=[{"name": n, "rx-bits-per-second": str(10_000_000 * (i + 1)),
                                               "tx-bits-per-second": str(1_000_000 * (i + 1))} for i, n in enumerate(nomes)])
+        if pedido.method == "POST" and caminho == "/system/script/run":
+            script = next(i for i in self.tabelas["/system/script"] if i[".id"] == (corpo or {}).get(".id"))
+            if script["name"] == "painel-alunos":  # imita o script do mikrotik-redes.rsc
+                nomes = {a["name"] for a in self.tabelas["/system/scheduler"]}
+                aberta = "painel-alunos-liberado" in nomes or (self.alunos_no_horario and "painel-alunos-fechado" not in nomes)
+                for i in self.tabelas["/interface"]:
+                    if i["name"] == "VLAN300-ALUNOS":
+                        i["disabled"] = "false" if aberta else "true"
+            return httpx.Response(200, json=[])
         if pedido.method == "POST" and caminho.endswith("/reset-counters"):
             tabela = caminho.removesuffix("/reset-counters")
             ids = set((corpo or {}).get("numbers", "").split(","))

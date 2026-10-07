@@ -313,6 +313,10 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
 .legenda-saida::before { background: #ea580c; }
 
 /* Forçar DNS: chave liga/desliga */
+.rede-alunos-topo { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.rede-alunos-topo h2 { margin: 0; }
+.rede-alunos-topo .etiqueta { font-size: 13px; padding: 3px 10px; }
+.rede-alunos-estado { font-size: 16px; margin: 0 0 14px; }
 .forcar-dns-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .forcar-dns h2 { margin-bottom: 4px; }
 .forcar-dns .dica { margin-bottom: 4px; }
