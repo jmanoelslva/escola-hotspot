@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+$(if refresh-timeout)
+<meta http-equiv="refresh" content="$(refresh-timeout-secs)">
+$(endif)
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="pragma" content="no-cache">
+<meta http-equiv="expires" content="-1">
+<meta name="theme-color" content="#0d4a7d" />
+<title>Wi-Fi da Escola - Conectado</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="aviso-escola.js"></script>
+<script>
+        // Aviso da escola: o Painel do Hotspot grava aviso-escola.js
+        // (var AVISO_ESCOLA = "...") na pasta do hotspot.
+        function carregarAviso() {
+            var caixa = document.getElementById('aviso-escola');
+            var texto = typeof AVISO_ESCOLA === 'string' ? AVISO_ESCOLA.replace(/^\s+|\s+$/g, '') : '';
+            if (!caixa || !texto) return;
+            caixa.textContent = texto;
+            caixa.hidden = false;
+        }
+$(if advert-pending == 'yes')
+    var popup = '';
+    function focusAdvert() {
+        if (window.focus) popup.focus();
+    }
+    function openAdvert() {
+        popup = open('$(link-advert)', 'hotspot_advert', '');
+        setTimeout("focusAdvert()", 1000);
+    }
+$(endif)
+    function openLogout() {
+        if (!confirm('Deseja sair da rede Wi-Fi?')) return false;
+        if (window.name != 'hotspot_status') return true;
+        open('$(link-logout)', 'hotspot_logout', 'toolbar=0,location=0,directories=0,status=0,menubars=0,resizable=1,width=280,height=250');
+        window.close();
+        return false;
+    }
+
+    // Tempos vindos do roteador (em segundos); o relógio anda sozinho entre as atualizações.
+    var conectado = parseInt('$(uptime-secs)', 10) || 0;
+    var restante = parseInt('$(session-time-left-secs)', 10);
+    var total = isNaN(restante) ? 0 : conectado + restante;
+    var inicio = new Date().getTime();
+
+    function doisDigitos(n) { return (n < 10 ? '0' : '') + n; }
+
+    function relogio(s) {
+        var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
+        return doisDigitos(h) + ':' + doisDigitos(m) + ':' + doisDigitos(s % 60);
+    }
+
+    function porExtenso(s) {
+        var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
+        if (h > 0) return h + 'h ' + doisDigitos(m) + 'min';
+        if (m > 0) return m + 'min';
+        return s + 's';
+    }
+
+    function bytesLegiveis(b) {
+        var un = ['B', 'KB', 'MB', 'GB', 'TB'], i = 0;
+        while (b >= 1024 && i < un.length - 1) { b /= 1024; i++; }
+        return (i ? b.toFixed(1).replace('.', ',') : b) + ' ' + un[i];
+    }
+
+    function texto(id, valor) {
+        var el = document.getElementById(id);
+        if (el) el.innerHTML = valor;
+    }
+
+    function atualizar() {
+        var passou = Math.floor((new Date().getTime() - inicio) / 1000);
+        var agora = conectado + passou;
+        texto('tempo-conectado', relogio(agora));
+        if (total > 0) {
+            var falta = Math.max(total - agora, 0);
+            var usado = Math.min(agora / total * 100, 100);
+            texto('tempo-restante', porExtenso(falta));
+            texto('legenda-restante', 'Restam ' + porExtenso(falta));
+            var barra = document.getElementById('barra');
+            barra.firstChild.style.width = usado + '%';
+            barra.className = (total - agora) < 600 ? 'barra pouco' : 'barra';
+        }
+    }
+
+    function iniciar() {
+        var dados = document.getElementById('dados-restantes');
+        if (dados) {
+            var b = parseInt(dados.getAttribute('data-bytes'), 10);
+            if (!isNaN(b)) dados.innerHTML = bytesLegiveis(b);
+        }
+        if (total > 0) document.getElementById('bloco-limite').style.display = 'block';
+        atualizar();
+        setInterval(atualizar, 1000);
+        carregarAviso();
+$(if advert-pending == 'yes')
+        openAdvert();
+$(endif)
+    }
+</script>
+</head>
+
+<body onload="iniciar()">
+    <div class="cartao">
+        <img class="logo" src="img/logo.png" alt="Escola Estadual Professora Maria Aldineide Pessoa Gomes" width="180" height="142" />
+
+        <div class="centro"><span class="selo">Conectado</span></div>
+        $(if login-by != 'mac')
+        <h1>Olá, $(username)!</h1>
+        $(endif)
+        <p class="info">Você já pode navegar. Volte a esta página para ver o tempo de conexão ou sair.</p>
+        <div id="aviso-escola" class="aviso-escola" hidden></div>
+
+        <div class="tempo">
+            <div class="tempo-rotulo">Tempo conectado</div>
+            <div class="tempo-valor" id="tempo-conectado">$(uptime)</div>
+        </div>
+
+        <div id="bloco-limite" style="display:none">
+            <div class="barra" id="barra"><span></span></div>
+            <div class="barra-legenda">
+                <span>Tempo da sessão</span>
+                <span id="legenda-restante">Restam $(session-time-left)</span>
+            </div>
+        </div>
+
+        <div class="grade">
+            <div class="item">
+                <div class="item-rotulo">Enviados</div>
+                <div class="item-valor">$(bytes-in-nice)</div>
+            </div>
+            <div class="item">
+                <div class="item-rotulo">Recebidos</div>
+                <div class="item-valor">$(bytes-out-nice)</div>
+            </div>
+            $(if remain-bytes-total)
+            <div class="item largo">
+                <div class="item-rotulo">Franquia de dados restante</div>
+                <div class="item-valor" id="dados-restantes" data-bytes="$(remain-bytes-total)">$(remain-bytes-total) bytes</div>
+            </div>
+            $(endif)
+            <div class="item largo">
+                <div class="item-rotulo">Endereço IP</div>
+                <div class="item-valor">$(ip)</div>
+            </div>
+            <div class="item largo">
+                <div class="item-rotulo">Aparelho (MAC)</div>
+                <div class="item-valor">$(mac)</div>
+            </div>
+        </div>
+
+        $(if blocked == 'yes')
+        <p class="alerta">Para continuar navegando, <a href="$(link-advert)" target="hotspot_advert">abra o aviso da escola</a>.</p>
+        $(endif)
+
+        $(if login-by-mac != 'yes')
+        <form action="$(link-logout)" name="logout" onsubmit="return openLogout()">
+            <input class="botao sair" type="submit" value="Sair da rede">
+        </form>
+        <p class="aviso">Ao terminar, saia da rede para que ninguém use o seu acesso neste aparelho.</p>
+        $(endif)
+    </div>
+
+    <p class="rodape">Escola Estadual Professora Maria Aldineide Pessoa Gomes<br />Coité do Noia - AL</p>
+</body>
+</html>

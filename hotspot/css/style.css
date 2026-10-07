@@ -1,0 +1,207 @@
+/* Hotspot - Escola Estadual Professora Maria Aldineide Pessoa Gomes
+   Sem fontes ou arquivos externos: antes do login o aparelho não tem internet. */
+
+:root {
+    --azul: #0d4a7d;
+    --azul-escuro: #083459;
+    --vermelho: #bc1b21;
+    --vermelho-escuro: #961519;
+    --texto: #1f2933;
+    --texto-suave: #52606d;
+    --borda: #cbd2d9;
+    --fundo-campo: #f5f7fa;
+    --verde: #1e7e34;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { min-height: 100%; }
+
+body {
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.45;
+    color: #1f2933;
+    background: #0d4a7d;
+    background: linear-gradient(160deg, #0d4a7d 0%, #083459 70%, #05223b 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px 16px;
+}
+
+a { color: var(--azul); }
+
+.cartao {
+    width: 100%;
+    max-width: 400px;
+    background: #fff;
+    border-radius: 14px;
+    border-top: 6px solid var(--vermelho);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .3);
+    padding: 28px 24px 24px;
+    animation: surgir .4s ease-out both;
+}
+
+@keyframes surgir { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.logo { display: block; width: 180px; max-width: 70%; height: auto; margin: 0 auto 16px; }
+
+h1 { font-size: 22px; text-align: center; color: var(--azul); margin-bottom: 6px; }
+
+.info { text-align: center; color: var(--texto-suave); margin-bottom: 20px; }
+
+.alerta {
+    background: #fdecec;
+    color: var(--vermelho-escuro);
+    border: 1px solid #f5c2c4;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 18px;
+    text-align: center;
+}
+.alerta::first-letter { text-transform: uppercase; }
+
+.rodape { color: rgba(255, 255, 255, .65); font-size: 13px; text-align: center; margin-top: 18px; }
+
+/* Campos */
+.campo { display: block; position: relative; margin-bottom: 14px; }
+.campo .ico { position: absolute; left: 14px; top: 50%; width: 16px; height: 16px; margin-top: -8px; opacity: .55; }
+
+input[type=text], input[type=password] {
+    width: 100%;
+    height: 48px;
+    padding: 0 14px 0 42px;
+    font: inherit;
+    color: var(--texto);
+    background: var(--fundo-campo);
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    outline: 0;
+    -webkit-appearance: none;
+    appearance: none;
+}
+input[type=text]:focus, input[type=password]:focus { border-color: var(--azul); box-shadow: 0 0 0 3px rgba(13, 74, 125, .18); background: #fff; }
+
+/* Mostrar senha */
+.campo input[name=password] { padding-right: 84px; }
+.mostrar-senha {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    height: 36px; padding: 0 10px; font: inherit; font-size: 14px; font-weight: 600;
+    color: var(--azul); background: transparent; border: 0; border-radius: 6px; cursor: pointer;
+}
+.mostrar-senha:hover, .mostrar-senha:focus { background: rgba(13, 74, 125, .08); outline: 0; }
+
+/* Aviso da escola (aviso.txt, escrito pelo painel) */
+.aviso-escola {
+    background: #fff4d6; color: #5c3d00; border: 1px solid #f3d27a; border-radius: 8px;
+    padding: 10px 12px; margin: 0 0 16px; font-size: 15px; text-align: center; white-space: pre-line;
+}
+[hidden] { display: none !important; }
+
+/* Termos de uso */
+.aceite {
+    display: flex;
+    align-items: flex-start;
+    margin: 4px 0 18px;
+    font-size: 15px;
+    color: var(--texto-suave);
+    cursor: pointer;
+}
+.aceite input { width: 20px; height: 20px; flex: none; margin: 1px 10px 0 0; accent-color: var(--azul); cursor: pointer; }
+.link-termos { background: none; border: 0; padding: 0; font: inherit; color: var(--azul); text-decoration: underline; cursor: pointer; }
+
+/* Botões */
+.botao, input[type=submit] {
+    display: block;
+    width: 100%;
+    height: 48px;
+    font: inherit;
+    font-weight: 600;
+    color: #fff;
+    background: var(--azul);
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: background .2s;
+}
+.botao:hover, .botao:focus, input[type=submit]:hover, input[type=submit]:focus { background: var(--azul-escuro); }
+.botao:disabled, .botao:disabled:hover { background: #9aa5b1; cursor: not-allowed; }
+.botao.sair { background: var(--vermelho); }
+.botao.sair:hover, .botao.sair:focus { background: var(--vermelho-escuro); }
+
+/* Janela dos termos: a camada inteira é que rola (rolagem dentro de um bloco
+   flex trava ao voltar para cima no navegador de login do Android/iPhone). */
+.janela {
+    position: fixed;
+    top: 0; right: 0; bottom: 0; left: 0;
+    display: none;
+    padding: 16px;
+    background: rgba(0, 0, 0, .55);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    z-index: 10;
+}
+.janela.aberta { display: block; }
+body.travado { overflow: hidden; }
+.janela-caixa {
+    background: #fff;
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+    border-radius: 12px;
+}
+.janela-caixa h2 { font-size: 18px; color: var(--azul); padding: 16px 20px; border-bottom: 1px solid #e4e7eb; }
+.janela-texto { padding: 12px 20px 16px; font-size: 15px; }
+.janela-texto h3 { font-size: 15px; color: var(--azul); margin: 14px 0 4px; }
+.janela-texto p, .janela-texto li { margin-bottom: 6px; text-align: justify; -webkit-hyphens: auto; hyphens: auto; }
+.janela-texto ul { padding-left: 20px; }
+.janela-acoes {
+    position: -webkit-sticky;
+    position: sticky;
+    bottom: -16px;
+    padding: 12px 20px 16px;
+    background: #fff;
+    border-top: 1px solid #e4e7eb;
+    border-radius: 0 0 12px 12px;
+}
+
+/* Status */
+.centro { text-align: center; margin-bottom: 14px; }
+.selo {
+    display: inline-block;
+    background: #e6f4ea;
+    color: var(--verde);
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 999px;
+    padding: 4px 12px;
+}
+.selo::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--verde); margin-right: 6px; vertical-align: 1px; }
+
+.tempo { text-align: center; margin: 4px 0 16px; }
+.tempo-rotulo { font-size: 13px; color: var(--texto-suave); text-transform: uppercase; letter-spacing: .04em; }
+.tempo-valor { font-size: 34px; font-weight: 700; color: var(--azul); font-variant-numeric: tabular-nums; }
+
+.barra { height: 10px; background: #e4e7eb; border-radius: 999px; overflow: hidden; margin: 6px 0 4px; }
+.barra span { display: block; height: 100%; width: 0; background: var(--azul); border-radius: 999px; transition: width .5s; }
+.barra.pouco span { background: var(--vermelho); }
+.barra-legenda { display: flex; justify-content: space-between; font-size: 13px; color: var(--texto-suave); margin-bottom: 16px; }
+
+.grade { display: flex; flex-wrap: wrap; margin: 0 -5px 12px; }
+.item { width: calc(50% - 10px); margin: 0 5px 10px; background: var(--fundo-campo); border-radius: 10px; padding: 10px 12px; }
+.item.largo { width: calc(100% - 10px); }
+.item-rotulo { font-size: 13px; color: var(--texto-suave); }
+.item-valor { font-weight: 600; word-break: break-all; }
+
+.aviso { font-size: 14px; color: var(--texto-suave); text-align: center; margin-top: 12px; }
+
+table { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
+td { padding: 9px 4px; border-bottom: 1px solid #e4e7eb; font-size: 15px; }
+td:first-child { color: var(--texto-suave); }
+td:last-child { text-align: right; font-weight: 600; word-break: break-all; }
