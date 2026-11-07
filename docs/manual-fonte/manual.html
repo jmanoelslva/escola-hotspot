@@ -18,6 +18,9 @@
     ul, ol { margin: 0 0 10px; padding-left: 20px; }
     li { margin-bottom: 3px; }
     .capitulo { page-break-before: always; }
+    /* Perguntas frequentes: pergunta junto da resposta e espaçamento menor, para caber sem sobrar uma linha numa página sozinha */
+    .faq h3 { margin: 10px 0 3px; page-break-after: avoid; }
+    .faq p { margin-bottom: 4px; page-break-inside: avoid; }
     figure { margin: 10px 0 14px; page-break-inside: avoid; text-align: center; }
     figure img { max-width: 100%; max-height: 165mm; border: 1px solid #d9dee4; border-radius: 6px; }
     figure.pequena img { max-width: 78%; }
@@ -454,7 +457,7 @@
 </section>
 
 <!-- ====================================================== 11 -->
-<section class="capitulo">
+<section class="capitulo faq">
     <h1>11. Perguntas frequentes</h1>
     <h3>O painel não abre.</h3>
     <p>Confirme que o computador do painel está ligado. Ele inicia sozinho com o Windows, mas pode levar até um minuto depois de ligar. Se continuar sem abrir, avise o responsável pela TI.</p>
