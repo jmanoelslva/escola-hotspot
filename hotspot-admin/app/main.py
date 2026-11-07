@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+import threading
 from contextlib import asynccontextmanager
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
@@ -15,7 +16,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import administradores, ajustes, aps, backup, coleta, controle, historico, importacao, qrcodes, rede, rede_alunos, senha, servico, sistema, util, visitantes
+from . import administradores, ajustes, aps, backup, backup_config, coleta, controle, historico, importacao, qrcodes, rede, rede_alunos, senha, servico, sistema, util, visitantes
 from .config import APP_VERSION, PASTA_PROJETO, config
 from .mikrotik import EnderecoMikrotik, ErroAutenticacao, ErroConexao, ErroMikrotik, Mikrotik
 from .sessoes import LimiteLogin, Sessao, Sessoes
@@ -67,6 +68,7 @@ app.state.limite_login = LimiteLogin()
 app.state.transport = None  # os testes trocam por um MikroTik falso
 app.state.endereco = EnderecoMikrotik(ajustes.endereco_mikrotik(config.pasta_dados, config), config.mikrotik_verificar_tls)
 app.state.atualizacao = sistema.VerificadorAtualizacao()
+app.state.versao_painel = sistema.VerificadorPainel(APP_VERSION)
 app.state.redes_wifi = senha.redes(config.redes_wifi)
 app.state.limite_senha = LimiteLogin()
 
@@ -168,7 +170,6 @@ def _usuario(item: dict) -> dict:
         "senha": item.get("password", ""),
         "perfil": item.get("profile", ""),
         "comentario": item.get("comment", ""),
-        "limite_tempo": "" if item.get("limit-uptime") in (None, "0s", "0") else item.get("limit-uptime"),
         "mac": "" if mac in ("", MAC_VAZIO) else mac,
         "desativado": util.sim(item.get("disabled")),
         "uptime": item.get("uptime", ""),
@@ -224,7 +225,6 @@ class NovoUsuario(BaseModel):
     senha: str = Field(max_length=64)
     perfil: str = Field(default="", max_length=64)
     comentario: str = Field(default="", max_length=200)
-    limite_tempo: str = Field(default="", max_length=20)
     mac: str = Field(default="", max_length=20)
 
 
@@ -233,7 +233,6 @@ class AlterarUsuario(BaseModel):
     senha: str | None = Field(default=None, max_length=64)
     perfil: str | None = Field(default=None, max_length=64)
     comentario: str | None = Field(default=None, max_length=200)
-    limite_tempo: str | None = Field(default=None, max_length=20)
     mac: str | None = Field(default=None, max_length=20)
     desativado: bool | None = None
 
@@ -307,6 +306,7 @@ class NovosVisitantes(BaseModel):
     perfil: str = Field(default="", max_length=64)
     descricao: str = Field(default="", max_length=80)
     nome: str = Field(default="", max_length=40)
+    prazo: datetime | None = None  # opcional: se não for usado até aqui, o cartão some
 
 
 class EncerrarVisitantes(BaseModel):
@@ -409,7 +409,11 @@ def login(dados: Login, request: Request, response: Response):
     token = app.state.sessoes.criar(usuario, dados.senha, identidade)
     response.set_cookie(COOKIE, token, httponly=True, samesite="strict", path="/")
     log_acoes.info("%s entrou (ip %s)", usuario, ip)
-    _backup_do_dia(usuario, dados.senha)
+    # Em segundo plano: a cópia da configuração leva alguns segundos e não pode atrasar o login.
+    if getattr(app.state, "backup_em_segundo_plano", True):
+        threading.Thread(target=_backup_do_dia, args=(usuario, dados.senha), name="backup-login", daemon=True).start()
+    else:
+        _backup_do_dia(usuario, dados.senha)
     return {"usuario": usuario, "identidade": identidade, "conexao": tipo_conexao()}
 
 
@@ -452,7 +456,13 @@ def _usuarios_comuns(mk: Mikrotik) -> list[dict]:
     """Usuários do hotspot sem os visitantes (que têm a própria tela) e sem os do sistema."""
     return [u for u in mk.listar(USUARIOS)
             if not util.sim(u.get("default")) and u.get("name") != "default-trial"
-            and visitantes.ler_comentario(u.get("comment", ""))[0] is None]
+            and not visitantes.eh_visitante(u.get("comment", ""))]
+
+
+def _comentario_usuario(texto: str) -> str:
+    if visitantes.comentario_reservado(texto):
+        raise util.ErroDados('O nome/turma não pode começar com "painel-visitante": é a marca das senhas de visitante.')
+    return texto.strip()
 
 
 @app.post("/api/usuarios")
@@ -460,13 +470,10 @@ def criar_usuario(dados: NovoUsuario, mk: Mikrotik = Depends(mikrotik), s: Sessa
     corpo = {
         "name": util.validar_usuario(dados.nome),
         "password": util.validar_senha(dados.senha),
-        "comment": dados.comentario.strip(),
+        "comment": _comentario_usuario(dados.comentario),
     }
     if dados.perfil:
         corpo["profile"] = dados.perfil
-    tempo = util.validar_tempo(dados.limite_tempo)
-    if tempo:
-        corpo["limit-uptime"] = tempo
     if dados.mac.strip():
         corpo["mac-address"] = util.normalizar_mac(dados.mac)
     criado = mk.criar(USUARIOS, corpo)
@@ -486,9 +493,7 @@ def alterar_usuario(item_id: str, dados: AlterarUsuario, mk: Mikrotik = Depends(
     if dados.perfil:
         corpo["profile"] = dados.perfil
     if dados.comentario is not None:
-        corpo["comment"] = dados.comentario.strip()
-    if dados.limite_tempo is not None:
-        corpo["limit-uptime"] = util.validar_tempo(dados.limite_tempo) or "0s"
+        corpo["comment"] = _comentario_usuario(dados.comentario)
     if dados.mac is not None:
         corpo["mac-address"] = util.normalizar_mac(dados.mac) if dados.mac.strip() else MAC_VAZIO
     if dados.desativado is not None:
@@ -737,16 +742,16 @@ def exportar_usuarios(senhas: bool = False, mk: Mikrotik = Depends(mikrotik), s:
     folha = livro.active
     folha.title = "Usuários"
     titulos = (["Usuário"] + (["Senha"] if senhas else [])
-               + ["Nome", "Turma", "Perfil", "Limite de tempo", "Situação", "Enviados (MB)", "Recebidos (MB)"])
+               + ["Nome", "Turma", "Perfil", "Situação", "Enviados (MB)", "Recebidos (MB)"])
     folha.append(titulos)
     for celula in folha[1]:
         celula.font = Font(bold=True)
     for u in usuarios:
         nome, turma = util.separar_turma(u["comentario"])
         folha.append([u["nome"]] + ([u["senha"]] if senhas else []) + [
-            nome, turma, u["perfil"], u["limite_tempo"], "Desativado" if u["desativado"] else "Ativo",
+            nome, turma, u["perfil"], "Desativado" if u["desativado"] else "Ativo",
             round(u["bytes_in"] / 1048576, 1), round(u["bytes_out"] / 1048576, 1)])
-    for coluna, largura in zip("ABCDEFGHIJ", (18, 12, 30, 12, 14, 14, 12, 14, 14, 14)):
+    for coluna, largura in zip("ABCDEFGHI", (18, 12, 30, 12, 14, 12, 14, 14, 14)):
         folha.column_dimensions[coluna].width = largura
     saida = io.BytesIO()
     livro.save(saida)
@@ -1305,12 +1310,16 @@ def ver_historico(busca: str = "", usuario: str = "", dias: int = 30, _: Sessao 
 # ---------------------------------------------------------------- backup
 
 def _backup_do_dia(usuario: str, senha: str) -> None:
-    if backup.existe_de_hoje(config.pasta_dados):
+    if backup.existe_de_hoje(config.pasta_dados) and not backup_config.precisa(config.pasta_dados):
         return
     try:
         with conectar(usuario, senha) as mk:
-            nome = backup.salvar(config.pasta_dados, backup.montar(mk))
-        log_acoes.info("%s backup automático %s", usuario, nome)
+            if not backup.existe_de_hoje(config.pasta_dados):
+                nome = backup.salvar(config.pasta_dados, backup.montar(mk))
+                log_acoes.info("%s backup automático %s", usuario, nome)
+            config_nome = backup_config.semanal(mk, config.pasta_dados)
+            if config_nome:
+                log_acoes.info("%s cópia automática da configuração %s", usuario, config_nome)
     except Exception as erro:  # o login não pode falhar por causa do backup
         logging.getLogger("painel").warning("backup automático falhou: %r", erro)
 
@@ -1338,6 +1347,32 @@ def baixar_backup(nome: str, s: Sessao = Depends(sessao_atual)):
 def excluir_backup(nome: str, s: Sessao = Depends(sessao_atual)):
     backup.caminho(config.pasta_dados, nome).unlink()
     registrar(s, f"excluiu o backup {nome}")
+    return {"ok": True}
+
+
+@app.get("/api/backups-config")
+def listar_backups_config(_: Sessao = Depends(sessao_atual)):
+    return backup_config.listar(config.pasta_dados)
+
+
+@app.post("/api/backups-config")
+def fazer_backup_config(mk: Mikrotik = Depends(mikrotik), s: Sessao = Depends(sessao_atual)):
+    nome = backup_config.salvar(config.pasta_dados, backup_config.exportar(mk))
+    registrar(s, f"copiou a configuração do MikroTik {nome}")
+    return {"nome": nome}
+
+
+@app.get("/api/backups-config/{nome}")
+def baixar_backup_config(nome: str, s: Sessao = Depends(sessao_atual)):
+    arquivo = backup_config.caminho(config.pasta_dados, nome)
+    registrar(s, f"baixou a cópia da configuração {nome}")
+    return FileResponse(arquivo, media_type="text/plain; charset=utf-8", filename=nome)
+
+
+@app.delete("/api/backups-config/{nome}")
+def excluir_backup_config(nome: str, s: Sessao = Depends(sessao_atual)):
+    backup_config.caminho(config.pasta_dados, nome).unlink()
+    registrar(s, f"excluiu a cópia da configuração {nome}")
     return {"ok": True}
 
 
@@ -1372,6 +1407,7 @@ def ver_sistema(mk: Mikrotik = Depends(mikrotik)):
     dados.update(sistema.licenca(mk))
     dados["usuarios"] = len(_usuarios_comuns(mk))
     dados["aps"] = aps.resumo(mk)
+    dados["relogio"] = sistema._opcional(lambda: sistema.relogio(mk), None)
     return dados
 
 
@@ -1385,7 +1421,7 @@ def ver_trafego(interfaces: str = "", mk: Mikrotik = Depends(mikrotik)):
 
 @app.get("/api/atualizacao")
 def ver_atualizacao(forcar: bool = False, mk: Mikrotik = Depends(mikrotik)):
-    return app.state.atualizacao.obter(mk, forcar)
+    return {**app.state.atualizacao.obter(mk, forcar), "painel": app.state.versao_painel.obter(forcar)}
 
 
 # ---------------------------------------------------------------- visitantes (senhas temporárias)
@@ -1440,9 +1476,12 @@ def criar_visitantes(dados: NovosVisitantes, mk: Mikrotik = Depends(mikrotik), s
             f"Já existem {folga['validos']} senha(s) de visitante válida(s) e o limite é {folga['limite']} "
             f"(sessões do hotspot na licença do MikroTik). Dá para criar no máximo {folga['disponiveis']} agora; "
             "encerre algumas para liberar mais.")
-    ate = visitantes.validade(dados.minutos, dados.ate_fim_do_dia)
-    criados = visitantes.criar(mk, dados.quantidade, ate, dados.perfil, dados.descricao, dados.nome)
-    registrar(s, f"criou {len(criados)} senha(s) de visitante válida(s) até {ate:%d/%m/%Y %H:%M}"
+    minutos = visitantes.duracao(dados.minutos, dados.ate_fim_do_dia)
+    prazo = visitantes.validar_prazo(dados.prazo)
+    criados = visitantes.criar(mk, dados.quantidade, minutos, dados.perfil, dados.descricao, dados.nome, prazo)
+    registrar(s, f"criou {len(criados)} senha(s) de visitante válida(s) por {visitantes.texto_duracao(minutos)} "
+                 "a partir do primeiro acesso"
+                 + (f", prazo para usar até {prazo:%d/%m/%Y %H:%M}" if prazo else ", sem prazo para usar")
                  + (f" ({dados.descricao.strip()})" if dados.descricao.strip() else ""))
     return {"criados": _com_qr(criados, _base_login(mk))}
 

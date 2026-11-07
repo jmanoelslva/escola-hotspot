@@ -8,66 +8,114 @@ from app import visitantes
 
 USUARIOS = "/ip/hotspot/user"
 AGENDA = "/system/scheduler"
+SCRIPTS = "/system/script"
 
 
 # ------------------------------------------------------------- visitantes
 
-def test_validade():
-    agora = datetime(2026, 10, 6, 14, 30, 45)
-    assert visitantes.validade(120, False, agora) == datetime(2026, 10, 6, 16, 30)
-    assert visitantes.validade(None, True, agora) == datetime(2026, 10, 6, 23, 59)
+def test_duracao():
+    assert visitantes.duracao(120, False) == 120
+    assert visitantes.duracao(None, True) is None
     for errado in (0, 5, 31 * 24 * 60):
         with pytest.raises(Exception):
-            visitantes.validade(errado, False, agora)
+            visitantes.duracao(errado, False)
+    assert visitantes.texto_duracao(120) == "2 horas" and visitantes.texto_duracao(1440) == "1 dia"
+    assert visitantes.texto_duracao(None) == "até o fim do dia"
+
+
+def test_prazo():
+    agora = datetime(2026, 11, 7, 10, 0)
+    assert visitantes.validar_prazo(None, agora) is None
+    assert visitantes.validar_prazo(datetime(2026, 11, 10, 18, 0, 30), agora) == datetime(2026, 11, 10, 18, 0)
+    for errado in (agora, datetime(2027, 11, 8, 10, 0)):
+        with pytest.raises(Exception):
+            visitantes.validar_prazo(errado, agora)
 
 
 def test_comentario_ida_e_volta():
-    ate = datetime(2026, 10, 6, 18, 0)
-    texto = visitantes.comentario(ate, "  Reunião   de pais ")
-    assert texto == "painel-visitante até 2026-10-06 18:00 | Reunião de pais"
-    assert visitantes.ler_comentario(texto) == (ate, "Reunião de pais")
-    assert visitantes.ler_comentario("Maria - 9A") == (None, "")
+    texto = visitantes.comentario(120, "  Reunião   de pais ")
+    assert texto == "painel-visitante por 120 min | Reunião de pais"
+    assert visitantes.ler_duracao(texto) == (True, 120, None, "", "Reunião de pais")
+    prazo = datetime(2026, 11, 10, 18, 0)
+    texto = visitantes.comentario(None, "", prazo)
+    assert texto == "painel-visitante por fim do dia prazo 2026-11-10 18:00"
+    assert visitantes.ler_duracao(texto) == (True, None, prazo, "", "")
+    # Cartões antigos continuam reconhecidos.
+    antigo = "painel-visitante até 2026-10-06 18:00 | Palestra"
+    assert visitantes.ler_comentario(antigo) == (datetime(2026, 10, 6, 18, 0), "Palestra")
+    assert visitantes.eh_visitante(antigo) and visitantes.eh_visitante(texto)
+    assert not visitantes.eh_visitante("Maria - 9A") and visitantes.ler_duracao("Maria - 9A")[0] is False
 
 
-def test_criar_listar_e_encerrar_visitantes(logado, mk):
+def test_script_do_vigia_casa_com_o_comentario():
+    # O vigia lê a duração a partir da letra 21 e procura o comentário do prazo.
+    assert len("painel-visitante por ") == 21
+    assert visitantes.comentario(None, "")[21:31] == "fim do dia"
+    assert visitantes.COMENTARIO_PRAZO.startswith("Painel do Hotspot: prazo")
+    assert '[find user=\\"" . $nome . "\\"]' in visitantes.SCRIPT_VIGIA
+
+
+def test_criar_sem_prazo_aguarda_o_primeiro_acesso(logado, mk):
     r = logado.post("/api/visitantes", json={"quantidade": 3, "minutos": 120, "perfil": "alunos", "descricao": "Palestra"})
     assert r.status_code == 200, r.text
     criados = r.json()["criados"]
-    assert len(criados) == 3 and len({c["usuario"] for c in criados}) == 3
     assert [c["usuario"] for c in criados] == ["visita1", "visita2", "visita3"]
-    assert all(len(c["senha"]) == 6 and c["senha"].isdigit() for c in criados)
+    assert all(len(c["senha"]) == 6 and c["senha"].isdigit() and c["aguardando"] for c in criados)
 
-    usuario = next(u for u in mk.tabelas[USUARIOS] if u["name"] == criados[0]["usuario"])
-    assert usuario["profile"] == "alunos" and usuario["comment"].startswith("painel-visitante até ")
+    usuario = next(u for u in mk.tabelas[USUARIOS] if u["name"] == "visita1")
+    assert usuario["profile"] == "alunos" and usuario["comment"] == f"painel-visitante por 120 min lote {criados[0]['lote']} | Palestra"
     agenda = {a["name"]: a for a in mk.tabelas[AGENDA]}
-    tarefa = agenda[f"painel-visitante-{usuario['name']}"]
-    ate = datetime.now() + timedelta(minutes=120)
-    assert tarefa["start-date"] == f"{ate:%Y-%m-%d}" and tarefa["interval"] == "0s"
-    script = tarefa["on-event"]
-    assert f'/ip hotspot user remove [find name="{usuario["name"]}"]' in script
-    assert f'/ip hotspot active remove [find user="{usuario["name"]}"]' in script
-    assert f'/system scheduler remove [find name="painel-visitante-{usuario["name"]}"]' in script
+    # Sem prazo: nenhum agendamento por visitante, só o vigia.
+    assert not any(n.startswith("painel-visitante-") for n in agenda)
+    assert agenda["painel-visitantes"]["interval"] == "30s"
+    assert any(s["name"] == "painel-visitantes" and s["source"] == visitantes.SCRIPT_VIGIA for s in mk.tabelas[SCRIPTS])
 
     lista = logado.get("/api/visitantes").json()
-    assert len(lista) == 3 and all(v["agendado"] and not v["expirado"] and v["descricao"] == "Palestra" for v in lista)
+    assert len(lista) == 3 and all(v["aguardando"] and v["agendado"] and not v["expirado"] and v["duracao"] == "2 horas"
+                                   and v["descricao"] == "Palestra" for v in lista)
 
-    mk.adicionar("/ip/hotspot/active", {"user": usuario["name"]})
-    mk.adicionar("/ip/hotspot/cookie", {"user": usuario["name"], "mac-address": "AA:AA:AA:AA:AA:AA"})
-    assert logado.delete(f"/api/visitantes/{usuario['.id']}").status_code == 200
-    assert usuario not in mk.tabelas[USUARIOS]
-    assert f"painel-visitante-{usuario['name']}" not in {a["name"] for a in mk.tabelas[AGENDA]}
-    assert mk.tabelas["/ip/hotspot/active"] == [] and mk.tabelas["/ip/hotspot/cookie"] == []
-    assert len(logado.get("/api/visitantes").json()) == 2
+    # O vigia (no MikroTik) agenda a saída no primeiro acesso: o painel mostra a hora.
+    fim = datetime.now() + timedelta(minutes=120)
+    mk.adicionar(AGENDA, {"name": "painel-visitante-visita1", "interval": "2h", "comment": "Painel do Hotspot: remove o visitante visita1",
+                          "next-run": f"{fim:%Y-%m-%d %H:%M:%S}"})
+    v1 = next(v for v in logado.get("/api/visitantes").json() if v["usuario"] == "visita1")
+    assert not v1["aguardando"] and v1["ate"] == f"{fim:%Y-%m-%dT%H:%M}"
+
+    # Criar de novo não duplica o vigia.
+    logado.post("/api/visitantes", json={"quantidade": 1, "minutos": 60})
+    assert sum(a["name"] == "painel-visitantes" for a in mk.tabelas[AGENDA]) == 1
 
 
-def test_visitante_ate_o_fim_do_dia_e_data_antiga(logado, mk):
-    mk.aceita_data_iso = False
-    r = logado.post("/api/visitantes", json={"quantidade": 1, "ate_fim_do_dia": True})
+def test_criar_com_prazo_agenda_o_prazo(logado, mk):
+    prazo = (datetime.now() + timedelta(days=3)).replace(second=0, microsecond=0)
+    r = logado.post("/api/visitantes", json={"quantidade": 1, "ate_fim_do_dia": True, "prazo": f"{prazo:%Y-%m-%dT%H:%M}"})
     assert r.status_code == 200, r.text
-    tarefa = mk.tabelas[AGENDA][-1]
-    meses = ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
-    hoje = datetime.now()
-    assert tarefa["start-date"] == f"{meses[hoje.month - 1]}/{hoje:%d/%Y}" and tarefa["start-time"] == "23:59:00"
+    usuario = mk.tabelas[USUARIOS][-1]
+    assert usuario["comment"] == f"painel-visitante por fim do dia prazo {prazo:%Y-%m-%d %H:%M} lote {r.json()['criados'][0]['lote']}"
+    tarefa = next(a for a in mk.tabelas[AGENDA] if a["name"] == f"painel-visitante-{usuario['name']}")
+    assert tarefa["start-date"] == f"{prazo:%Y-%m-%d}" and tarefa["start-time"] == f"{prazo:%H:%M:00}"
+    assert tarefa["interval"] == "0s" and tarefa["comment"].startswith(visitantes.COMENTARIO_PRAZO)
+    assert f'/ip hotspot user remove [find name="{usuario["name"]}"]' in tarefa["on-event"]
+    v = logado.get("/api/visitantes").json()[0]
+    assert v["aguardando"] and v["agendado"] and v["prazo"] == f"{prazo:%Y-%m-%dT%H:%M}"
+
+    passado = (datetime.now() - timedelta(minutes=1)).strftime("%Y-%m-%dT%H:%M")
+    assert logado.post("/api/visitantes", json={"quantidade": 1, "minutos": 60, "prazo": passado}).status_code == 400
+
+
+def test_cartao_antigo_continua_listado(logado, mk):
+    mk.aceita_data_iso = False
+    ate = datetime.now() + timedelta(hours=1)
+    mk.adicionar(USUARIOS, {"name": "pais1", "password": "123456", "comment": f"painel-visitante até {ate:%Y-%m-%d %H:%M}"})
+    mk.adicionar(AGENDA, {"name": "painel-visitante-pais1"})
+    v = logado.get("/api/visitantes").json()[0]
+    assert v["usuario"] == "pais1" and v["ate"] == f"{ate:%Y-%m-%dT%H:%M}" and v["agendado"] and not v["aguardando"]
+
+
+def test_data_do_agendador():
+    assert visitantes._data_hora("2026-11-07 14:30:00") == datetime(2026, 11, 7, 14, 30)
+    assert visitantes._data_hora("nov/07/2026 14:30:00") == datetime(2026, 11, 7, 14, 30)
+    assert visitantes._data_hora("") is None
 
 
 def test_nao_encerra_usuario_comum(logado, mk):
@@ -146,7 +194,7 @@ def test_nome_do_usuario_escolhido(logado, mk):
     r = logado.post("/api/visitantes", json={"quantidade": 3, "minutos": 60, "nome": "Pais", "descricao": "Reunião"}).json()
     assert [c["usuario"] for c in r["criados"]] == ["pais2", "pais3", "pais4"]
     agenda = {a["name"] for a in mk.tabelas[AGENDA]}
-    assert {"painel-visitante-pais2", "painel-visitante-pais4"} <= agenda
+    assert agenda == {"painel-visitantes"}  # sem prazo: o tempo só é agendado no primeiro acesso
 
 
 def test_nome_do_visitante_reaproveita_o_menor_numero_livre(logado, mk):

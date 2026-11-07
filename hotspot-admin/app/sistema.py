@@ -4,6 +4,7 @@ import logging
 import re
 import threading
 import time
+from datetime import datetime
 
 from . import util
 from .mikrotik import ErroAutenticacao, ErroMikrotik, Mikrotik
@@ -115,6 +116,112 @@ def trafego(mk: Mikrotik, nomes: list[str]) -> list[dict]:
             "saida_bps": util.inteiro(item.get("tx-bits-per-second")),
         })
     return resultado
+
+
+# ------------------------------------------------------------------ relógio
+
+RELOGIO = "/system/clock"
+NTP = "/system/ntp/client"
+TOLERANCIA_RELOGIO = 120  # segundos de diferença para o PC antes de avisar
+_MESES = ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
+
+
+def _data_relogio(data: str, hora: str) -> datetime | None:
+    """"2026-11-07" (7.10+) ou "nov/07/2026", com "HH:MM:SS"."""
+    try:
+        if "/" in data:
+            mes, dia, ano = data.split("/")
+            data = f"{ano}-{_MESES.index(mes.lower()) + 1:02d}-{dia}"
+        return datetime.strptime(f"{data} {hora[:8]}", "%Y-%m-%d %H:%M:%S")
+    except (ValueError, IndexError):
+        return None
+
+
+def _texto_diferenca(segundos: int) -> str:
+    minutos = round(abs(segundos) / 60)
+    quanto = f"{minutos} minuto(s)" if minutos < 120 else f"{round(minutos / 60)} hora(s)"
+    return f"{quanto} {'adiantada' if segundos > 0 else 'atrasada'}"
+
+
+def relogio(mk: Mikrotik, agora: datetime | None = None) -> dict:
+    """Hora do MikroTik contra a deste PC e o estado do NTP: os visitantes e a
+    rede Alunos dependem do relógio do roteador."""
+    agora = agora or datetime.now()
+    clock = _objeto(mk, RELOGIO)
+    hora_mk = _data_relogio(clock.get("date", ""), clock.get("time", ""))
+    ntp = _opcional(lambda: _objeto(mk, NTP), {})
+    diferenca = round((hora_mk - agora).total_seconds()) if hora_mk else None
+    ntp_ligado = util.sim(ntp.get("enabled"))
+    sincronizado = ntp_ligado and ntp.get("status", "") == "synchronized"
+    motivos = []
+    if diferenca is None:
+        motivos.append("não foi possível ler a hora do MikroTik")
+    elif abs(diferenca) > TOLERANCIA_RELOGIO:
+        motivos.append(f"a hora do MikroTik está {_texto_diferenca(diferenca)} em relação a este computador")
+    if not ntp_ligado:
+        motivos.append("o NTP do MikroTik está desligado")
+    elif not sincronizado:
+        motivos.append(f"o NTP do MikroTik não está sincronizado ({ntp.get('status') or 'sem resposta'})")
+    return {
+        "hora": f"{hora_mk:%Y-%m-%dT%H:%M:%S}" if hora_mk else "",
+        "fuso": clock.get("time-zone-name", ""),
+        "diferenca": diferenca,
+        "ntp_ligado": ntp_ligado,
+        "sincronizado": sincronizado,
+        "servidor": ntp.get("synced-server", ""),
+        "servidores": [s for s in (ntp.get("servers") or "").split(",") if s],
+        "alerta": bool(motivos),
+        "motivos": motivos,
+    }
+
+
+# ------------------------------------------------------------------ atualização do painel
+
+REPOSITORIO = "jmanoelslva/escola-hotspot"
+URL_RELEASE = f"https://api.github.com/repos/{REPOSITORIO}/releases/latest"
+
+
+def verificar_painel(versao_atual: str, buscar=None) -> dict:
+    """Última release do painel no GitHub (repositório público, sem token)."""
+    import httpx
+
+    resultado = {"atual": versao_atual, "disponivel": "", "tem": False, "nome": "", "url": "", "zip": "",
+                 "verificado_em": time.strftime("%Y-%m-%dT%H:%M:%S"), "falhou": False, "motivo": ""}
+    try:
+        if buscar:
+            dados = buscar()
+        else:
+            resposta = httpx.get(URL_RELEASE, timeout=10, headers={"Accept": "application/vnd.github+json",
+                                                                    "User-Agent": "painel-hotspot"})
+            resposta.raise_for_status()
+            dados = resposta.json()
+    except Exception as erro:  # sem internet no PC, GitHub fora etc.
+        log.info("verificação do painel falhou: %r", erro)
+        return {**resultado, "falhou": True, "motivo": "sem resposta do GitHub"}
+    disponivel = (dados.get("tag_name") or "").lstrip("v")
+    return {**resultado, "disponivel": disponivel, "nome": dados.get("name", ""), "url": dados.get("html_url", ""),
+            "zip": dados.get("zipball_url", ""),
+            "tem": bool(disponivel and _versao(disponivel) > _versao(versao_atual))}
+
+
+class VerificadorPainel:
+    """Consulta o GitHub no máximo a cada 6 horas."""
+
+    def __init__(self, versao_atual: str, buscar=None):
+        self._versao = versao_atual
+        self._buscar = buscar
+        self._resultado: dict | None = None
+        self._quando = 0.0
+        self._trava = threading.Lock()
+
+    def obter(self, forcar: bool = False) -> dict:
+        with self._trava:
+            if not forcar and self._resultado and time.monotonic() - self._quando < INTERVALO_VERIFICACAO:
+                return self._resultado
+        resultado = verificar_painel(self._versao, self._buscar)
+        with self._trava:
+            self._resultado, self._quando = resultado, time.monotonic()
+        return resultado
 
 
 # ------------------------------------------------------------------ atualização

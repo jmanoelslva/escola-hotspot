@@ -14,7 +14,7 @@ import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from . import sistema, util
+from . import backup_config, sistema, util
 from .mikrotik import Mikrotik
 
 INTERVALO = 300
@@ -169,6 +169,7 @@ class Coletor(threading.Thread):
                     continue
                 with mk:
                     coletar(mk, self._dados)
+                    backup_config.semanal(mk, self._dados)
             except Exception as erro:  # a coleta nunca derruba o painel
                 _log.warning("coleta de uso falhou: %r", erro)
 

@@ -28,6 +28,13 @@ function linhaVazia(corpo, colunas, texto) {
     corpo.append(el('tr', {}, el('td', { colspan: colunas, class: 'vazio', texto })));
 }
 
+// Tela vazia com o próximo passo: a mensagem e um botão que leva até ele.
+function linhaVaziaComAcao(colunas, texto, rotulo, acao) {
+    return el('tr', {}, el('td', { colspan: colunas, class: 'vazio' },
+        el('div', { class: 'vazio-acao' }, el('span', { texto }),
+            el('button', { class: 'botao primario', type: 'button', texto: rotulo, onclick: acao }))));
+}
+
 // ------------------------------------------------------------------ perfis e horário
 
 estado.perfisDetalhes = [];
@@ -432,7 +439,52 @@ function resultadoRestauracao(r) {
     return 'Recriados: ' + partes.join(', ') + '.' + (r.erros.length ? ' Erros: ' + r.erros.join('; ') : '');
 }
 
+// ------------------------------------------------------------------ cópia da configuração do MikroTik
+
+function tamanhoArquivo(n) {
+    return n >= 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+}
+
+async function copiarConfiguracao(botao) {
+    await comBotao(botao, async () => {
+        try {
+            await api('POST', '/api/backups-config');
+            aviso('Configuração do MikroTik copiada.');
+            await carregarBackupsConfig();
+        } catch (erro) { aviso(erro.message, true); }
+    });
+}
+
+async function carregarBackupsConfig() {
+    const lista = await api('GET', '/api/backups-config');
+    const corpo = $('#lista-backups-config');
+    corpo.replaceChildren();
+    if (!lista.length) {
+        corpo.append(linhaVaziaComAcao(3, 'Nenhuma cópia da configuração ainda. A primeira é feita sozinha nesta semana.',
+            'Copiar agora', (e) => copiarConfiguracao(e.target)));
+    }
+    for (const b of lista) {
+        corpo.append(el('tr', {},
+            el('td', {}, el('strong', { texto: dataHora(b.criado_em) || b.nome })),
+            el('td', { 'data-rotulo': 'Tamanho', texto: tamanhoArquivo(b.tamanho) }),
+            el('td', {}, el('div', { class: 'acoes' },
+                el('a', { class: 'botao pequeno cor-azul', href: '/api/backups-config/' + encodeURIComponent(b.nome), download: b.nome, texto: 'Baixar' }),
+                el('button', { class: 'botao pequeno cor-vermelho', type: 'button', texto: 'Excluir', onclick: async () => {
+                    if (!await confirmar('Excluir cópia', `Excluir a cópia da configuração de ${dataHora(b.criado_em)}? O arquivo é apagado deste computador.`, 'Excluir')) return;
+                    try {
+                        await api('DELETE', '/api/backups-config/' + encodeURIComponent(b.nome));
+                        aviso('Cópia excluída.');
+                        await carregarBackupsConfig();
+                    } catch (erro) { aviso(erro.message, true); }
+                } }))),
+        ));
+    }
+}
+
+$('#fazer-backup-config').addEventListener('click', (e) => copiarConfiguracao(e.target));
+
 async function carregarBackups() {
+    carregarBackupsConfig().catch((e) => aviso(e.message, true));
     const lista = await api('GET', '/api/backups');
     const corpo = $('#lista-backups');
     corpo.replaceChildren();
@@ -945,11 +997,17 @@ function validoAte(iso) {
         : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' + hora;
 }
 
+// Cartão antigo ou já em uso: "até hoje, 15:30"; não usado: "2 horas a partir do 1º acesso · usar até 10/11 18:00".
+function validadeVisitante(v) {
+    if (!v.aguardando) return v.ate ? 'até ' + validoAte(v.ate) : '—';
+    return v.duracao + ' a partir do 1º acesso' + (v.prazo ? ' · usar até ' + validoAte(v.prazo) : '');
+}
+
 estado.qrWifi = '';
 
 function cartaoVisitante(v) {
     return { usuario: v.usuario, senha: v.senha,
-        comentario: 'Visitante · válido até ' + validoAte(v.ate) + (v.descricao ? ' · ' + v.descricao : ''),
+        comentario: 'Visitante · válido ' + validadeVisitante(v) + (v.descricao ? ' · ' + v.descricao : ''),
         qr_wifi: estado.qrWifi, qr_login: v.qr_login };
 }
 
@@ -985,28 +1043,106 @@ async function carregarVisitantes() {
     for (const id of [...estado.visitantesSelecionados]) if (!ids.has(id)) estado.visitantesSelecionados.delete(id);
     $('#encerrar-todos-visitantes').disabled = lista.length === 0;
     $('#imprimir-visitantes').disabled = !lista.some((v) => !v.expirado);
+    renderVisitantes();
+}
 
+// ------------------------------------------------------------------ lotes de visitantes
+
+estado.lotesAbertos = new Set();
+const SEM_LOTE = 'anteriores';
+
+// Lotes do mais novo para o mais antigo; os cartões de versões anteriores (sem lote) por último.
+function lotesVisitantes(lista) {
+    const mapa = new Map();
+    for (const v of lista) {
+        const chave = v.lote || SEM_LOTE;
+        if (!mapa.has(chave)) mapa.set(chave, []);
+        mapa.get(chave).push(v);
+    }
+    return [...mapa.entries()].sort(([a], [b]) => (a === SEM_LOTE) - (b === SEM_LOTE) || b.localeCompare(a));
+}
+
+function resumoLote(chave, itens) {
+    if (chave === SEM_LOTE) return `${itens.length} cartão(ões) com data marcada desde a criação`;
+    const v = itens[0];
+    return [`${itens.length} cartão(ões)`, v.duracao + ' a partir do 1º acesso',
+        v.prazo ? 'usar até ' + validoAte(v.prazo) : 'sem prazo para usar',
+        v.criado_em ? 'criado ' + validoAte(v.criado_em) : null].filter(Boolean).join(' · ');
+}
+
+function linhaLote(chave, itens) {
+    const aberto = estado.lotesAbertos.has(chave);
+    const emUso = itens.filter((v) => !v.aguardando && !v.expirado).length;
+    const conectados = itens.filter((v) => v.conectado).length;
+    const marcados = itens.filter((v) => estado.visitantesSelecionados.has(v.id)).length;
+    const titulo = chave === SEM_LOTE ? 'Cartões de versões anteriores' : (itens[0].descricao || 'Lote sem descrição');
+    const validos = itens.filter((v) => !v.expirado);
+    const caixa = el('input', {
+        type: 'checkbox', checked: marcados === itens.length, 'aria-label': 'Selecionar o lote ' + titulo,
+        onchange: (e) => {
+            for (const v of itens) e.target.checked ? estado.visitantesSelecionados.add(v.id) : estado.visitantesSelecionados.delete(v.id);
+            renderVisitantes();
+        },
+    });
+    caixa.indeterminate = marcados > 0 && marcados < itens.length;
+    const alternar = () => {
+        aberto ? estado.lotesAbertos.delete(chave) : estado.lotesAbertos.add(chave);
+        renderVisitantes();
+    };
+    return el('tr', { class: 'linha-lote' + (aberto ? ' aberto' : '') },
+        el('td', { class: 'col-check' }, caixa),
+        el('td', { colspan: 4, class: 'titulo-lote' },
+            el('button', { class: 'alternar-lote', type: 'button', 'aria-expanded': String(aberto), onclick: alternar },
+                el('span', { class: 'seta', 'aria-hidden': 'true', texto: '▸' }), el('strong', { texto: titulo })),
+            el('small', { class: 'detalhe-lote', texto: resumoLote(chave, itens) })),
+        el('td', { 'data-rotulo': 'Uso' },
+            el('div', { class: 'barra-lote', role: 'img', 'aria-label': `${emUso} de ${itens.length} em uso` },
+                el('span', { style: `width: ${Math.round(emUso / itens.length * 100)}%` })),
+            el('small', { class: 'detalhe-lote', texto: `${emUso} em uso · ${itens.length - emUso} sem uso` + (conectados ? ` · ${conectados} conectado(s)` : '') })),
+        el('td', {}, el('div', { class: 'acoes' },
+            el('button', { class: 'botao pequeno cor-roxo', type: 'button', texto: 'Imprimir lote', disabled: !validos.length,
+                onclick: () => imprimir(validos.map(cartaoVisitante)) }),
+            el('button', { class: 'botao pequeno cor-vermelho', type: 'button', texto: 'Encerrar lote',
+                onclick: () => encerrarVarios({ ids: itens.map((v) => v.id) }, `Encerrar as ${itens.length} senha(s) do lote "${titulo}"? Quem estiver conectado é desconectado.`) }))),
+    );
+}
+
+function linhaVisitante(v) {
+    const situacao = v.expirado
+        ? el('span', { class: 'etiqueta bloqueado', texto: 'Expirado' })
+        : v.conectado ? el('span', { class: 'etiqueta ok', texto: 'Conectado' })
+            : el('span', { class: 'etiqueta off', texto: v.aguardando ? 'Não usado' : 'Em uso' });
+    return el('tr', { class: 'linha-filho' + (v.expirado ? ' inativo' : '') },
+        el('td', { class: 'col-check' }, el('input', {
+            type: 'checkbox', checked: estado.visitantesSelecionados.has(v.id), 'aria-label': 'Selecionar ' + v.usuario,
+            onchange: (e) => { e.target.checked ? estado.visitantesSelecionados.add(v.id) : estado.visitantesSelecionados.delete(v.id); renderVisitantes(); },
+        })),
+        el('td', {}, el('strong', { class: 'mono', texto: v.usuario })),
+        el('td', { 'data-rotulo': 'Senha', class: 'mono', texto: v.senha }),
+        el('td', { 'data-rotulo': 'Descrição', texto: v.descricao || '—' }),
+        el('td', { 'data-rotulo': 'Validade', texto: validadeVisitante(v) }),
+        el('td', {}, situacao, v.agendado ? null : el('span', { class: 'etiqueta alerta-amarelo', title: 'Sem agendamento no MikroTik: crie uma senha nova para o painel refazer o vigia, ou encerre manualmente', texto: ' sem agendamento' })),
+        el('td', {}, el('div', { class: 'acoes' },
+            el('button', { class: 'botao pequeno cor-roxo', type: 'button', texto: 'Imprimir', onclick: () => imprimir([cartaoVisitante(v)]) }),
+            el('button', { class: 'botao pequeno cor-vermelho', type: 'button', texto: 'Encerrar agora', onclick: () => encerrarVisitante(v) }))),
+    );
+}
+
+function renderVisitantes() {
     const corpo = $('#lista-visitantes');
     corpo.replaceChildren();
-    if (!lista.length) linhaVazia(corpo, 7, 'Nenhum visitante com senha válida.');
-    for (const v of lista) {
-        const situacao = v.expirado
-            ? el('span', { class: 'etiqueta bloqueado', texto: 'Expirado' })
-            : v.conectado ? el('span', { class: 'etiqueta ok', texto: 'Conectado' }) : el('span', { class: 'etiqueta off', texto: 'Válido' });
-        corpo.append(el('tr', { class: v.expirado ? 'inativo' : '' },
-            el('td', { class: 'col-check' }, el('input', {
-                type: 'checkbox', checked: estado.visitantesSelecionados.has(v.id), 'aria-label': 'Selecionar ' + v.usuario,
-                onchange: (e) => { e.target.checked ? estado.visitantesSelecionados.add(v.id) : estado.visitantesSelecionados.delete(v.id); atualizarSelecaoVisitantes(); },
-            })),
-            el('td', {}, el('strong', { class: 'mono', texto: v.usuario })),
-            el('td', { 'data-rotulo': 'Senha', class: 'mono', texto: v.senha }),
-            el('td', { 'data-rotulo': 'Descrição', texto: v.descricao || '—' }),
-            el('td', { 'data-rotulo': 'Válido até', texto: validoAte(v.ate) }),
-            el('td', {}, situacao, v.agendado ? null : el('span', { class: 'etiqueta alerta-amarelo', title: 'Sem agendamento no MikroTik: encerre manualmente', texto: ' sem agendamento' })),
-            el('td', {}, el('div', { class: 'acoes' },
-                el('button', { class: 'botao pequeno cor-roxo', type: 'button', texto: 'Imprimir', onclick: () => imprimir([cartaoVisitante(v)]) }),
-                el('button', { class: 'botao pequeno cor-vermelho', type: 'button', texto: 'Encerrar agora', onclick: () => encerrarVisitante(v) }))),
-        ));
+    if (!estado.visitantes.length) {
+        corpo.append(linhaVaziaComAcao(7, 'Nenhum visitante com senha válida.', 'Criar senhas', () => {
+            const form = $('#form-visitantes');
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            form.quantidade.focus();
+        }));
+    }
+    const lotes = lotesVisitantes(estado.visitantes);
+    if (lotes.length === 1) estado.lotesAbertos.add(lotes[0][0]);  // um lote só: já aberto
+    for (const [chave, itens] of lotes) {
+        corpo.append(linhaLote(chave, itens));
+        if (estado.lotesAbertos.has(chave)) corpo.append(...itens.map(linhaVisitante));
     }
     atualizarSelecaoVisitantes();
 }
@@ -1041,6 +1177,7 @@ $('#form-visitantes').addEventListener('submit', async (evento) => {
         perfil: form.perfil.value,
         descricao: form.descricao.value.trim(),
         nome: form.nome.value.trim(),
+        prazo: form.prazo.value || null,
     };
     lembrar('perfil-visitante', dados.perfil);
     const l = estado.limiteVisitantes;
@@ -1054,7 +1191,7 @@ $('#form-visitantes').addEventListener('submit', async (evento) => {
     await comBotao(form.querySelector('[type=submit]'), async () => {
         try {
             const r = await api('POST', '/api/visitantes', dados);
-            aviso(`${r.criados.length} senha(s) de visitante criada(s), válida(s) até ${validoAte(r.criados[0].ate)}.`);
+            aviso(`${r.criados.length} senha(s) de visitante criada(s), válida(s) por ${validadeVisitante(r.criados[0])}.`);
             await carregarVisitantes();
         } catch (e) { aviso(e.message, true); }
     });
@@ -1081,12 +1218,12 @@ async function encerrarVarios(corpo, texto) {
 
 $('#marcar-todos-visitantes').addEventListener('change', (e) => {
     estado.visitantesSelecionados = new Set(e.target.checked ? estado.visitantes.map((v) => v.id) : []);
-    document.querySelectorAll('#lista-visitantes input[type=checkbox]').forEach((c) => { c.checked = e.target.checked; });
+    renderVisitantes();
     atualizarSelecaoVisitantes();
 });
 $('#limpar-selecao-visitantes').addEventListener('click', () => {
     estado.visitantesSelecionados.clear();
-    document.querySelectorAll('#lista-visitantes input[type=checkbox]').forEach((c) => { c.checked = false; });
+    renderVisitantes();
     atualizarSelecaoVisitantes();
 });
 $('#imprimir-visitantes-selecionados').addEventListener('click', () =>

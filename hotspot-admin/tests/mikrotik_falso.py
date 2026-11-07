@@ -63,7 +63,10 @@ class MikrotikFalso:
             "/ip/dns": {"servers": "8.8.8.8", "allow-remote-requests": "true"},
             "/system/license": {"software-id": "ABCD-1234", "nlevel": "4"},
             "/system/clock": {"date": "2026-10-06", "time": "22:10:30", "time-zone-name": "America/Maceio"},
+            "/system/ntp/client": {"enabled": "true", "servers": "a.ntp.br,b.ntp.br", "status": "synchronized",
+                                   "synced-server": "a.ntp.br"},
         }
+        self.export = "# 2026-10-06 22:10:30 by RouterOS 7.15.3\r\n/ip hotspot profile add name=hsprof1\r\n"
         self.versao_disponivel = "7.16.1"
         self.verificacoes = 0
         self.trafego_aleatorio = False
@@ -104,6 +107,10 @@ class MikrotikFalso:
             estado["latest-version"] = self.versao_disponivel
             estado["status"] = "New version is available" if self.versao_disponivel != estado["installed-version"] else "System is already up to date"
             return httpx.Response(200, json=[{"status": estado["status"]}])
+        if pedido.method == "POST" and caminho == "/execute":
+            if (corpo or {}).get("script", "").startswith("/export"):
+                return httpx.Response(200, json={"ret": self.export})
+            return httpx.Response(200, json={"ret": ""})
         if pedido.method == "POST" and caminho == "/interface/monitor-traffic":
             nomes = (corpo or {}).get("interface", "").split(",")
             if self.trafego_aleatorio:  # só para a demonstração visual

@@ -51,13 +51,13 @@ def test_id_invalido_nao_vai_para_o_mikrotik(logado, mk):
 def test_criar_listar_alterar_excluir_usuario(logado, mk):
     r = logado.post("/api/usuarios", json={
         "nome": "maria.silva", "senha": "abc123", "perfil": "alunos",
-        "comentario": "Maria - 9A", "limite_tempo": "2h", "mac": "aa-bb-cc-dd-ee-ff",
+        "comentario": "Maria - 9A", "mac": "aa-bb-cc-dd-ee-ff",
     })
     assert r.status_code == 200, r.text
     criado = mk.tabelas[USUARIOS][-1]
     assert criado["name"] == "maria.silva"
     assert criado["profile"] == "alunos"
-    assert criado["limit-uptime"] == "2h"
+    assert "limit-uptime" not in criado  # sem limite de tempo por usuário: só o do perfil
     assert criado["mac-address"] == "AA:BB:CC:DD:EE:FF"
 
     lista = logado.get("/api/usuarios").json()
@@ -65,10 +65,9 @@ def test_criar_listar_alterar_excluir_usuario(logado, mk):
     usuario = lista[0]
     assert usuario["senha"] == "abc123"
 
-    r = logado.patch(f"/api/usuarios/{usuario['id']}", json={"desativado": True, "limite_tempo": "", "mac": ""})
+    r = logado.patch(f"/api/usuarios/{usuario['id']}", json={"desativado": True, "mac": ""})
     assert r.status_code == 200, r.text
     assert criado["disabled"] == "true"
-    assert criado["limit-uptime"] == "0s"
     assert criado["mac-address"] == "00:00:00:00:00:00"
     assert logado.get("/api/usuarios").json()[0]["mac"] == ""
 

@@ -31,7 +31,7 @@ def trocar(mk: Mikrotik, usuario: str, atual: str, nova: str) -> str:
     item = next((u for u in mk.listar(USUARIOS, {"name": usuario})), None)
     # Mesma mensagem para usuário inexistente, visitante ou senha errada: não revela quem existe.
     if (not item or item.get("password", "") != atual or util.sim(item.get("default"))
-            or visitantes.ler_comentario(item.get("comment", ""))[0] is not None):
+            or visitantes.eh_visitante(item.get("comment", ""))):
         raise util.ErroDados(ERRO_GENERICO)
     if util.sim(item.get("disabled")):
         raise util.ErroDados("Este usuário está desativado. Procure a secretaria.")

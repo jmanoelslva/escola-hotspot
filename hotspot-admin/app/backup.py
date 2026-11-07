@@ -18,7 +18,8 @@ BINDINGS = "/ip/hotspot/ip-binding"
 MANTER = 30
 _NOME = re.compile(r"^backup-\d{4}-\d{2}-\d{2}(-\d{6})?\.json$")
 
-_CAMPOS_USUARIO = ("name", "password", "profile", "comment", "limit-uptime", "mac-address", "disabled")
+# Sem "limit-uptime": o limite vitalício saiu do painel e não volta por restauração.
+_CAMPOS_USUARIO = ("name", "password", "profile", "comment", "mac-address", "disabled")
 _CAMPOS_BINDING = ("type", "mac-address", "address", "server", "comment", "disabled")
 _CAMPOS_PERFIL = ("name", "rate-limit", "shared-users", "session-timeout", "address-list")
 
@@ -84,7 +85,7 @@ def listar(dados: Path) -> list[dict]:
             "bloqueios": len(conteudo.get("bloqueios", [])),
             "tamanho": arquivo.stat().st_size,
         })
-    return sorted(resultado, key=lambda b: b["nome"], reverse=True)
+    return sorted(resultado, key=lambda b: (b["criado_em"], b["nome"]), reverse=True)
 
 
 def caminho(dados: Path, nome: str) -> Path:

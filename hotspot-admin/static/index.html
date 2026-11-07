@@ -56,23 +56,20 @@
     </nav>
 
     <main class="conteudo">
-        <div id="faixa-atualizacao" class="faixa-atualizacao" role="status" hidden>
-            <span id="texto-faixa-atualizacao"></span>
-            <button id="ver-atualizacao" class="botao pequeno cor-azul" type="button">Ver detalhes</button>
-            <button id="fechar-faixa-atualizacao" class="botao pequeno discreto-escuro" type="button" aria-label="Fechar aviso">✕</button>
-        </div>
-
         <nav id="subabas" class="subabas" role="tablist" hidden></nav>
 
         <!-- Painel geral -->
         <section id="aba-geral" class="painel-aba" hidden>
+            <!-- Só no Início: fechada, só volta quando sair outra versão. -->
+            <div id="faixa-atualizacao" class="faixa-atualizacao" role="status" hidden>
+                <span id="texto-faixa-atualizacao"></span>
+                <button id="ver-atualizacao" class="botao pequeno cor-azul" type="button">Ver detalhes</button>
+                <button id="fechar-faixa-atualizacao" class="botao pequeno discreto-escuro" type="button" aria-label="Fechar aviso">✕</button>
+            </div>
+            <div class="faixa-atualizacao faixa-relogio" id="faixa-relogio" role="alert" hidden>
+                <span id="texto-faixa-relogio"></span>
+            </div>
             <div class="cartoes-resumo" id="cartoes-sistema"></div>
-            <details class="cartao escolha-interfaces">
-                <summary>Escolher as interfaces do gráfico</summary>
-                <div id="lista-interfaces" class="lista-interfaces"></div>
-            </details>
-            <p class="alerta-texto" id="erro-trafego" role="status"></p>
-            <div id="graficos" class="graficos"></div>
             <div class="cartao">
                 <div class="topo-uso">
                     <h2>Uso da internet</h2>
@@ -84,6 +81,21 @@
                 </div>
                 <div id="grafico-uso"></div>
                 <p class="dica legenda-uso"><span class="cor-baixa"></span> Baixado <span class="cor-envia"></span> Enviado <span id="resumo-uso"></span></p>
+            </div>
+            <details class="cartao escolha-interfaces">
+                <summary>Escolher as interfaces do gráfico</summary>
+                <div id="lista-interfaces" class="lista-interfaces"></div>
+            </details>
+            <p class="alerta-texto" id="erro-trafego" role="status"></p>
+            <div id="graficos" class="graficos"></div>
+            <div class="cartao">
+                <h2>Atualização do painel</h2>
+                <p id="estado-painel" class="dica">Verificando…</p>
+                <div id="como-atualizar-painel" class="dica" hidden>
+                    <strong>Como atualizar:</strong> abra a <a id="link-release-painel" href="#" target="_blank" rel="noopener">página da versão nova</a>,
+                    baixe o <strong>Source code (zip)</strong>, copie os arquivos por cima da pasta do painel neste computador
+                    e rode o <strong>instalar.bat</strong> de novo (ele mantém o <strong>.env</strong> e a pasta <strong>dados</strong>).
+                </div>
             </div>
             <div class="cartao">
                 <h2>Atualização do RouterOS</h2>
@@ -123,7 +135,7 @@
                 <table class="tabela">
                     <thead><tr>
                         <th class="col-check"><input type="checkbox" id="marcar-todos" aria-label="Marcar todos"></th>
-                        <th>Usuário</th><th>Senha</th><th>Nome / turma</th><th>Perfil</th><th>Limite</th><th>Situação</th><th></th>
+                        <th>Usuário</th><th>Senha</th><th>Nome / turma</th><th>Perfil</th><th>Situação</th><th></th>
                     </tr></thead>
                     <tbody id="lista-usuarios"></tbody>
                 </table>
@@ -193,13 +205,13 @@
         <section id="aba-visitantes" class="painel-aba" hidden>
             <form id="form-visitantes" class="cartao">
                 <h2>Senhas temporárias para visitantes</h2>
-                <p class="dica">Para palestrantes, pais em reunião, técnicos. Cada senha some sozinha na hora marcada: o próprio MikroTik desconecta e apaga o usuário, mesmo com o painel fechado (o relógio do roteador precisa estar certo).</p>
-                <div class="grade-form">
+                <p class="dica">Para palestrantes, pais em reunião, técnicos. O tempo de cada senha só começa a contar no primeiro acesso; até lá o cartão fica guardado. Com <strong>prazo para usar</strong>, o cartão que ninguém usou até essa data some sozinho. O próprio MikroTik desconecta e apaga o usuário, mesmo com o painel fechado (o relógio do roteador precisa estar certo).</p>
+                <div class="grade-form tres-colunas">
                     <label>Quantidade
                         <input name="quantidade" type="number" min="1" max="200" value="1" required>
                         <small class="ajuda" id="limite-visitantes"></small>
                     </label>
-                    <label>Válida por
+                    <label>Tempo de uso
                         <select name="validade">
                             <option value="60">1 hora</option>
                             <option value="120" selected>2 horas</option>
@@ -210,6 +222,11 @@
                             <option value="4320">3 dias</option>
                             <option value="10080">7 dias</option>
                         </select>
+                        <small class="ajuda">Conta a partir do primeiro acesso.</small>
+                    </label>
+                    <label>Prazo para usar (opcional)
+                        <input name="prazo" type="datetime-local">
+                        <small class="ajuda">Sem uso até essa data, o cartão some.</small>
                     </label>
                     <label>Perfil
                         <select name="perfil" id="perfil-visitantes"></select>
@@ -239,7 +256,7 @@
             </div>
             <div class="tabela-rolagem">
                 <table class="tabela">
-                    <thead><tr><th class="col-check"><input type="checkbox" id="marcar-todos-visitantes" aria-label="Marcar todos os visitantes"></th><th>Usuário</th><th>Senha</th><th>Descrição</th><th>Válido até</th><th>Situação</th><th></th></tr></thead>
+                    <thead><tr><th class="col-check"><input type="checkbox" id="marcar-todos-visitantes" aria-label="Marcar todos os visitantes"></th><th>Usuário</th><th>Senha</th><th>Descrição</th><th>Validade</th><th>Situação</th><th></th></tr></thead>
                     <tbody id="lista-visitantes"></tbody>
                 </table>
             </div>
@@ -467,6 +484,19 @@
                     <tbody id="lista-backups"></tbody>
                 </table>
             </div>
+            <div class="cartao">
+                <h2>Configuração do MikroTik</h2>
+                <p class="dica">Cópia da configuração inteira do roteador (<strong>/export terse</strong>, com as senhas), feita sozinha uma vez por semana. Guarda as últimas 12 na pasta <strong>dados\backups-config</strong> deste computador. Serve para reconstruir o MikroTik se ele for trocado ou resetado: abra o arquivo e cole no Terminal do Winbox, ou importe com <strong>/import</strong>.</p>
+                <div class="barra-acoes">
+                    <button id="fazer-backup-config" class="botao primario" type="button">Copiar configuração agora</button>
+                </div>
+            </div>
+            <div class="tabela-rolagem">
+                <table class="tabela">
+                    <thead><tr><th>Data</th><th>Tamanho</th><th></th></tr></thead>
+                    <tbody id="lista-backups-config"></tbody>
+                </table>
+            </div>
         </section>
 
         <!-- Administradores do MikroTik -->
@@ -635,15 +665,10 @@
         <label>Nome / turma
             <input name="comentario" maxlength="200" placeholder="ex.: Maria da Silva - 9º A">
         </label>
-        <div class="duas-colunas">
-            <label>Perfil
-                <select name="perfil"></select>
-            </label>
-            <label>Limite de tempo
-                <input name="limite_tempo" maxlength="20" placeholder="sem limite" spellcheck="false">
-                <small class="ajuda">ex.: 2h, 1d</small>
-            </label>
-        </div>
+        <label>Perfil
+            <select name="perfil"></select>
+            <small class="ajuda">O tempo de cada conexão e o horário vêm do perfil (Perfis e horário).</small>
+        </label>
         <label>Prender a um aparelho (MAC)
             <input name="mac" maxlength="20" placeholder="opcional" spellcheck="false">
         </label>
@@ -806,6 +831,18 @@
         <div class="janela-botoes">
             <button value="nao" class="botao">Cancelar</button>
             <button value="sim" class="botao perigo cheio" id="confirmar-sim">Confirmar</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="janela-previa" class="janela">
+    <form method="dialog">
+        <h2>Prévia da impressão</h2>
+        <p id="previa-texto" class="dica"></p>
+        <div id="previa-cartao" class="previa-cartao"></div>
+        <div class="janela-botoes">
+            <button value="nao" class="botao">Cancelar</button>
+            <button value="sim" class="botao primario" id="previa-imprimir">Imprimir</button>
         </div>
     </form>
 </dialog>

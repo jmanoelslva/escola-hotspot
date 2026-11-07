@@ -10,6 +10,37 @@ foram juntadas na versão seguinte que tem release. As versões antes da 1.10.0 
 
 ## [Não publicado]
 
+## [1.20.0] - 2026-11-07
+
+Visitantes com tempo a partir do primeiro acesso, prazo para usar e lotes; relógio do MikroTik, cópia semanal da configuração e aviso de versão nova do painel.
+
+### Alterado
+- Formulário de visitantes em duas linhas de três campos.
+- **Painel inicial:** seis cartões numa linha (o Roteador junta modelo, versão, tempo ligado e relógio) e o gráfico Uso da internet logo abaixo.
+- Faixa de atualização só no Início; fechada, só volta quando sair outra versão.
+- Submenus com o item ativo destacado na cor do menu; tabelas e botões não encostam mais nos blocos vizinhos.
+- Backup e cópia da configuração do login rodam em segundo plano (o login não espera).
+- Lista de backups em ordem de data (o backup diário aparecia fora de ordem).
+- Dependências na última versão estável; versões mínimas sobem para as testadas (python-multipart 0.0.33, que corrige falhas de segurança das versões antigas).
+- **Senhas de visitante contam o tempo a partir do primeiro acesso.** Antes o prazo começava na criação e o cartão expirava mesmo sem uso. Agora "Tempo de uso" só começa quando o visitante entra pela primeira vez; até lá o cartão fica guardado. Quem marca o início é o vigia `painel-visitantes` (script + agendador a cada 30 s no MikroTik, criado pelo painel), que funciona com o painel fechado.
+
+### Adicionado
+- **Prazo para usar** (opcional) na criação das senhas de visitante: o cartão que ninguém usou até essa data e hora some sozinho; quem usou antes segue o tempo de uso. Em branco, o cartão fica guardado até o primeiro uso.
+- Lista de visitantes mostra "Não usado" com o tempo de uso e o prazo, ou a hora em que o cartão em uso expira. Cartões criados nas versões anteriores continuam valendo até a data marcada.
+- **Lotes de visitantes:** os cartões criados de uma vez formam um lote. A lista fica agrupada, com o resumo do lote, a barra de cartões em uso e os botões Imprimir lote e Encerrar lote.
+- **Prévia da impressão:** antes de imprimir, o primeiro cartão aparece como vai sair no papel.
+- **Relógio do MikroTik:** o Início avisa quando a hora do roteador difere mais de 2 minutos da deste computador ou quando o NTP está desligado ou fora de sincronia.
+- **Cópia da configuração do MikroTik** (Sistema → Backup): `/export terse` com as senhas, sozinha uma vez por semana e com o botão "Copiar configuração agora"; guarda as últimas 12 em `dados/backups-config`.
+- **Aviso de versão nova do painel:** consulta a última release no GitHub (no máximo a cada 6 horas) e mostra como atualizar.
+- Telas vazias com o próximo passo (Criar senhas, Novo usuário, Copiar agora).
+
+### Segurança
+- O vigia dos visitantes só age sobre nomes de letras e números, e o painel não deixa um usuário comum receber o comentário "painel-visitante".
+- Restaurar um backup não recria o limite de tempo vitalício (`limit-uptime`).
+
+### Removido
+- **"Limite de tempo" no cadastro de usuário** (e a coluna "Limite" na lista e na planilha exportada). Ele gravava o `limit-uptime` do MikroTik, que soma todo o tempo conectado desde a criação e, ao acabar, bloqueia o usuário para sempre; não era o que se esperava. Fica só o tempo de cada conexão do perfil (Perfis e horário). Usuários que ainda tenham um limite antigo no MikroTik não são alterados.
+
 ## [1.19.2] - 2026-10-07
 
 Uso da internet, relatório mensal, troca de senha pelo Wi-Fi e teste dos APs com 5 pings (inclui 1.19.0 e 1.19.1).
@@ -222,7 +253,8 @@ Redes Administrativo e Alunos no MikroTik e controle da Rede Alunos pelo painel.
 - Usuários, conectados, aparelhos (bypass e bloqueio), importação por planilha e impressão de credenciais.
 - Instalação automática no Windows (`instalar.bat`), REST API do RouterOS 7 com HTTPS ou HTTP escolhido sozinho e `mikrotik-https.rsc` para ativar o www-ssl.
 
-[Não publicado]: https://github.com/jmanoelslva/escola-hotspot/compare/v1.19.2...HEAD
+[Não publicado]: https://github.com/jmanoelslva/escola-hotspot/compare/v1.20.0...HEAD
+[1.20.0]: https://github.com/jmanoelslva/escola-hotspot/compare/v1.19.2...v1.20.0
 [1.19.2]: https://github.com/jmanoelslva/escola-hotspot/compare/v1.18.0...v1.19.2
 [1.18.0]: https://github.com/jmanoelslva/escola-hotspot/compare/v1.17.2...v1.18.0
 [1.17.2]: https://github.com/jmanoelslva/escola-hotspot/compare/v1.16.1...v1.17.2

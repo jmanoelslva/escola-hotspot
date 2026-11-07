@@ -175,7 +175,9 @@ input:focus, select:focus { outline: 0; border-color: var(--azul); box-shadow: 0
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--borda);
 }
 .subaba {
     padding: 6px 14px;
@@ -190,7 +192,9 @@ input:focus, select:focus { outline: 0; border-color: var(--azul); box-shadow: 0
     white-space: nowrap;
 }
 .subaba:hover { color: var(--cor); border-color: var(--cor-borda); }
-.subaba.ativa { color: var(--cor); background: var(--cor-fundo); border-color: var(--cor-borda); }
+.subaba.ativa { color: #fff; background: var(--cor); border-color: var(--cor); }
+.subaba.ativa:hover { color: #fff; }
+.subaba:focus-visible { outline: 2px solid var(--cor); outline-offset: 2px; }
 
 .conteudo { padding: 16px; max-width: 1200px; margin: 0 auto; }
 
@@ -213,7 +217,10 @@ input:focus, select:focus { outline: 0; border-color: var(--azul); box-shadow: 0
 .rotulo-inline { margin: 0; flex: 0 1 200px; }
 
 /* Tabelas */
-.tabela-rolagem { background: var(--branco); border: 1px solid var(--borda); border-radius: 12px; overflow-x: auto; }
+.tabela-rolagem { background: var(--branco); border: 1px solid var(--borda); border-radius: 12px; overflow-x: auto; margin-bottom: 16px; }
+.tabela-rolagem:last-child { margin-bottom: 0; }
+.cartao .tabela-rolagem { margin: 12px 0; }
+.cartao > .barra-acoes:last-child { margin-bottom: 0; }
 .tabela { width: 100%; border-collapse: collapse; }
 .tabela th, .tabela td { padding: 9px 12px; text-align: left; border-bottom: 1px solid #edf0f3; vertical-align: middle; }
 .tabela th { font-size: 13px; color: var(--suave); font-weight: 600; background: #f8fafc; white-space: nowrap; }
@@ -370,6 +377,8 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
 
 /* Visitantes e páginas */
 .grade-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0 14px; }
+.grade-form.tres-colunas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 720px) { .grade-form.tres-colunas { grid-template-columns: 1fr; } }
 .destaque-verde { border-color: #9fd3ae; background: #f3fbf5; }
 .lista-senhas { margin: 0 0 12px; padding-left: 18px; }
 .lista-senhas li { margin-bottom: 4px; }
@@ -410,6 +419,41 @@ label.botao { display: inline-flex; margin: 0; font-size: inherit; }
 .qr-miniatura { width: 64px; height: 64px; vertical-align: middle; margin-right: 10px; border: 1px solid var(--borda); border-radius: 4px; background: #fff; }
 .lista-senhas { list-style: none; padding-left: 0; }
 .lista-senhas li { display: flex; align-items: center; margin-bottom: 8px; }
+
+/* Lotes de visitantes */
+.tabela tr.linha-lote td { background: #f7f9fb; border-top: 1px solid var(--borda); vertical-align: middle; }
+.tabela tr.linha-lote.aberto td { background: var(--azul-claro); }
+.titulo-lote { min-width: 260px; }
+.alternar-lote { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; padding: 2px 0; font: inherit; color: var(--azul); cursor: pointer; text-align: left; }
+.alternar-lote:hover strong { text-decoration: underline; }
+.alternar-lote .seta { display: inline-block; transition: transform .15s; font-size: 12px; }
+.linha-lote.aberto .alternar-lote .seta { transform: rotate(90deg); }
+.detalhe-lote { display: block; font-size: 12px; color: var(--suave); margin-top: 2px; }
+.barra-lote { height: 8px; min-width: 110px; background: #e4e7eb; border-radius: 999px; overflow: hidden; }
+.barra-lote span { display: block; height: 100%; background: var(--verde); border-radius: 999px; }
+.tabela tr.linha-filho td:nth-child(2) { padding-left: 28px; }
+@media (prefers-reduced-motion: reduce) { .alternar-lote .seta { transition: none; } }
+
+/* Tela vazia com ação */
+.vazio-acao { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+
+/* Prévia do cartão impresso (mesmas medidas do papel) */
+.previa-cartao { display: flex; justify-content: center; padding: 14px; background: var(--fundo); border-radius: 10px; margin-bottom: 12px; }
+.previa-cartao .credencial { width: 63mm; background: #fff; border: 1px dashed #888; border-radius: 3mm; padding: 3mm 4mm; font-size: 10pt; color: #000; box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+.previa-cartao .credencial-topo { display: flex; align-items: center; gap: 2mm; margin-bottom: 2mm; }
+.previa-cartao .credencial-topo img { width: 12mm; height: auto; }
+.previa-cartao .credencial-topo strong { font-size: 11pt; color: #0d4a7d; }
+.previa-cartao .credencial-escola { font-size: 7pt; line-height: 1.25; color: #333; margin-bottom: 1.5mm; }
+.previa-cartao .credencial-nome { font-size: 8.5pt; color: #333; margin-bottom: 1.5mm; min-height: 1em; }
+.previa-cartao .credencial-campo { display: flex; justify-content: space-between; align-items: baseline; gap: 2mm; border-top: 1px solid #ddd; padding-top: 1mm; margin-top: 1mm; }
+.previa-cartao .credencial-campo b { font-family: Consolas, monospace; font-size: 11pt; word-break: break-all; text-align: right; }
+.previa-cartao .credencial-qrs { display: flex; justify-content: space-around; gap: 2mm; margin-top: 2mm; }
+.previa-cartao .credencial-qrs figure { margin: 0; text-align: center; }
+.previa-cartao .credencial-qrs img { width: 24mm; height: 24mm; display: block; margin: 0 auto; }
+.previa-cartao .credencial-qrs figcaption { font-size: 7pt; color: #333; margin-top: .5mm; }
+
+/* Relógio do MikroTik */
+.faixa-relogio { background: #fdeaea; color: var(--vermelho-escuro); border-color: #f2bcbe; }
 
 /* Celular: tabela vira lista de cartões */
 @media (max-width: 760px) {

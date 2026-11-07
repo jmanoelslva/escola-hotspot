@@ -335,7 +335,9 @@ function renderUsuarios() {
     const corpo = $('#lista-usuarios');
     corpo.replaceChildren();
     if (!lista.length) {
-        corpo.append(el('tr', {}, el('td', { colspan: 8, class: 'vazio', texto: estado.usuarios.length ? 'Nenhum usuário encontrado.' : 'Nenhum usuário cadastrado ainda.' })));
+        corpo.append(estado.usuarios.length
+            ? el('tr', {}, el('td', { colspan: 7, class: 'vazio', texto: 'Nenhum usuário encontrado com esse filtro.' }))
+            : linhaVaziaComAcao(7, 'Nenhum usuário cadastrado ainda.', '+ Novo usuário', () => abrirUsuario(null)));
     }
     for (const u of lista) {
         const marcado = estado.selecionados.has(u.id);
@@ -348,7 +350,6 @@ function renderUsuarios() {
             el('td', { 'data-rotulo': 'Senha', class: 'mono', texto: u.senha || '—' }),
             el('td', { 'data-rotulo': 'Nome', texto: u.comentario }),
             el('td', { 'data-rotulo': 'Perfil', texto: u.perfil }),
-            el('td', { 'data-rotulo': 'Limite', texto: u.limite_tempo ? tempo(u.limite_tempo) : '—' }),
             el('td', {}, u.desativado
                 ? el('span', { class: 'etiqueta off', texto: 'Desativado' })
                 : el('span', { class: 'etiqueta ok', texto: 'Ativo' }),
@@ -450,7 +451,6 @@ function abrirUsuario(usuario) {
         form.senha.placeholder = usuario.senha ? 'atual: ' + usuario.senha : '';
         form.comentario.value = usuario.comentario;
         form.perfil.value = usuario.perfil;
-        form.limite_tempo.value = usuario.limite_tempo;
         form.mac.value = usuario.mac;
     } else {
         form.senha.value = gerarSenha();
@@ -473,7 +473,6 @@ $('#form-usuario').addEventListener('submit', async (evento) => {
         senha: form.senha.value,
         perfil: form.perfil.value,
         comentario: form.comentario.value.trim(),
-        limite_tempo: form.limite_tempo.value.trim(),
         mac: form.mac.value.trim(),
     };
     const editando = estado.editandoUsuario;
@@ -821,8 +820,33 @@ async function imprimir(lista) {
             c.qr_login ? el('figure', {}, el('img', { src: c.qr_login, alt: '' }), el('figcaption', { texto: (c.qr_wifi ? '2. ' : '') + 'Faça o login' })) : null) : null,
     )));
     await imagensProntas(area);
+    if (!await previaImpressao(lista.length)) return;
     await new Promise((pronto) => setTimeout(pronto, 100));  // deixa o navegador desenhar as imagens
     window.print();
+}
+
+// Mostra o primeiro cartão como vai sair no papel antes de abrir a impressão.
+function previaImpressao(quantidade) {
+    const janela = $('#janela-previa');
+    $('#previa-cartao').replaceChildren($('#impressao').firstElementChild.cloneNode(true));
+    $('#previa-texto').textContent = quantidade === 1
+        ? '1 cartão, em folha A4.'
+        : `${quantidade} cartões em folha A4, 3 por linha. Abaixo, o primeiro deles.`;
+    $('#previa-imprimir').textContent = quantidade === 1 ? 'Imprimir' : `Imprimir ${quantidade}`;
+    janela.returnValue = '';
+    janela.showModal();
+    return new Promise((resolver) => {
+        let respondeu = false;
+        const responder = (sim) => {
+            if (respondeu) return;
+            respondeu = true;
+            if (janela.open) janela.close(sim ? 'sim' : 'nao');
+            resolver(sim);
+        };
+        $('#previa-imprimir').onclick = (e) => { e.preventDefault(); responder(true); };
+        janela.querySelector('button[value=nao]').onclick = (e) => { e.preventDefault(); responder(false); };
+        janela.addEventListener('close', () => responder(janela.returnValue === 'sim'), { once: true });
+    });
 }
 
 // ------------------------------------------------------------------ início

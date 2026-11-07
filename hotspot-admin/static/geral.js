@@ -64,11 +64,31 @@ function renderSistema() {
         cartao('CPU', s.cpu + '%', null, s.cpu >= 80 ? 'alerta-numero' : ''),
         cartao('Memória', memoria + '%', `${bytes(s.memoria_usada)} de ${bytes(s.memoria_total)}`, memoria >= 90 ? 'alerta-numero' : ''),
         cartao('Temperatura', s.temperatura === null ? '—' : String(s.temperatura).replace('.', ',') + ' °C', null, quente ? 'alerta-numero' : ''),
-        cartao('Ligado há', tempo(s.uptime) || '—'),
+        cartaoRoteador(s),
         cartaoSessoes(s),
         cartaoAps(s.aps),
-        cartao('Roteador', s.modelo || 'MikroTik', 'RouterOS ' + s.versao),
     );
+    mostrarRelogio(s.relogio);
+}
+
+// Modelo, versão, tempo ligado e o relógio num cartão só (antes ocupava uma linha inteira).
+function cartaoRoteador(s) {
+    const r = s.relogio;
+    const hora = !r ? null : r.alerta ? 'relógio com problema' : 'hora certa' + (r.servidor ? ` (${r.servidor})` : '');
+    return cartao('Roteador', s.modelo || 'MikroTik',
+        [`RouterOS ${s.versao}`, s.uptime ? 'ligado há ' + tempo(s.uptime) : null, hora].filter(Boolean).join(' · '),
+        r && r.alerta ? 'alerta-numero' : '');
+}
+
+// Visitantes e a rede Alunos dependem da hora do MikroTik: avisa quando ela não bate.
+function mostrarRelogio(r) {
+    const faixa = $('#faixa-relogio');
+    faixa.hidden = !(r && r.alerta);
+    if (faixa.hidden) return;
+    const texto = r.motivos.join('; ');
+    $('#texto-faixa-relogio').textContent = `Relógio do MikroTik: ${texto[0].toUpperCase() + texto.slice(1)}. `
+        + 'Senhas de visitante e o horário da rede Alunos podem vencer na hora errada. '
+        + `Confira em System → Clock e System → NTP Client (servidores: ${r.servidores.join(', ') || 'nenhum'}).`;
 }
 
 function renderEscolhaInterfaces() {
@@ -218,6 +238,7 @@ async function carregarGeral() {
 
 function textoAtualizacao(a) {
     const partes = [];
+    if (a.painel && a.painel.tem) partes.push(`Painel ${a.painel.disponivel} disponível (instalado: ${a.painel.atual}).`);
     if (a.atualizacao_routeros) partes.push(`RouterOS ${a.disponivel} disponível (instalado: ${a.instalada}, canal ${a.canal}).`);
     if (a.atualizacao_firmware) partes.push(`Firmware da RouterBOARD ${a.firmware_novo} disponível (atual: ${a.firmware_atual}).`);
     return partes.join(' ');
@@ -231,25 +252,46 @@ async function mostrarAtualizacao(forcar) {
         $('#estado-atualizacao').textContent = 'Não foi possível verificar: ' + e.message;
         return;
     }
+    const p = a.painel || {};
+    const temPainel = !!p.tem;
     const tem = a.atualizacao_routeros || a.atualizacao_firmware;
     const faixa = $('#faixa-atualizacao');
-    faixa.hidden = !tem;
-    if (tem) $('#texto-faixa-atualizacao').textContent = textoAtualizacao(a);
+    const textoFaixa = textoAtualizacao(a);
+    faixa.hidden = !(tem || temPainel) || faixaFechada() === textoFaixa;
+    faixa.dataset.texto = textoFaixa;
+    if (!faixa.hidden) $('#texto-faixa-atualizacao').textContent = textoFaixa;
+
+    let textoPainel;
+    if (p.falhou) textoPainel = `Painel ${p.atual}. Não foi possível consultar o GitHub (${p.motivo}); este computador precisa de internet.`;
+    else if (temPainel) textoPainel = `Painel ${p.disponivel} disponível (instalado: ${p.atual})${p.nome ? ': ' + p.nome.replace(/^v[\d.]+\s*[–-]\s*/, '') : ''}.`;
+    else textoPainel = `Painel ${p.atual || ''} está atualizado.`;
+    $('#estado-painel').textContent = textoPainel + (p.verificado_em ? ` Verificado em ${dataHora(p.verificado_em)}.` : '');
+    $('#como-atualizar-painel').hidden = !temPainel;
+    if (temPainel) $('#link-release-painel').href = /^https:\/\/github\.com\//.test(p.url || '') ? p.url : 'https://github.com/jmanoelslva/escola-hotspot/releases';
 
     const quando = dataHora(a.verificado_em);
     let texto;
     if (a.falhou) texto = `Não foi possível consultar a MikroTik (${a.status || 'sem resposta'}). O roteador precisa de internet.`;
-    else if (tem) texto = textoAtualizacao(a);
+    else if (tem) texto = [a.atualizacao_routeros ? `RouterOS ${a.disponivel} disponível (instalado: ${a.instalada}, canal ${a.canal}).` : null,
+        a.atualizacao_firmware ? `Firmware da RouterBOARD ${a.firmware_novo} disponível (atual: ${a.firmware_atual}).` : null].filter(Boolean).join(' ');
     else texto = `RouterOS ${a.instalada} (canal ${a.canal}) está atualizado.` + (a.firmware_atual ? ` Firmware ${a.firmware_atual}.` : '');
     $('#estado-atualizacao').textContent = texto + (quando ? ` Verificado em ${quando}.` : '');
     $('#como-atualizar').hidden = !tem;
 }
 
 $('#verificar-atualizacao').addEventListener('click', (e) => comBotao(e.target, () => mostrarAtualizacao(true)));
-$('#fechar-faixa-atualizacao').addEventListener('click', () => { $('#faixa-atualizacao').hidden = true; });
-$('#ver-atualizacao').addEventListener('click', () => abrirAba('geral'));
+// A faixa fechada fica fechada neste navegador até o texto mudar (outra versão disponível).
+function faixaFechada() {
+    try { return localStorage.getItem('painel.faixaFechada') || ''; } catch (e) { return ''; }
+}
 
-// Ao entrar no painel: consulta (o servidor guarda por 6 horas) e mostra a faixa no topo.
-AO_ENTRAR.push(() => mostrarAtualizacao(false));
+$('#fechar-faixa-atualizacao').addEventListener('click', () => {
+    const faixa = $('#faixa-atualizacao');
+    faixa.hidden = true;
+    try { localStorage.setItem('painel.faixaFechada', faixa.dataset.texto || ''); } catch (e) { /* sem armazenamento */ }
+});
+$('#ver-atualizacao').addEventListener('click', () => {
+    $('#estado-painel').closest('.cartao').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
 
 CARREGAR.geral = carregarGeral;
