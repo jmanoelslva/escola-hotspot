@@ -43,7 +43,8 @@ mk = MikrotikFalso()
 mk.versao_disponivel = "7.15.3"  # sem faixa de atualização nas telas
 mk.trafego_aleatorio = True
 mk.alunos_no_horario = True
-mk.objetos["/system/clock"].update({"date": "2026-10-08", "time": "12:10:00"})
+# Hora do MikroTik simulado = hora atual (senão o Início mostra o aviso do relógio).
+mk.objetos["/system/clock"].update({"date": f"{datetime.now():%Y-%m-%d}", "time": f"{datetime.now():%H:%M:%S}"})
 
 mk.tabelas["/ip/hotspot/user/profile"][1].update({"rate-limit": "2M/5M", "shared-users": "1"})
 mk.adicionar("/ip/hotspot/user/profile", {"name": "professores", "rate-limit": "5M/20M", "shared-users": "2", "session-timeout": "8h"})

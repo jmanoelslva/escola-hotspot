@@ -1,4 +1,5 @@
 """Tira as telas do painel (MikroTik simulado, dados fictícios) para o manual."""
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
@@ -51,7 +52,8 @@ with sync_playwright() as p:
     # Dados de exemplo criados pelo próprio painel
     api(page, "PUT", "/api/aviso", {"texto": "Feira de ciências nesta sexta-feira. Tragam o crachá!"})
     api(page, "PUT", "/api/configuracoes/wifi", {"ssid": "Administrativo", "seguranca": "wpa", "senha": "exemplo-2026"})
-    api(page, "POST", "/api/visitantes", {"quantidade": 4, "minutos": 120, "nome": "pais", "descricao": "Reunião de pais"})
+    prazo = (datetime.now() + timedelta(days=6)).replace(hour=23, minute=59).strftime("%Y-%m-%dT%H:%M")
+    api(page, "POST", "/api/visitantes", {"quantidade": 4, "minutos": 120, "nome": "pais", "descricao": "Reunião de pais", "prazo": prazo})
     api(page, "POST", "/api/visitantes", {"quantidade": 2, "ate_fim_do_dia": True, "nome": "tecnico", "descricao": "Manutenção"})
     api(page, "PUT", "/api/rede-alunos/config", {"interface": "VLAN300-ALUNOS", "janelas": [
         {"inicio": "08:50", "fim": "09:10", "dias": [1, 2, 3, 4, 5]},
@@ -61,6 +63,7 @@ with sync_playwright() as p:
     api(page, "PUT", "/api/perfis/*1/horario", {"ativo": True, "inicio": "07:00", "fim": "17:00", "dias": ["mon", "tue", "wed", "thu", "fri"]})
     api(page, "PUT", "/api/forcar-dns", {"ativo": True})
     api(page, "POST", "/api/backups")
+    api(page, "POST", "/api/backups-config")
     api(page, "PUT", "/api/configuracoes/escola", {"nome": "Escola Estadual Professora Maria Aldineide Pessoa Gomes", "cidade": "Coité do Noia - AL"})
     api(page, "PUT", "/api/configuracoes/troca-senha", {"ativo": True})
     page.reload()
@@ -74,7 +77,17 @@ with sync_playwright() as p:
     tela(page, "03-usuarios", "usuarios")
     tela(page, "04-novo-usuario", None, antes="document.querySelector('#novo-usuario').click()", pagina_inteira=False)
     page.keyboard.press("Escape")
-    tela(page, "05-visitantes", "visitantes", ms=1800)
+    # Visitantes: o lote da reunião de pais aberto
+    tela(page, "05-visitantes", "visitantes", ms=1800,
+         antes="estado.lotesAbertos.add(estado.visitantes.find((v) => v.usuario === 'pais1').lote); renderVisitantes()")
+    # Prévia da impressão (antes de abrir a janela de imprimir)
+    page.evaluate("window.print = () => {}")
+    # void: não espera a impressão, que fica aguardando o clique na prévia
+    page.evaluate("void imprimir(estado.visitantes.filter((v) => v.usuario.startsWith('pais')).map(cartaoVisitante))")
+    esperar(page, 1500)
+    page.locator("#janela-previa").screenshot(path=str(SAIDA / "22-previa.png"))
+    page.click("#janela-previa button[value=nao]")
+    print("ok 22-previa")
     tela(page, "06-perfis", "perfis")
     tela(page, "07-importar", "importar")
     tela(page, "08-conectados", "conectados")
@@ -100,7 +113,7 @@ with sync_playwright() as p:
     # Cartões de visitante como saem na impressão
     page.evaluate("abrirAba('visitantes')")
     esperar(page, 1500)
-    page.evaluate("window.print = () => {}")
+    page.evaluate("window.print = () => {}; window.previaImpressao = async () => true")
     page.evaluate("imprimir(estado.visitantes.slice(0, 3).map(cartaoVisitante))")
     esperar(page, 1500)
     page.emulate_media(media="print")

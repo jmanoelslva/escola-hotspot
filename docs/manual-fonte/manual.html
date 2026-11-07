@@ -61,7 +61,7 @@
     <p class="subtitulo">Manual de uso para gestores</p>
     <div class="faixa"></div>
     <p class="escola">Escola Estadual Professora Maria Aldineide Pessoa Gomes<br>Coité do Noia - AL</p>
-    <p class="rodape">Versão do painel 1.19 · Outubro de 2026</p>
+    <p class="rodape">Versão do painel 1.20 · Novembro de 2026</p>
 </section>
 
 <!-- ====================================================== SUMÁRIO -->
@@ -168,14 +168,16 @@
     <figure><img src="telas/02-inicio.png" alt=""><figcaption>Figura 2 – Início</figcaption></figure>
     <ul>
         <li><strong>CPU, Memória e Temperatura</strong>: ficam em vermelho quando estão altas.</li>
+        <li><strong>Roteador</strong>: modelo, versão do RouterOS, há quanto tempo está ligado e se a hora está certa (sincronizada pelo NTP com <em>a.ntp.br</em>). Fica <strong>vermelho</strong> quando o relógio tem problema.</li>
         <li><strong>Sessões do hotspot</strong>: quantas pessoas estão logadas no Wi-Fi e o limite da licença (ex.: <em>3 de 200</em>). Fica <strong>amarelo</strong> a partir de 160 e <strong>vermelho</strong> a partir de 190.</li>
         <li><strong>APs</strong>: quantos pontos de acesso estão no ar (ex.: <em>5 de 6 no ar</em>). Quando algum cai, o cartão fica <strong>vermelho</strong> e mostra o nome do AP fora do ar. Os APs são cadastrados em <span class="caminho">Sistema → Configurações</span> (item 9.2).</li>
         <li><strong>Gráficos</strong>: o tráfego dos últimos 5 minutos. O marcado como <em>internet</em> é o link da operadora. Em <em>Escolher as interfaces do gráfico</em> dá para mostrar outras.</li>
-        <li><strong>Atualização do RouterOS</strong>: avisa quando há versão nova do sistema do roteador (a atualização em si é feita pelo responsável pela TI).</li>
+        <li><strong>Atualização do painel</strong> e <strong>Atualização do RouterOS</strong>, no fim da tela: avisam quando há versão nova do painel ou do sistema do roteador (a atualização em si é feita pelo responsável pela TI). A faixa amarela com o aviso aparece só no Início; fechada no ✕, só volta quando sair outra versão.</li>
     </ul>
+    <div class="atencao"><strong>Faixa vermelha "Relógio do MikroTik"</strong>Aparece quando a hora do roteador está mais de 2 minutos diferente da hora do computador, ou quando o NTP está desligado ou sem sincronia. Com a hora errada, as senhas de visitante e o horário da rede Alunos vencem na hora errada: chame o responsável pela TI.</div>
 
     <h2 class="capitulo">4.2 Uso da internet</h2>
-    <p>No fim da tela fica o histórico de uso da internet, registrado pelo painel a cada 5 minutos. Escolha o período nos botões do canto.</p>
+    <p>Logo abaixo dos cartões fica o histórico de uso da internet, registrado pelo painel a cada 5 minutos. Escolha o período nos botões do canto.</p>
     <figure><img src="telas/02b-uso.png" alt=""><figcaption>Figura 3 – Uso da internet nos últimos 30 dias</figcaption></figure>
     <ul>
         <li><strong>Hoje</strong> e <strong>7 dias</strong>: velocidade de download (azul) e de upload (laranja), em Mbps, ao longo do tempo.</li>
@@ -198,14 +200,14 @@
         <li>Clique em <span class="botao">+ Novo usuário</span>.</li>
         <li>Preencha o <strong>Usuário</strong> (sem acentos nem espaços, ex.: <code>maria.silva</code>). A <strong>senha</strong> já vem gerada; clique em <span class="botao">Gerar</span> para outra ou digite uma.</li>
         <li>Em <strong>Nome / turma</strong>, use o formato <code>Nome - Turma</code> (ex.: <em>Maria da Silva - 9º A</em>). A turma é usada no filtro e no relatório de consumo.</li>
-        <li>Escolha o <strong>Perfil</strong>. <em>Limite de tempo</em> e <em>Prender a um aparelho</em> são opcionais.</li>
+        <li>Escolha o <strong>Perfil</strong>: o tempo de cada conexão e o horário de uso vêm dele (item 5.3). <em>Prender a um aparelho</em> é opcional.</li>
         <li>Clique em <span class="botao">Salvar</span>.</li>
     </ol>
     <figure class="pequena"><img src="telas/04-novo-usuario.png" alt=""><figcaption>Figura 5 – Cadastro de usuário</figcaption></figure>
 
     <h3>No dia a dia</h3>
     <ul>
-        <li><span class="botao">Editar</span>: muda nome, perfil, senha ou limites.</li>
+        <li><span class="botao">Editar</span>: muda nome, perfil, senha ou o aparelho preso.</li>
         <li><span class="botao b-roxo">Nova senha</span>: gera uma senha nova na hora e oferece imprimir o cartão. A senha antiga deixa de funcionar.</li>
         <li><span class="botao b-laranja">Desativar</span>: a pessoa deixa de conseguir entrar, mas o cadastro fica guardado. <span class="botao b-verde">Ativar</span> devolve o acesso.</li>
         <li><span class="botao b-vermelho">Excluir</span>: apaga o usuário.</li>
@@ -214,22 +216,33 @@
     </ul>
 
     <h2 class="capitulo">5.2 Visitantes (senhas temporárias)</h2>
-    <p>Para palestrantes, pais em reunião, técnicos. Cada senha <strong>some sozinha</strong> na hora marcada, mesmo com o painel fechado.</p>
+    <p>Para palestrantes, pais em reunião, técnicos, aulas e eventos. O <strong>tempo de uso só começa a contar no primeiro acesso</strong>: até lá o cartão fica guardado. No fim do tempo, a senha <strong>some sozinha</strong>, mesmo com o painel fechado.</p>
     <figure><img src="telas/05-visitantes.png" alt=""><figcaption>Figura 6 – Visitantes</figcaption></figure>
     <ol>
         <li>Informe a <strong>Quantidade</strong>. Embaixo do campo aparece quantas ainda cabem (até 200, contando as que já existem). Se passar, o painel avisa e não cria.</li>
-        <li>Escolha <strong>Válida por</strong> (1 hora até 7 dias, ou até o fim do dia) e o <strong>Perfil</strong>.</li>
+        <li>Escolha o <strong>Tempo de uso</strong> (1 hora até 7 dias, ou até o fim do dia do primeiro acesso).</li>
+        <li><strong>Prazo para usar (opcional)</strong>: data e hora limite para o primeiro acesso. O cartão que ninguém usou até lá some sozinho; quem entrou antes continua com o tempo de uso inteiro. Em branco, o cartão fica guardado até ser usado.</li>
+        <li>Escolha o <strong>Perfil</strong>.</li>
         <li><strong>Nome do usuário (opcional)</strong>: digitando <em>pais</em>, as senhas saem como <code>pais1</code>, <code>pais2</code>… Em branco, ficam <code>visita1</code>, <code>visita2</code>… Até 10 letras, sem acento.</li>
         <li><strong>Descrição (opcional)</strong>: aparece na lista e no cartão (ex.: <em>Reunião de pais</em>).</li>
         <li>Clique em <span class="botao">Criar senhas</span>. O painel avisa quantas foram criadas; elas aparecem na lista abaixo.</li>
     </ol>
-    <p>A senha dos visitantes tem sempre <strong>6 números</strong>. Para entregar, use <span class="botao b-roxo">Imprimir</span> (um), <span class="botao b-roxo">Imprimir todos</span> ou marque vários e use <em>Imprimir selecionados</em>. <span class="botao b-vermelho">Encerrar agora</span> desconecta e apaga o visitante antes da hora.</p>
-    <figure><img src="telas/19-cartoes.png" alt=""><figcaption>Figura 7 – Cartões impressos (3 por linha numa folha A4)</figcaption></figure>
+    <div class="dica"><strong>Exemplo</strong>Aula no dia 13 com 20 participantes: crie 20 senhas com <em>Tempo de uso</em> de 4 horas, <em>Prazo para usar</em> 13/11 às 23:59 e a descrição <em>Aula X</em>. Quem entrar usa 4 horas a partir do próprio acesso; os cartões que sobrarem somem depois do dia 13.</div>
+    <h3>Lotes</h3>
+    <p>As senhas criadas de uma vez formam um <strong>lote</strong>. A lista mostra cada lote numa linha com a descrição, o tempo de uso, o prazo, a data de criação e uma barra com quantos cartões já estão <em>em uso</em>. Clique no nome do lote para ver os cartões dele.</p>
+    <ul>
+        <li><strong>Situação</strong> de cada cartão: <em>Não usado</em> (guardado), <em>Em uso</em> (com a hora em que vence na coluna Validade), <em>Conectado</em> ou <em>Expirado</em>.</li>
+        <li><span class="botao b-roxo">Imprimir lote</span> e <span class="botao b-vermelho">Encerrar lote</span> valem para todos os cartões do lote.</li>
+        <li><span class="botao b-roxo">Imprimir</span> e <span class="botao b-vermelho">Encerrar agora</span> na linha do cartão valem só para ele. <span class="botao b-roxo">Imprimir todos</span> ou a seleção com as caixas também funcionam.</li>
+    </ul>
+    <p>A senha dos visitantes tem sempre <strong>6 números</strong>. Antes de imprimir, o painel mostra uma <strong>prévia</strong> do cartão como vai sair no papel; confira e clique em <span class="botao">Imprimir</span>.</p>
+    <figure class="pequena"><img src="telas/22-previa.png" alt=""><figcaption>Figura 7 – Prévia da impressão</figcaption></figure>
+    <figure><img src="telas/19-cartoes.png" alt=""><figcaption>Figura 8 – Cartões impressos (3 por linha numa folha A4)</figcaption></figure>
     <div class="dica"><strong>Como o visitante usa o cartão</strong>1. Aponta a câmera do celular para o QR code <em>"Conecte ao Wi-Fi"</em> e entra na rede.<br>2. Aponta para o QR code <em>"Faça o login"</em>: a tela de login abre com usuário e senha já preenchidos; basta aceitar os termos e conectar.<br>Se preferir, pode digitar o usuário e a senha na tela de login.</div>
 
     <h2 class="capitulo">5.3 Perfis e horário</h2>
     <p>O <strong>perfil</strong> define as regras de um grupo de usuários (por exemplo, <em>alunos</em> e <em>professores</em>).</p>
-    <figure><img src="telas/06-perfis.png" alt=""><figcaption>Figura 8 – Perfis e horário</figcaption></figure>
+    <figure><img src="telas/06-perfis.png" alt=""><figcaption>Figura 9 – Perfis e horário</figcaption></figure>
     <ul>
         <li><strong>Download / Envio</strong>: velocidade máxima de cada pessoa.</li>
         <li><strong>Aparelhos</strong>: quantos aparelhos o mesmo usuário pode conectar ao mesmo tempo (cada aparelho conta no limite de 200 da licença).</li>
@@ -239,7 +252,7 @@
 
     <h2>5.4 Importar planilha</h2>
     <p>Para cadastrar uma turma inteira de uma vez.</p>
-    <figure><img src="telas/07-importar.png" alt=""><figcaption>Figura 9 – Importar planilha</figcaption></figure>
+    <figure><img src="telas/07-importar.png" alt=""><figcaption>Figura 10 – Importar planilha</figcaption></figure>
     <ol>
         <li>Clique em <strong>modelo da planilha</strong> e preencha no Excel, uma linha por pessoa: <strong>usuario</strong> (obrigatório), <strong>senha</strong> (em branco, o painel cria), <strong>nome</strong>, <strong>turma</strong> e <strong>perfil</strong>.</li>
         <li>Salve como <strong>.xlsx</strong> ou <strong>.csv</strong>, escolha o arquivo, o perfil padrão e clique em <span class="botao">Ler planilha</span>.</li>
@@ -253,7 +266,7 @@
     <h1>6. Conectados</h1>
     <h2>6.1 Conectados agora</h2>
     <p>Quem está logado no Wi-Fi neste momento, com IP, aparelho (MAC), tempo e consumo. Atualiza sozinho a cada 30 segundos.</p>
-    <figure><img src="telas/08-conectados.png" alt=""><figcaption>Figura 10 – Conectados agora</figcaption></figure>
+    <figure><img src="telas/08-conectados.png" alt=""><figcaption>Figura 11 – Conectados agora</figcaption></figure>
     <ul>
         <li><span class="botao b-laranja">Desconectar</span>: encerra a sessão. A pessoa pode entrar de novo pela tela de login.</li>
         <li><span class="botao b-verde">Liberar</span>: o aparelho passa a navegar sem login (útil para aparelhos da escola).</li>
@@ -262,7 +275,7 @@
 
     <h2 class="capitulo">6.2 Todos os aparelhos</h2>
     <p>Todos os aparelhos na rede, <strong>logados ou não</strong>, inclusive os da rede Alunos.</p>
-    <figure><img src="telas/09-todos-aparelhos.png" alt=""><figcaption>Figura 11 – Todos os aparelhos</figcaption></figure>
+    <figure><img src="telas/09-todos-aparelhos.png" alt=""><figcaption>Figura 12 – Todos os aparelhos</figcaption></figure>
     <table>
         <tr><th>Situação</th><th>O que quer dizer</th></tr>
         <tr><td><strong>Logado</strong> (verde)</td><td>Entrou com usuário e senha; o usuário aparece embaixo do nome do aparelho.</td></tr>
@@ -275,7 +288,7 @@
 
     <h2 class="capitulo">6.3 Consumo</h2>
     <p>Quanto cada usuário (ou cada turma) usou de internet desde a última vez que os contadores foram zerados.</p>
-    <figure><img src="telas/10-consumo.png" alt=""><figcaption>Figura 12 – Consumo</figcaption></figure>
+    <figure><img src="telas/10-consumo.png" alt=""><figcaption>Figura 13 – Consumo</figcaption></figure>
     <ul>
         <li>Alterne entre <strong>Por usuário</strong> e <strong>Por turma</strong>.</li>
         <li><span class="botao b-vermelho">Zerar contadores</span> recomeça a contagem (por exemplo, no início de cada mês).</li>
@@ -286,7 +299,7 @@
 <section class="capitulo">
     <h1>7. Aparelhos (liberar e bloquear)</h1>
     <p>Aparelhos <strong>liberados</strong> navegam sem passar pelo login: TVs, impressoras, computadores da escola. Aparelhos <strong>bloqueados</strong> não conseguem usar a rede.</p>
-    <figure><img src="telas/11-aparelhos.png" alt=""><figcaption>Figura 13 – Aparelhos liberados e bloqueados</figcaption></figure>
+    <figure><img src="telas/11-aparelhos.png" alt=""><figcaption>Figura 14 – Aparelhos liberados e bloqueados</figcaption></figure>
     <ol>
         <li>Clique em <span class="botao">+ Liberar aparelho</span> ou <span class="botao b-vermelho">+ Bloquear aparelho</span>.</li>
         <li>Dê uma <strong>descrição</strong> (ex.: <em>TV sala 5</em>).</li>
@@ -302,7 +315,7 @@
     <h1>8. Regras de acesso</h1>
     <h2>8.1 Rede Alunos</h2>
     <p>Controla quando a rede dos alunos tem internet. Quem abre e fecha é o próprio roteador, a cada minuto, mesmo com o painel fechado.</p>
-    <figure><img src="telas/12-rede-alunos.png" alt=""><figcaption>Figura 14 – Rede Alunos</figcaption></figure>
+    <figure><img src="telas/12-rede-alunos.png" alt=""><figcaption>Figura 15 – Rede Alunos</figcaption></figure>
     <h3>Modo de funcionamento</h3>
     <table>
         <tr><th>Modo</th><th>O que acontece</th></tr>
@@ -327,7 +340,7 @@
     <div class="atencao"><strong>Relógio</strong>Os horários dependem do relógio do roteador. Se a rede abrir ou fechar na hora errada, avise o responsável pela TI.</div>
 
     <h2 class="capitulo">8.2 Sites bloqueados</h2>
-    <figure><img src="telas/13-sites.png" alt=""><figcaption>Figura 15 – Sites bloqueados</figcaption></figure>
+    <figure><img src="telas/13-sites.png" alt=""><figcaption>Figura 16 – Sites bloqueados</figcaption></figure>
     <ol>
         <li>Digite o endereço do site (ex.: <code>bet365.com</code>) e, se quiser, o motivo.</li>
         <li>Clique em <span class="botao b-vermelho">Bloquear</span>. Vale para o site e todos os subdomínios (bloquear <em>tiktok.com</em> bloqueia também <em>www.tiktok.com</em>).</li>
@@ -344,29 +357,29 @@
     <h1>9. Sistema</h1>
     <h2>9.1 Aviso</h2>
     <p>Um recado que aparece na tela de login do Wi-Fi e na tela de conectado (ex.: <em>"Feira de ciências nesta sexta-feira"</em>).</p>
-    <figure class="pequena"><img src="telas/14-aviso.png" alt=""><figcaption>Figura 16 – Aviso</figcaption></figure>
+    <figure class="pequena"><img src="telas/14-aviso.png" alt=""><figcaption>Figura 17 – Aviso</figcaption></figure>
     <p>Escreva o texto (até 500 caracteres), confira em <em>Como fica</em> e clique em <span class="botao">Salvar aviso</span>. <span class="botao">Apagar aviso</span> tira o recado.</p>
 
     <h2 class="capitulo">9.2 Configurações</h2>
     <p>Reúne os ajustes gerais do painel, em cartões separados.</p>
     <h3>Escola</h3>
-    <figure><img src="telas/15a-escola.png" alt=""><figcaption>Figura 17 – Escola</figcaption></figure>
+    <figure><img src="telas/15a-escola.png" alt=""><figcaption>Figura 18 – Escola</figcaption></figure>
     <p>Nome, cidade e logotipo usados no topo do painel, na tela de entrada e nos cartões impressos. Ao salvar, o nome e a cidade vão também para o rodapé da tela de login do Wi-Fi. Para trocar o logotipo, clique em <span class="botao">Trocar logotipo…</span> (PNG ou JPG, até 2 MB).</p>
 
     <h3>Pontos de acesso (APs)</h3>
-    <figure><img src="telas/15b-aps.png" alt=""><figcaption>Figura 18 – Pontos de acesso</figcaption></figure>
+    <figure><img src="telas/15b-aps.png" alt=""><figcaption>Figura 19 – Pontos de acesso</figcaption></figure>
     <p>Lista dos APs da escola que o roteador vigia. Para cadastrar, informe o <strong>nome</strong> (ex.: <em>AP3 – pátio</em>) e o <strong>IP</strong> e clique em <span class="botao b-verde">Adicionar</span>. Cada AP aparece como <strong>No ar</strong> (verde) ou <strong>Fora do ar</strong> (vermelho), com a data e a hora em que caiu.</p>
     <p>A cada 30 segundos o próprio roteador manda <strong>5 pings</strong> para cada AP, mesmo com o painel fechado. O AP só é marcado como fora do ar quando <strong>nenhum dos 5</strong> responde; assim, um pacote perdido não vira alarme falso.</p>
 
     <h3>Serviço do painel</h3>
-    <figure><img src="telas/15c-servico.png" alt=""><figcaption>Figura 19 – Serviço do painel e troca de senha pelo Wi-Fi</figcaption></figure>
+    <figure><img src="telas/15c-servico.png" alt=""><figcaption>Figura 20 – Serviço do painel e troca de senha pelo Wi-Fi</figcaption></figure>
     <p>Usuário próprio do painel no roteador, usado para trabalhar sem ninguém logado: registrar o uso da internet (item 4.2) e atender a troca de senha pelo Wi-Fi (item 10). Só um administrador <em>full</em> ativa ou desativa. A senha desse usuário é criada pelo painel e fica guardada só no computador do painel. <span class="botao b-verde">Gerar senha nova</span> troca essa senha; <span class="botao b-vermelho">Desativar</span> apaga o usuário e para o registro de uso.</p>
 
     <h3>Troca de senha pelo Wi-Fi</h3>
     <p>Liga ou desliga o link <em>"Trocar minha senha"</em> na tela de conectado do Wi-Fi (veja o item 10). Precisa do Serviço do painel ativo.</p>
 
     <h3>Conexão com o MikroTik</h3>
-    <figure><img src="telas/15d-conexao.png" alt=""><figcaption>Figura 20 – Conexão com o MikroTik</figcaption></figure>
+    <figure><img src="telas/15d-conexao.png" alt=""><figcaption>Figura 21 – Conexão com o MikroTik</figcaption></figure>
     <p>Endereço e porta do roteador. Só deve ser mudado pelo responsável pela TI. Se só a porta mudar, deixe o IP em branco: fica o padrão <code>192.168.88.1</code>. O painel testa o endereço novo antes de salvar; se o roteador não responder, nada muda.</p>
 
     <h3>Endereço do hotspot e Rede Wi-Fi dos QR codes</h3>
@@ -377,7 +390,7 @@
 
     <h2 class="capitulo">9.3 Administradores</h2>
     <p>Quem pode entrar no painel. Só quem entrou com um usuário do grupo <strong>full</strong> vê os botões desta tela.</p>
-    <figure><img src="telas/16-administradores.png" alt=""><figcaption>Figura 21 – Administradores</figcaption></figure>
+    <figure><img src="telas/16-administradores.png" alt=""><figcaption>Figura 22 – Administradores</figcaption></figure>
     <table>
         <tr><th>Grupo</th><th>O que pode fazer</th><th>Indicado para</th></tr>
         <tr><td><strong>painel</strong></td><td>Usar todas as telas do painel. Não entra no sistema do roteador e não cadastra administradores.</td><td>Direção, coordenação, secretaria</td></tr>
@@ -401,21 +414,23 @@
         <li><strong>O que foi feito no painel</strong>: cadastros, importações, senhas novas, senhas trocadas pelos próprios usuários, sites bloqueados e liberações da rede Alunos fora do horário.</li>
         <li><strong>Consumo por turma</strong> e <strong>Quem mais usou</strong>: contados desde o último <em>Zerar contadores</em> (item 6.3).</li>
     </ul>
-    <figure><img src="telas/20-relatorio.png" alt="" style="max-height: 185mm"><figcaption>Figura 22 – Relatório mensal</figcaption></figure>
+    <figure><img src="telas/20-relatorio.png" alt="" style="max-height: 185mm"><figcaption>Figura 23 – Relatório mensal</figcaption></figure>
 
     <h2 class="capitulo">9.5 Backup</h2>
     <p>O painel guarda sozinho uma cópia por dia (no primeiro acesso do dia) com usuários e senhas, aparelhos, perfis e sites bloqueados, e mantém as últimas 30.</p>
-    <figure><img src="telas/17-backup.png" alt=""><figcaption>Figura 23 – Backup</figcaption></figure>
+    <figure><img src="telas/17-backup.png" alt=""><figcaption>Figura 24 – Backup</figcaption></figure>
     <ul>
         <li><span class="botao">Fazer backup agora</span>: cria uma cópia na hora (bom antes de mudanças grandes).</li>
         <li><span class="botao">Baixar</span>: salva a cópia no computador.</li>
         <li><span class="botao b-laranja">Restaurar</span>: recria no roteador só o que estiver faltando; não altera nem apaga o que já existe.</li>
     </ul>
-    <div class="atencao"><strong>Atenção</strong>Os arquivos de backup contêm as senhas dos usuários. Não envie por e-mail nem guarde em pen drive compartilhado.</div>
+    <h3>Configuração do MikroTik</h3>
+    <p>Uma vez por semana o painel também copia a <strong>configuração inteira do roteador</strong> e guarda as últimas 12. Serve para reconstruir o MikroTik se ele for trocado ou resetado (trabalho do responsável pela TI). <span class="botao">Copiar configuração agora</span> faz uma cópia na hora, por exemplo antes de mexer no roteador.</p>
+    <div class="atencao"><strong>Atenção</strong>Os arquivos de backup contêm as senhas dos usuários, e a cópia da configuração contém as senhas do roteador e da internet. Não envie por e-mail nem guarde em pen drive compartilhado.</div>
 
     <h2>9.6 Histórico</h2>
     <p>Registro de quem fez o quê e quando: cadastros, senhas novas, bloqueios, liberações da rede Alunos e outros.</p>
-    <figure><img src="telas/18-historico.png" alt=""><figcaption>Figura 24 – Histórico</figcaption></figure>
+    <figure><img src="telas/18-historico.png" alt=""><figcaption>Figura 25 – Histórico</figcaption></figure>
     <p>Use a busca (ex.: <em>maria</em>, <em>bloqueou</em>), o filtro por operador e o período. As senhas nunca aparecem no histórico.</p>
 </section>
 
@@ -423,7 +438,7 @@
 <section class="capitulo">
     <h1>10. Troca de senha pelo Wi-Fi</h1>
     <p>Professores, funcionários e alunos cadastrados podem trocar a própria senha do Wi-Fi pelo celular, sem precisar procurar a secretaria. Visitantes não trocam, porque a senha deles é temporária.</p>
-    <figure class="pequena"><img src="telas/21-senha.png" alt="" style="max-height: 140mm"><figcaption>Figura 25 – Página de troca de senha no celular</figcaption></figure>
+    <figure class="pequena"><img src="telas/21-senha.png" alt="" style="max-height: 140mm"><figcaption>Figura 26 – Página de troca de senha no celular</figcaption></figure>
     <ol>
         <li>Conectado ao Wi-Fi Administrativo, na tela de conectado, toque em <strong>Trocar minha senha</strong>.</li>
         <li>Preencha o <strong>usuário</strong>, a <strong>senha atual</strong> e a <strong>senha nova</strong> duas vezes (pelo menos 6 caracteres).</li>
@@ -450,7 +465,7 @@
     <h3>A senha está certa, mas o login é recusado.</h3>
     <p>Veja em <span class="caminho">Início</span> o cartão <strong>Sessões do hotspot</strong>. Se estiver perto de 200, o limite da licença foi atingido: é preciso que outras pessoas saiam, ou desconectar aparelhos em <span class="caminho">Conectados agora</span>. Também confira se o perfil da pessoa não tem limite de aparelhos já usado em outro celular.</p>
     <h3>O visitante não consegue entrar.</h3>
-    <p>Confira em <span class="caminho">Usuários → Visitantes</span> se a senha ainda está <em>Válida</em>. Senhas vencidas são apagadas sozinhas; crie outra.</p>
+    <p>Confira em <span class="caminho">Usuários → Visitantes</span> se a senha ainda está na lista (<em>Não usado</em> ou <em>Em uso</em>). Senhas vencidas, ou que passaram do prazo para usar, são apagadas sozinhas; crie outra. Se o Início mostrar a faixa vermelha do relógio, o problema é a hora do roteador.</p>
     <h3>Os alunos estão sem internet.</h3>
     <p>Fora dos horários cadastrados a rede Alunos fica fechada. Veja o estado em <span class="caminho">Regras de acesso → Rede Alunos</span> e, se for o caso, use <span class="botao b-verde">Liberar agora</span>.</p>
     <h3>A impressão saiu sem os QR codes.</h3>
@@ -474,7 +489,7 @@
         <li><strong>Clique em Sair</strong> ao terminar, principalmente em computadores usados por outras pessoas.</li>
         <li><strong>Planilhas com senhas</strong> (Exportar com senhas) e backups devem ficar em local seguro e ser apagados quando não forem mais necessários.</li>
         <li><strong>Desative</strong> o usuário de quem saiu da escola, em vez de esperar.</li>
-        <li><strong>Visitantes</strong>: crie senhas com a validade mais curta possível e encerre as que não forem usadas.</li>
+        <li><strong>Visitantes</strong>: use o tempo de uso mais curto possível, sempre com <em>Prazo para usar</em>, e encerre os lotes que não forem mais usados.</li>
     </ul>
     <div class="dica"><strong>Suporte</strong>Dúvidas ou problemas que este manual não resolve: procure o responsável pela TI da escola.</div>
 </section>

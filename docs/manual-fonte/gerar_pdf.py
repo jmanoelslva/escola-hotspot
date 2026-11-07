@@ -1,11 +1,11 @@
-"""manual/manual.html -> PDF A4 com rodapé de página."""
+"""manual.html -> PDF A4 com rodapé de página."""
 import shutil
 import sys
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
-PASTA = Path(__file__).parent / "manual"
+PASTA = Path(__file__).parent
 shutil.copy("D:/ESCOLA/hotspot-admin/static/logo.png", PASTA / "logo.png")
 DESTINO = Path(sys.argv[1])
 
